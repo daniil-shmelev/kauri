@@ -44,6 +44,8 @@ def subtree_width(t, x, y, h, xleft, xright):
 
 
 def display(fs):
+    if not isinstance(fs, ForestSum):
+        fs = fs.asForestSum()    
     if fs == ForestSum([]):
         plt.text(0, 0, str(0))
         h = 1

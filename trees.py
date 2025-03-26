@@ -390,6 +390,15 @@ class Forest():
         out = self.apply_product(lambda x : x, lambda x : x.antipode.minus(), applyReduction)
         return out
 
+    def singleton_reduced(self):
+        out = copy.copy(self)
+        out.reduce()
+        if len(out.treeList) > 1:
+            out.treeList = list(filter(lambda x: x.listRepr != [], out.treeList))
+            if len(out.treeList) == 0:
+                out.treeList = [Tree([])]
+        return out
+
 
 ######################################
 class ForestSum():
@@ -599,7 +608,7 @@ class ForestSum():
         return self.apply_product(lambda x : x, lambda x : x.antipode.minus())
 
     def singleton_reduced(self):
-        pass
+        return ForestSum([x.singleton_reduced() for x in self.forestList], self.coeffList)
 
 
 #######################
