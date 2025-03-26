@@ -3,8 +3,6 @@ import copy
 
 from fractions import Fraction
 
-from line_profiler_pycharm import profile
-
 useFractionsInRepr_ = False
 
 def useFractions(flag):
@@ -179,7 +177,7 @@ class Tree():
     def apply(self, func, applyReduction = True):
         return func(self)
 
-    @profile
+    
     def apply_product(self, func1, func2, applyReduction = True):
         subtrees, branches = self.split()
         #a(branches) * b(subtrees)
@@ -195,7 +193,7 @@ class Tree():
             out.reduce()
         return out
 
-    @profile
+    
     def id_sqrt(self, applyReduction = True): #Id^{1/2}
         if self.equals(Tree(None)):
             return Tree(None).__mul__(1, False)
@@ -227,7 +225,7 @@ class Forest():
         self.treeList = treeList
         self.reduce()
 
-    @profile
+    
     def reduce(self):  # Remove redundant empty trees
         if len(self.treeList) > 1:
             self.treeList = list(filter(lambda x: x.listRepr is not None, self.treeList))
@@ -245,24 +243,24 @@ class Forest():
         r += repr(self.treeList[-1]) + ""
         return r
 
-    @profile
+    
     def join(self):
         out = [t.listRepr for t in self.treeList]
         out = list(filter(lambda x: x is not None, out)) 
         return Tree(out)
 
-    @profile
+    
     def numNodes(self):
         return sum(t.numNodes() for t in self.treeList)
 
     def len(self):
         return len(self.treeList)
 
-    @profile
+    
     def factorial(self):
         return self.apply(lambda x : x.factorial())
 
-    @profile
+    
     def antipode(self, applyReduction = True):
         if self.treeList is None or self.treeList == []:
             raise ValueError("Error in forest antipode")
@@ -305,7 +303,7 @@ class Forest():
 
     __rmul__ = __mul__
 
-    @profile
+    
     def __imul__(self, other):
         if isinstance(other, Tree):
             self.treeList.append(other)
@@ -339,7 +337,7 @@ class Forest():
     def __neg__(self):
         return self.__mul__(-1, False)
 
-    @profile
+    
     def equals(self, otherForest):
         l1 = self.treeList
         l2 = copy.copy(otherForest.treeList)
@@ -360,7 +358,7 @@ class Forest():
     def asForestSum(self):
         return ForestSum([self])
 
-    @profile
+    
     def apply(self, func, applyReduction = True):
         out = 1
         for t in self.treeList:
@@ -371,7 +369,7 @@ class Forest():
             out.reduce()
         return out
 
-    @profile
+    
     def apply_product(self, func1, func2, applyReduction = True):
         out = 1
         for t in self.treeList:
@@ -418,7 +416,7 @@ class ForestSum():
         r += repr(self.coeffList[-1]) + "*" + repr(self.forestList[-1])
         return r
 
-    @profile
+    
     def reduce(self):
         newForestList = []
         newCoeffList = []
@@ -446,7 +444,7 @@ class ForestSum():
     def factorial(self):
         return self.apply(lambda x : x.factorial(), False)
 
-    @profile
+    
     def antipode(self, applyReduction = True):
         out = self.coeffList[0] * self.forestList[0].antipode()
         for i in range(1, len(self.forestList)):
@@ -459,7 +457,7 @@ class ForestSum():
             out.reduce()
         return out
 
-    @profile
+    
     def sign(self):
         newCoeffs = []
         for i in range(len(self.coeffList)):
@@ -535,7 +533,7 @@ class ForestSum():
     def __neg__(self):
         return self.__mul__(-1, False)
 
-    @profile
+    
     def __eq__(self, other):
         temp = copy.copy(other)
         if isinstance(temp, int) or isinstance(temp, float):
@@ -560,7 +558,7 @@ class ForestSum():
 
         return len(f2) == 0
 
-    @profile
+    
     def apply(self, func, applyReduction = True):
         out = 0
         for f,c in zip(self.forestList, self.coeffList):
@@ -575,7 +573,7 @@ class ForestSum():
             out.reduce()
         return out
 
-    @profile
+    
     def apply_product(self, func1, func2, applyReduction = True):
         out = 0
         for f,c in zip(self.forestList, self.coeffList):
