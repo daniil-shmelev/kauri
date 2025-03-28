@@ -1,6 +1,5 @@
 import unittest
-from trees import *
-from maps import *
+from rootedtrees import *
 
 trees = [Tree(None),
          Tree([]),

@@ -122,11 +122,10 @@ class Tree():
         elif isinstance(other, Tree):
             out = Forest([self, other])
         elif isinstance(other, Forest):
-            out = Forest([self, other.treeList])
+            out = Forest([self] + other.treeList)
         elif isinstance(other, ForestSum):
-            f = copy.deepcopy(other.forestList)
-            c = copy.deepcopy(other.coeffList)
-            f = [self * x for x in f]
+            c = copy.copy(other.coeffList)
+            f = [self * x for x in other.forestList]
             out = ForestSum(f, c)
         else:
             raise ValueError("oh no")
@@ -177,6 +176,17 @@ class Tree():
     def apply(self, func, applyReduction = True):
         return func(self)
 
+    def apply_power(self, func, n, applyReduction = True):
+        if n == 0:
+            return self
+        if n == 1:
+            return self.apply(func, applyReduction)
+        else:
+            res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
+            if applyReduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
+                res.reduce()
+            return res
+
     
     def apply_product(self, func1, func2, applyReduction = True):
         subtrees, branches = self.split()
@@ -192,30 +202,6 @@ class Tree():
         if applyReduction and not (isinstance(out, int) or isinstance(out, float)):
             out.reduce()
         return out
-
-    
-    def id_sqrt(self, applyReduction = True): #Id^{1/2}
-        if self.equals(Tree(None)):
-            return Tree(None).__mul__(1, False)
-        if self.equals(Tree([])):
-            return Tree([]).__mul__(0.5, False)
-        else:
-            ident = lambda x : x
-            #out = self.apply_product(ident, ident) - 2 * self
-            out = add_(self.apply_product(ident, ident), self.__mul__(-2, False), True)
-            out = out.id_sqrt(False)
-            out = sub_(self, out).__mul__(0.5, False)
-
-            if applyReduction:
-                out.reduce()
-            return out
-
-    def minus(self):
-        x = self.id_sqrt()
-        return x.apply_product(lambda x : x.signed_antipode(), lambda x : x)
-    
-    def plus(self):
-        return self.apply_product(lambda x : x, lambda x : x.antipode().minus())
 
 
 ######################################
@@ -365,9 +351,20 @@ class Forest():
             #out = out * t.apply(func)
             out = mul_(out, t.apply(func), False)
 
-        if applyReduction and not (isinstance(out, int) or isinstance(out, float)):
+        if applyReduction and not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
             out.reduce()
         return out
+
+    def apply_power(self, func, n, applyReduction = True):
+        if n == 0:
+            return self
+        if n == 1:
+            return self.apply(func, applyReduction)
+        else:
+            res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
+            if applyReduction and not isinstance(res, Tree):
+                res.reduce()
+            return res
 
     
     def apply_product(self, func1, func2, applyReduction = True):
@@ -377,17 +374,6 @@ class Forest():
 
         if applyReduction and not (isinstance(out, int) or isinstance(out, float)):
             out.reduce()
-        return out
-
-    def id_sqrt(self, applyReduction = True): #Id^{1/2}
-        return self.apply(lambda x : x.id_sqrt(applyReduction), applyReduction)
-
-    def minus(self, applyReduction = True):
-        out = self.id_sqrt().apply_product(lambda x : x.signed_antipode(), lambda x : x, applyReduction)
-        return out
-    
-    def plus(self, applyReduction = True):
-        out = self.apply_product(lambda x : x, lambda x : x.antipode.minus(), applyReduction)
         return out
 
     def singleton_reduced(self):
@@ -445,7 +431,11 @@ class ForestSum():
         for i in zero_idx[::-1]:
             newForestList.pop(i)
             newCoeffList.pop(i)
-        
+
+        if newForestList == []:
+            newForestList.append(Tree(None).asForest())
+            newCoeffList.append(0)
+
         self.forestList = newForestList
         self.coeffList = newCoeffList
         return self
@@ -459,7 +449,7 @@ class ForestSum():
         for i in range(1, len(self.forestList)):
             #out += self.coeffList[i] * self.forestList[i].antipode()
             out.__iadd__(
-                self.coeffList[i].__mul__(self.forestList[i].antipode(False), False)
+                mul_(self.coeffList[i], self.forestList[i].antipode(False), False)
             , False)
 
         if applyReduction:
@@ -470,7 +460,7 @@ class ForestSum():
     def sign(self):
         newCoeffs = []
         for i in range(len(self.coeffList)):
-            if self.forestList.numNodes() % 2 == 0:
+            if self.forestList[i].numNodes() % 2 == 0:
                 newCoeffs.append(self.coeffList[i])
             else:
                 newCoeffs.append(-self.coeffList[i])
@@ -495,7 +485,7 @@ class ForestSum():
         return self
 
     def __mul__(self, other, applyReduction = True):
-        temp = copy.copy(self)
+        temp = copy.deepcopy(self)
         temp.__imul__(other, applyReduction)
         return temp
 
@@ -523,7 +513,7 @@ class ForestSum():
         return self
 
     def __add__(self, other, applyReduction = True):
-        temp = copy.copy(self)
+        temp = copy.deepcopy(self)
         temp.__iadd__(other, applyReduction)
         return temp
 
@@ -532,7 +522,7 @@ class ForestSum():
         return self
 
     def __sub__(self, other, applyReduction = True):
-        temp = copy.copy(self)
+        temp = copy.deepcopy(self)
         temp.__isub__(other, applyReduction)
         return temp
 
@@ -578,9 +568,20 @@ class ForestSum():
             #out += c * term
             out = add_(out, mul_(term, c, False), False)
 
-        if applyReduction and not (isinstance(out, int) or isinstance(out, float)):
+        if applyReduction and not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
             out.reduce()
         return out
+
+    def apply_power(self, func, n, applyReduction = True):
+        if n == 0:
+            return self
+        if n == 1:
+            return self.apply(func, applyReduction)
+        else:
+            res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
+            if applyReduction and not isinstance(res, Tree):
+                res.reduce()
+            return res
 
     
     def apply_product(self, func1, func2, applyReduction = True):
@@ -596,16 +597,6 @@ class ForestSum():
         if applyReduction and not (isinstance(out, int) or isinstance(out, float)):
             out.reduce()
         return out
-
-    def id_sqrt(self, applyReduction = True): #Id^{1/2}
-        return self.apply(lambda x : x.id_sqrt(applyReduction))
-
-    def minus(self):
-        x = self.id_sqrt()
-        return x.apply_product(lambda x : x.signed_antipode(), lambda x : x)
-    
-    def plus(self):
-        return self.apply_product(lambda x : x, lambda x : x.antipode.minus())
 
     def singleton_reduced(self):
         return ForestSum([x.singleton_reduced() for x in self.forestList], self.coeffList)
