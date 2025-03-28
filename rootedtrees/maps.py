@@ -1,4 +1,4 @@
-from trees import *
+from .trees import *
 
 # These are just convenience functions to be used with "apply" and "apply_product"
 

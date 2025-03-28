@@ -19,6 +19,23 @@ class GeneralTests(unittest.TestCase):
             self.assertEqual(repr(t), repr(t.asForest()), repr(t) + " " + repr(t.asForest()))
             self.assertEqual("1*" + repr(t), repr(t.asForestSum()), repr(t) + " " + repr(t.asForestSum()))
 
+    def test_mixed_arithmetic(self):
+        t0 = Tree(None)
+        t1 = Tree([])
+        t2 = Tree([[]])
+        t3 = Tree([[], []])
+
+        f1 = Forest([t1, t2])
+        f2 = Forest([t3])
+
+        self.assertTrue(f1 == (t1 * t2))
+
+        s1 = ForestSum([f1, f2], [2, -1])  # 2*f1 - f2
+        s2 = s1 + 5 * t0
+
+        self.assertTrue(s1 == (2 * f1 - t3), repr(s1) + ", " + repr(2 * f1 - t3))
+        self.assertTrue(s2 == (2 * f1 - t3 + 5), repr(s2) + ", " + repr(2 * f1 - t3 + 5))
+
     def test_numNodes(self):
         nums = [0,1,2,3,3,4,4,4,4]
         for t, n in zip(trees, nums):
@@ -52,21 +69,28 @@ class GeneralTests(unittest.TestCase):
         for t in trees:
             self.assertEqual(counit(t), t.apply_product(S, ident))
 
-    def test_id_sqrt(self):
+    def test_antipode_squared(self):
         for t in trees:
-            self.assertEqual(t, t.apply_product(sqrt, sqrt))
+            self.assertEqual(t, t.antipode().antipode())
 
-    def test_minus(self):
-        for t in trees:
-            self.assertAlmostEqual(t.apply(exact_weights), t.minus().apply(exact_weights))
+    def test_antipode_squared_2(self):
+        def f(t):
+            n = t.numNodes()
+            return t.apply_power(lambda x : x - x.antipode().antipode(), n)
 
-    def test_plus(self):
-        for t in trees:
-            self.assertAlmostEqual(t.apply(counit), t.plus().apply(exact_weights))
+        for t in trees[1:]:
+            self.assertEqual(0, t.apply(f))
 
-    def test_plus_minus(self):
-        for t in trees:
-            self.assertEqual(t, t.apply_product(even_component, odd_component))
+    def test_antipode_squared_3(self):
+        def f(t):
+            n = t.numNodes()
+            f1 = lambda x : x + x.antipode()
+            f2 = lambda x : x - x.antipode().antipode()
+            f3 = lambda x : x.apply_power(f2, n-1).apply(f1)
+            return t.apply(f3)
+
+        for t in trees[1:]:
+            self.assertEqual(0, t.apply(f))
 
 
 if __name__ == '__main__':

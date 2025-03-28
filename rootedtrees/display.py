@@ -1,6 +1,6 @@
 import matplotlib.pyplot as plt
 plt.rcParams["figure.figsize"] = (15,1)
-from trees import *
+from .trees import *
 
 scale = 0.2
 
@@ -43,7 +43,7 @@ def subtree_width(t, x, y, h, xleft, xright):
     return new_h, xleft, xright
 
 
-def display(fs):
+def display(fs, fileName = None):
     if not isinstance(fs, ForestSum):
         fs = fs.asForestSum()    
     if fs == ForestSum([]):
@@ -75,4 +75,8 @@ def display(fs):
     plt.yticks([])
     plt.axis('off')
     plt.tight_layout()
+
+    if fileName is not None:
+        plt.savefig(fileName + ".png")
+
     plt.show()
