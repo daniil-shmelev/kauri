@@ -91,6 +91,23 @@ class GeneralTests(unittest.TestCase):
         for t in trees[1:]:
             self.assertEqual(0, t.apply(f))
 
+    def test_adjoint_flow(self):
+        for t in trees:
+            self.assertAlmostEqual(t.apply(exact_weights), t.antipode().sign().apply(exact_weights))
+
+    def test_RK_elementary_weights(self):
+        #Test using an RK method of order 4
+        A = [[0,0,0,0],
+             [1./2,0,0,0],
+             [0,1./2,0,0],
+             [0,0,1,0]]
+        b = [1./6,1./3,1./3,1./6]
+
+        f = lambda x : RK_elementary_weights(x, A, b)
+
+        for t in trees:
+            self.assertAlmostEqual(t.apply(exact_weights), t.apply(f))
+
 
 if __name__ == '__main__':
     unittest.main()

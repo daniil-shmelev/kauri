@@ -25,3 +25,20 @@ def odd_component(t):
 
 def even_component(t):
     return t.plus()
+
+def RK_internal_weights(i, t, A, b, s):
+    return sum(A[i][j] * RK_derivative_weights(j, t, A, b, s) for j in range(s))
+
+def RK_derivative_weights(i, t, A, b, s):
+    if t == Tree(None) or t == Tree([]):
+        return 1
+    else:
+        out = 1
+        for subtree in t.unjoin().treeList:
+            out *= RK_internal_weights(i, subtree, A, b, s)
+        return out
+
+
+def RK_elementary_weights(t, A, b):
+    s = len(b)
+    return sum(b[i] * RK_derivative_weights(i, t, A, b, s) for i in range(s))
