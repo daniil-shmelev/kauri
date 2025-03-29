@@ -42,16 +42,18 @@ def listReprToLayout_(rep):
 def layoutToListRepr_(layout):
     if len(layout) == 0:
         return None
+    branch_layouts = branch_layouts_(layout)
+    rep = [layoutToListRepr_(lay) for lay in branch_layouts]
+    return rep
 
+def branch_layouts_(layout):
     branch_layouts = []
     for i in layout[1:]:
         if i == 1:
             branch_layouts.append([0])
         else:
-            branch_layouts[-1].append(i-1)
-
-    rep = [layoutToListRepr_(lay) for lay in branch_layouts]
-    return rep
+            branch_layouts[-1].append(i - 1)
+    return branch_layouts
 
 ##############################################
 ##############################################

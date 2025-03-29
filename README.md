@@ -16,7 +16,7 @@ $s$ is erased from $t$.
 - The unit $\emptyset$ is the empty tree
 - The counit $\varepsilon$ is given by $\varepsilon(\tau) = 1$ if $\tau = \emptyset$ and $0$ otherwise
 - The antipode $S$ is defined by
-$$S(t) = -t - \sum_{s \subset t} S([t \setminus s])s, \quad S(\bullet) = -\bullet.$$
+$$S(t) = -t - \sum_{s \subset t} S([t \setminus s])s, \quad S(\bullet) = -\bullet$$
 
 Given two maps $f,g : \mathcal{H} \to \mathcal{H}$, we define their product map by
 $$(f\cdot g)(\tau) = \mu \circ (f \otimes g) \circ \Delta(\tau).$$
@@ -95,6 +95,14 @@ exact_weights(t) #Returns 1 / t.factorial()
 RK_elementary_weights(t, A, b) #Returns the elementary weights for an RK scheme with parameters (A,b)
 ```
 
+To generate trees of a given order, we provide an implementation of the algorithm of [Beyer & Hedetniemi, 1980](#reference),
+ used in the following functions
+```python
+next_tree(t) #Generates the next tree after t with respect to the lexicographic order
+trees_of_order(n) #A generator function generating all trees of order n
+trees_up_to_order(n) #A generator function generating all trees of order <= n
+```
+
 ## Citation
 
 ```bibtex
@@ -109,3 +117,4 @@ RK_elementary_weights(t, A, b) #Returns the elementary weights for an RK scheme 
 ## References
 <a name="reference"></a>
 - Connes, A., & Kreimer, D. (1999). *Hopf algebras, renormalization and noncommutative geometry*. In *Quantum field theory: perspective and prospective* (pp. 59–109). Springer.
+- Beyer, T., & Hedetniemi, S. M. (1980). *Constant time generation of rooted trees*. In *SIAM Journal on Computing 9.4* (pp. 706-712)
