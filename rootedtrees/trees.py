@@ -16,9 +16,6 @@ def c_repr(f):
     else:
         return repr(f)
 
-def true_coeffs(tau):
-    return 1. / tau.factorial()
-
 ######################################
 class Tree():
 ######################################
@@ -143,6 +140,9 @@ class Tree():
 
     def sortedListRepr(self):
         return sortedListRepr_(self.listRepr)
+
+    def layout(self):
+        return listReprToLayout_(self.listRepr)
 
     def sorted(self):
         return Tree(self.sortedListRepr())
@@ -583,34 +583,3 @@ class ForestSum():
 
     def singleton_reduced(self):
         return ForestSum([x.singleton_reduced() for x in self.forestList], self.coeffList)
-
-
-#######################
-#######################
-
-def mul_(obj1, obj2, applyReduction = True):
-    if isinstance(obj1, int) or isinstance(obj1, float):
-        if isinstance(obj2, int) or isinstance(obj2, float):
-            return obj1 * obj2
-        else:
-            return obj2.__mul__(obj1, applyReduction)
-    else:
-        return obj1.__mul__(obj2, applyReduction)
-
-def add_(obj1, obj2, applyReduction = True):
-    if isinstance(obj1, int) or isinstance(obj1, float):
-        if isinstance(obj2, int) or isinstance(obj2, float):
-            return obj1 + obj2
-        else:
-            return obj2.__add__(obj1, applyReduction)
-    else:
-        return obj1.__add__(obj2, applyReduction)
-
-def sub_(obj1, obj2, applyReduction = True):
-    if isinstance(obj1, int) or isinstance(obj1, float):
-        if isinstance(obj2, int) or isinstance(obj2, float):
-            return obj1 - obj2
-        else:
-            return obj2.__sub__(obj1, applyReduction)
-    else:
-        return obj1.__sub__(obj2, applyReduction)
