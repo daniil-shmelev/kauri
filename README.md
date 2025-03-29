@@ -56,6 +56,7 @@ whilst display(s2) plots:<br><br>
 ```python
 t.numNodes() #Returns the number of nodes in a tree or forest t
 t.factorial() #Returns the tree factorial of a tree or forest t
+t.sorted() #Returns the sorted representation of the tree, with the heaviest branches moved to the right
 t.join() #For a forest t, returns the tree formed by joining the trees of the forest with a common root
 t.unjoin() #For a tree t, returns the forest formed by deleting the root
 t.split() #For a tree t, returns a list of truncs and a list of corresponding branches, split according to the coproduct Delta

@@ -1,5 +1,6 @@
 import itertools
 import copy
+from .utils import *
 
 from fractions import Fraction
 
@@ -33,34 +34,10 @@ class Tree():
         return Forest([Tree(rep) for rep in self.listRepr])
 
     def numNodes(self):
-        return self.numNodes_(self.listRepr)
-
-    def numNodes_(self, listRepr_):
-        if listRepr_ is None:
-            return 0
-        elif listRepr_ == []:
-            return 1
-        else:
-            return 1 + sum(self.numNodes_(rep) for rep in listRepr_)
-
+        return numNodes_(self.listRepr)
 
     def factorial(self):
-        return self.factorial_(self.listRepr)[0]
-
-    def factorial_(self, listRepr_):
-        if listRepr_ == None:
-            return 1, 0
-        if listRepr_ == []:
-            return 1, 1
-        else:
-            f = 1
-            n = 1
-            for rep in listRepr_:
-                res = self.factorial_(rep)
-                f *= res[0]
-                n += res[1]
-            f *= n
-            return f, n
+        return factorial_(self.listRepr)[0]
 
     def split(self):
         if self.listRepr == None:
@@ -164,8 +141,14 @@ class Tree():
     def __eq__(self, other):
         return self.asForestSum() == other
 
+    def sortedListRepr(self):
+        return sortedListRepr_(self.listRepr)
+
+    def sorted(self):
+        return Tree(self.sortedListRepr())
+
     def equals(self, otherTree):
-        return self.listRepr == otherTree.listRepr
+        return self.sortedListRepr() == otherTree.sortedListRepr()
 
     def asForest(self):
         return Forest([self])

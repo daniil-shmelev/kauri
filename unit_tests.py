@@ -18,6 +18,13 @@ class GeneralTests(unittest.TestCase):
             self.assertEqual(repr(t), repr(t.asForest()), repr(t) + " " + repr(t.asForest()))
             self.assertEqual("1*" + repr(t), repr(t.asForestSum()), repr(t) + " " + repr(t.asForestSum()))
 
+    def test_equality(self):
+        self.assertEqual(Tree([[],[[]]]), Tree([[[]],[]]))
+        self.assertEqual(Tree([[], [[]]]).asForest(), Tree([[[]], []]))
+        self.assertEqual(Tree([[],[[],[]]]), Tree([[[],[]], []]))
+        self.assertEqual(Tree([[[]],[],[]]), Tree([[],[[]],[]]))
+        self.assertEqual(Tree([[[]], [], []]), Tree([[], [], [[]]]))
+
     def test_mixed_arithmetic(self):
         t0 = Tree(None)
         t1 = Tree([])
