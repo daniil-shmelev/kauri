@@ -191,6 +191,17 @@ class Tree():
 
     __rmul__ = __mul__
 
+    def __pow__(self, n, apply_reduction = True):
+        if not isinstance(n, int) or n < 0:
+            raise ValueError("Tree.__pow__ received invalid argument")
+        if n == 0:
+            return Tree(None)
+
+        out = Forest([self] * n)
+        if apply_reduction:
+            out.reduce()
+        return out
+
     def __add__(self, other, apply_reduction = True):
         if isinstance(other, int) or isinstance(other, float):
             out = ForestSum([Forest([self]), Forest([Tree(None)])], [1, other])
@@ -573,6 +584,17 @@ class Forest():
 
     __rmul__ = __mul__
 
+
+    def __pow__(self, n, apply_reduction = True):
+        if not isinstance(n, int) or n < 0:
+            raise ValueError("Forest.__pow__ received invalid argument")
+        if n == 0:
+            return Forest([Tree(None)])
+        out = Forest(self.tree_list * n)
+        if apply_reduction:
+            out.reduce()
+        return out
+
     
     def __imul__(self, other):
         if isinstance(other, Tree):
@@ -911,7 +933,7 @@ class ForestSum():
         """
         return self.sign().antipode()
 
-    def __imul__(self, other, applyReduction = True):
+    def __imul__(self, other, apply_reduction = True):
         if isinstance(other, int) or isinstance(other, float):
             self.coeff_list = [x * other for x in self.coeff_list]
         elif isinstance(other, Tree) or isinstance(other, Forest):
@@ -922,16 +944,30 @@ class ForestSum():
         else:
             raise ValueError("oh no")
 
-        if applyReduction:
+        if apply_reduction:
             self.reduce()
         return self
 
-    def __mul__(self, other, applyReduction = True):
+    def __mul__(self, other, apply_reduction = True):
         temp = copy.deepcopy(self)
-        temp.__imul__(other, applyReduction)
+        temp.__imul__(other, apply_reduction)
         return temp
 
     __rmul__ = __mul__
+
+
+    def __pow__(self, n, apply_reduction = True):
+        if not isinstance(n, int) or n < 0:
+            raise ValueError("ForestSum.__pow__ received invalid argument")
+        if n == 0:
+            return Tree(None).as_forest_sum()
+        temp = copy.deepcopy(self)
+        for i in range(n-1):
+            temp.__imul__(self, False)
+        if apply_reduction:
+            temp.reduce()
+        return temp
+
 
 
     def __iadd__(self, other, applyReduction = True):

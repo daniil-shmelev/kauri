@@ -18,12 +18,98 @@ class GeneralTests(unittest.TestCase):
             self.assertEqual(repr(t), repr(t.as_forest()), repr(t) + " " + repr(t.as_forest()))
             self.assertEqual("1*" + repr(t), repr(t.as_forest_sum()), repr(t) + " " + repr(t.as_forest_sum()))
 
+    def test_add(self):
+        t1 = Tree([]) + Tree([[],[]])
+        t2 = ForestSum([
+            Forest([Tree([])]),
+            Forest([Tree([[],[]])])
+        ], [1,1])
+        self.assertEqual(t2, t1)
+
+        t1 = Tree([]) - 2 * Tree([[], []])
+        t2 = ForestSum([
+            Forest([Tree([])]),
+            Forest([Tree([[], []])])
+        ], [1, -2])
+        self.assertEqual(t2, t1)
+
+        t1 = 1 + Tree([[], []])
+        t2 = ForestSum([
+            Forest([Tree(None)]),
+            Forest([Tree([[], []])])
+        ], [1, 1])
+        self.assertEqual(t2, t1)
+
+        t1 = Tree([[], []]) + 2
+        t2 = ForestSum([
+            Forest([Tree([[], []])]),
+            Forest([Tree(None)])
+        ], [1, 2])
+        self.assertEqual(t2, t1)
+
+        t1 = Tree([[], []]) + Forest([Tree([]), Tree([[]])])
+        t2 = ForestSum([
+            Forest([Tree([[], []])]),
+            Forest([Tree([]), Tree([[]])])
+        ], [1, 1])
+        self.assertEqual(t2, t1)
+
+    def test_mul(self):
+        t1 = Tree([]) * Tree([[], []])
+        t2 = Forest([Tree([]), Tree([[],[]])])
+        self.assertEqual(t2, t1)
+
+        t1 = Tree([]) * Tree(None) * Tree(None)
+        t2 = Tree([])
+        self.assertEqual(t1, t2)
+
+        t1 = Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
+        t2 = Forest([Tree([[]]), Tree([]), Tree([[],[]])])
+        self.assertEqual(t1, t2)
+
+        t1 = (Tree([]) - Tree([[]])) * Tree([])
+        t2 = Tree([]) * Tree([]) - Tree([[]]) * Tree([])
+        self.assertEqual(t1,t2)
+
+    def test_pow_tree(self):
+        t1 = Tree([]) ** 3
+        t2 = Tree([]) * Tree([]) * Tree([])
+        self.assertEqual(t1, t2)
+
+        t1 = Tree(None) ** 3
+        self.assertEqual(1, t1)
+
+        t1 = Tree([]) ** 0
+        self.assertEqual(1, t1)
+
+    def test_pow_forest(self):
+        t1 = Forest([Tree([]), Tree(None)]) ** 3
+        t2 = Tree([]) * Tree([]) * Tree([])
+        self.assertEqual(t1, t2)
+
+        t1 = Tree(None).as_forest() ** 3
+        self.assertEqual(1, t1)
+
+        t1 = Tree([]).as_forest() ** 0
+        self.assertEqual(1, t1)
+
+    def test_pow_forest_sum(self):
+        t1 = (Tree([]) - 2 * Tree([[]])) ** 2
+        t2 = Tree([]) * Tree([]) - 4 * Tree([]) * Tree([[]]) + 4 * Tree([[]]) * Tree([[]])
+        self.assertEqual(t1, t2)
+
+        t1 = Tree([]).as_forest_sum() ** 0
+        self.assertEqual(1, t1)
+
     def test_equality(self):
         self.assertEqual(Tree([[],[[]]]), Tree([[[]],[]]))
         self.assertEqual(Tree([[], [[]]]).as_forest(), Tree([[[]], []]))
         self.assertEqual(Tree([[],[[],[]]]), Tree([[[],[]], []]))
         self.assertEqual(Tree([[[]],[],[]]), Tree([[],[[]],[]]))
         self.assertEqual(Tree([[[]], [], []]), Tree([[], [], [[]]]))
+        self.assertEqual(Forest([Tree([[]]), Tree([]), Tree([[],[]])]), Forest([Tree([]), Tree([[],[]]), Tree([[]])]))
+        self.assertEqual(Tree([]) - Tree([[]]), -Tree([[]]) + Tree([]))
+        self.assertEqual(ForestSum([Tree([[]]).as_forest(), Tree([]).as_forest(), Tree([]).as_forest()],[1,1,-1]), Tree([[]]).as_forest_sum())
 
     def test_mixed_arithmetic(self):
         t0 = Tree(None)
