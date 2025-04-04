@@ -61,18 +61,18 @@ whilst `display(s2)` plots:<br><br>
 ## Functions
 
 ```python
-t.numNodes() #Returns the number of nodes in a tree or forest t
-t.factorial() #Returns the tree factorial of a tree or forest t
-t.sorted() #Returns the sorted representation of the tree, with the heaviest branches moved to the left
-t.join() #For a forest t, returns the tree formed by joining the trees of the forest with a common root
-t.unjoin() #For a tree t, returns the forest formed by deleting the root
-t.split() #For a tree t, returns a list of truncs and a list of corresponding branches, split according to the coproduct Delta
-t.antipode() #Returns the antipode of a tree, forest or forest sum t
-t.sign() #Returns t if t.numNodes() is even, otherwise -t
-t.signed_antipode() #Returns the composition of the sign and antipode functions
-t.asForest() #For a tree t, returns t as a forest
-t.asForestSum() #For a tree or forest t, returns t as a forest sum
-t.singleton_reduced() #For a forest or forest sum t, removes redundant occurences of Tree([]) in each forest
+t.nodes()  # Returns the number of nodes in a tree or forest t
+t.factorial()  # Returns the tree factorial of a tree or forest t
+t.sorted()  # Returns the sorted representation of the tree, with the heaviest branches moved to the left
+t.join()  # For a forest t, returns the tree formed by joining the trees of the forest with a common root
+t.unjoin()  # For a tree t, returns the forest formed by deleting the root
+t.split()  # For a tree t, returns a list of truncs and a list of corresponding branches, split according to the coproduct Delta
+t.antipode()  # Returns the antipode of a tree, forest or forest sum t
+t.sign()  # Returns t if t.numNodes() is even, otherwise -t
+t.signed_antipode()  # Returns the composition of the sign and antipode functions
+t.as_forest()  # For a tree t, returns t as a forest
+t.as_forest_sum()  # For a tree or forest t, returns t as a forest sum
+t.singleton_reduced()  # For a forest or forest sum t, removes redundant occurences of Tree([]) in each forest
 ```
 
 Additionally, given two functions `func1`, `func2` defined as maps from trees to scalars, trees, forests or forest sums, the

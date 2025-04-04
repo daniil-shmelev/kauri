@@ -15,12 +15,12 @@ class GeneralTests(unittest.TestCase):
 
     def test_conversion(self):
         for t in trees:
-            self.assertEqual(repr(t), repr(t.asForest()), repr(t) + " " + repr(t.asForest()))
-            self.assertEqual("1*" + repr(t), repr(t.asForestSum()), repr(t) + " " + repr(t.asForestSum()))
+            self.assertEqual(repr(t), repr(t.as_forest()), repr(t) + " " + repr(t.as_forest()))
+            self.assertEqual("1*" + repr(t), repr(t.as_forest_sum()), repr(t) + " " + repr(t.as_forest_sum()))
 
     def test_equality(self):
         self.assertEqual(Tree([[],[[]]]), Tree([[[]],[]]))
-        self.assertEqual(Tree([[], [[]]]).asForest(), Tree([[[]], []]))
+        self.assertEqual(Tree([[], [[]]]).as_forest(), Tree([[[]], []]))
         self.assertEqual(Tree([[],[[],[]]]), Tree([[[],[]], []]))
         self.assertEqual(Tree([[[]],[],[]]), Tree([[],[[]],[]]))
         self.assertEqual(Tree([[[]], [], []]), Tree([[], [], [[]]]))
@@ -45,15 +45,15 @@ class GeneralTests(unittest.TestCase):
     def test_numNodes(self):
         nums = [0,1,2,3,3,4,4,4,4]
         for t, n in zip(trees, nums):
-            self.assertEqual(n, t.numNodes(), repr(t) + " Tree")
-            self.assertEqual(n, t.asForest().numNodes(), repr(t) + " Forest")
+            self.assertEqual(n, t.nodes(), repr(t) + " Tree")
+            self.assertEqual(n, t.as_forest().nodes(), repr(t) + " Forest")
 
     def test_factorial(self):
         factorials = [1,1,2,3,6,4,8,12,24]
         for t, f in zip(trees, factorials):
             self.assertEqual(f, t.factorial(), repr(t) + " Tree")
-            self.assertEqual(f, t.asForest().factorial(), repr(t) + " Forest")
-            self.assertEqual(f, t.asForestSum().factorial(), repr(t) + " ForestSum")
+            self.assertEqual(f, t.as_forest().factorial(), repr(t) + " Forest")
+            self.assertEqual(f, t.as_forest_sum().factorial(), repr(t) + " ForestSum")
 
     def test_antipode(self):
         antipodes = [
@@ -68,8 +68,8 @@ class GeneralTests(unittest.TestCase):
 
         for t, s in zip(trees[:7], antipodes):
             self.assertEqual(s, t.antipode(), repr(t) + " Tree")
-            self.assertEqual(s, t.asForest().antipode(), repr(t) + " Forest")
-            self.assertEqual(s, t.asForestSum().antipode(), repr(t) + " ForestSum")
+            self.assertEqual(s, t.as_forest().antipode(), repr(t) + " Forest")
+            self.assertEqual(s, t.as_forest_sum().antipode(), repr(t) + " ForestSum")
 
     def test_antipode_property(self):
         for t in trees:
@@ -81,7 +81,7 @@ class GeneralTests(unittest.TestCase):
 
     def test_antipode_squared_2(self):
         def f(t):
-            n = t.numNodes()
+            n = t.nodes()
             return t.apply_power(lambda x : x - x.antipode().antipode(), n)
 
         for t in trees[1:]:
@@ -89,7 +89,7 @@ class GeneralTests(unittest.TestCase):
 
     def test_antipode_squared_3(self):
         def f(t):
-            n = t.numNodes()
+            n = t.nodes()
             f1 = lambda x : x + x.antipode()
             f2 = lambda x : x - x.antipode().antipode()
             f3 = lambda x : x.apply_power(f2, n-1).apply(f1)
