@@ -1,6 +1,7 @@
 import itertools
 import copy
-from .utils import _nodes, _factorial, _sorted_list_repr, _list_repr_to_level_sequence, _add, _mul, _sub
+import math
+from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence, _add, _mul, _sub
 
 ######################################
 class Tree():
@@ -55,6 +56,71 @@ class Tree():
             t.factorial() #Returns 8
         """
         return _factorial(self.list_repr)[0]
+
+    def sigma(self):
+        """
+        Computes the symmetry factor :math:`\\sigma(t)`, the order of the symmetric group of the tree. For a tree
+        :math:`t = [t_1^{m_1} t_2^{m_2} \cdots t_k^{m_k}]`, the symmetry factor satisfies the recursion
+
+        .. math::
+            \\sigma(t) = \\prod_{i=1}^k m_i! \\sigma(t_i)^{m_i}.
+
+        :return: Symmetry factor, :math:`\\sigma(t)`
+        :rtype: int
+
+        Example usage::
+
+            t = Tree([[[]],[]])
+            t.sigma()
+        """
+        return _sigma(self.list_repr)
+
+    def alpha(self):
+        """
+        For a tree :math:`t` with :math:`n` nodes, computes the number of distinct ways of labelling the nodes of the tree
+        with symbols :math:`\{1, 2, \ldots, n\}`, such that:
+
+        - Each vertex receives one and only one label,
+        - Labellings that are equivalent under the symmetry group are counted only once,
+        - If :math:`(i,j)` is a labelled edge, then :math:`i<j`.
+
+        This number is typically denoted by :math:`\\alpha(t)` and given by
+
+        .. math::
+            \\alpha(t) = \\frac{n!}{t! \\sigma(t)}
+
+        :return: :math:`\\alpha(t)`
+        :rtype: int
+
+        Example usage::
+
+            t = Tree([[[]],[]])
+            t.alpha()
+        """
+        return self.beta() / self.factorial()
+
+    def beta(self):
+        """
+        For a tree :math:`t` with :math:`n` nodes, computes the number of distinct ways of labelling the nodes of the tree
+        with symbols :math:`\{1, 2, \ldots, n\}`, such that:
+
+        - Each vertex receives one and only one label,
+        - Labellings that are equivalent under the symmetry group are counted only once.
+
+        This number is typically denoted by :math:`\\beta(t)` and given by
+
+        .. math::
+            \\beta(t) = \\frac{n!}{\\sigma(t)}
+
+        :return: :math:`\\beta(t)`
+        :rtype: int
+
+        Example usage::
+
+            t = Tree([[[]],[]])
+            t.alpha()
+        """
+        return math.factorial(self.nodes()) / self.sigma()
 
     def split(self):
         """

@@ -128,11 +128,34 @@ class GeneralTests(unittest.TestCase):
         self.assertTrue(s1 == (2 * f1 - t3), repr(s1) + ", " + repr(2 * f1 - t3))
         self.assertTrue(s2 == (2 * f1 - t3 + 5), repr(s2) + ", " + repr(2 * f1 - t3 + 5))
 
-    def test_numNodes(self):
+    def test_num_nodes(self):
         nums = [0,1,2,3,3,4,4,4,4]
         for t, n in zip(trees, nums):
             self.assertEqual(n, t.nodes(), repr(t) + " Tree")
             self.assertEqual(n, t.as_forest().nodes(), repr(t) + " Forest")
+
+    def test_sigma(self):
+        vals = [1, 1, 1, 1, 2, 1, 2, 1, 6, 1, 2, 1, 1, 6, 2, 2, 2, 24]
+        i = 0
+        for t in trees_up_to_order(5):
+            self.assertEqual(vals[i], t.sigma(), "i = " + str(i))
+            i += 1
+
+    def test_alpha(self):
+        vals = [1, 1, 2, 6, 24, 120, 720]
+        for n in range(1, 8):
+            alpha_sum = 0
+            for t in trees_of_order(n):
+                alpha_sum += t.alpha()
+            self.assertEqual(vals[n-1], alpha_sum)
+
+    def test_beta(self):
+        vals = [1,2,9,64,625,7776,117649]
+        for n in range(1, 8):
+            beta_sum = 0
+            for t in trees_of_order(n):
+                beta_sum += t.beta()
+            self.assertEqual(vals[n-1], beta_sum)
 
     def test_factorial(self):
         factorials = [1,1,2,3,6,4,8,12,24]

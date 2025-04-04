@@ -1,3 +1,5 @@
+import math
+
 def _nodes(rep):
     if rep is None:
         return 0
@@ -20,6 +22,27 @@ def _factorial(rep):
             n += res[1]
         f *= n
         return f, n
+
+def _sigma(rep):
+    if rep == None or rep == []:
+        return 1
+    rep_dict = {}
+    unique_rep = []
+    for r in rep:
+        r_str = repr(r)
+        if r_str in rep_dict.keys():
+            rep_dict[r_str] += 1
+        else:
+            rep_dict[r_str] = 1
+            unique_rep.append(r)
+
+    out = 1
+    for r in unique_rep:
+        r_str = repr(r)
+        k = rep_dict[r_str]
+        out *= math.factorial(k) * (_sigma(r) ** k)
+    return out
+
 
 def _sorted_list_repr(rep):
     if rep is None:
