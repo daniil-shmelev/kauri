@@ -1,7 +1,7 @@
 import itertools
 import copy
 import math
-from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence, _add, _mul, _sub
+from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence
 
 ######################################
 class Tree():
@@ -398,6 +398,8 @@ class Tree():
 
             (f \cdot g)(t) := \mu \circ (f \otimes g) \circ \Delta (t)
 
+        and negative powers are defined as :math:`f^{-n} = f^n \\circ S`, where :math:`S` is the antipode.
+
         :param func: A function defined on trees
         :type func: callable
         :param n: Exponent
@@ -416,8 +418,10 @@ class Tree():
         """
         if n == 0:
             return self
-        if n == 1:
+        elif n == 1:
             return self.apply(func, apply_reduction)
+        elif n < 0:
+            return self.apply_power(lambda x : func(x.antipode(apply_reduction = False)), -n, apply_reduction)
         else:
             res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
             if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
@@ -764,7 +768,7 @@ class Forest():
 
             (f \cdot g)(t) := \mu \circ (f \otimes g) \circ \Delta (t)
 
-        and extended multiplicatively to forests.
+        and negative powers are defined as :math:`f^{-n} = f^n \\circ S`, where :math:`S` is the antipode. Extended multiplicatively to forests.
 
         :param func: A function defined on trees
         :type func: callable
@@ -786,6 +790,8 @@ class Forest():
             return self
         if n == 1:
             return self.apply(func, apply_reduction)
+        elif n < 0:
+            return self.apply_power(lambda x : func(x.antipode(apply_reduction = False)), -n, apply_reduction)
         else:
             res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
             if apply_reduction and not isinstance(res, Tree):
@@ -1142,7 +1148,7 @@ class ForestSum():
 
             (f \cdot g)(t) := \mu \circ (f \otimes g) \circ \Delta (t)
 
-        and extended to a multiplicative linear map on forest sums.
+        and negative powers are defined as :math:`f^{-n} = f^n \\circ S`, where :math:`S` is the antipode. Extended to a multiplicative linear map on forest sums.
 
         :param func: A function defined on trees
         :type func: callable
@@ -1164,6 +1170,8 @@ class ForestSum():
             return self
         if n == 1:
             return self.apply(func, apply_reduction)
+        elif n < 0:
+            return self.apply_power(lambda x : func(x.antipode(apply_reduction = False)), -n, apply_reduction)
         else:
             res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
             if apply_reduction and not isinstance(res, Tree):
@@ -1225,3 +1233,37 @@ class ForestSum():
             s1.singleton_reduced() #Returns Tree([[],[]]) + Tree([])
         """
         return ForestSum([x.singleton_reduced() for x in self.forest_list], self.coeff_list)
+
+
+##############################################
+##############################################
+
+def _is_tree_like(obj):
+    return isinstance(obj, Tree) or isinstance(obj, Forest) or isinstance(obj, ForestSum)
+
+def _mul(obj1, obj2, applyReduction = True):
+    if not _is_tree_like(obj1):
+        if not _is_tree_like(obj2):
+            return obj1 * obj2
+        else:
+            return obj2.__mul__(obj1, applyReduction)
+    else:
+        return obj1.__mul__(obj2, applyReduction)
+
+def _add(obj1, obj2, applyReduction = True):
+    if not _is_tree_like(obj1):
+        if not _is_tree_like(obj2):
+            return obj1 + obj2
+        else:
+            return obj2.__add__(obj1, applyReduction)
+    else:
+        return obj1.__add__(obj2, applyReduction)
+
+def _sub(obj1, obj2, applyReduction = True):
+    if not _is_tree_like(obj1):
+        if not _is_tree_like(obj2):
+            return obj1 - obj2
+        else:
+            return obj2.__sub__(obj1, applyReduction)
+    else:
+        return obj1.__sub__(obj2, applyReduction)

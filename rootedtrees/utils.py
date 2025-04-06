@@ -78,33 +78,35 @@ def _branch_level_sequences(levelSeq):
             branch_layouts[-1].append(i - 1)
     return branch_layouts
 
-##############################################
-##############################################
-
-
-def _mul(obj1, obj2, applyReduction = True):
-    if isinstance(obj1, int) or isinstance(obj1, float):
-        if isinstance(obj2, int) or isinstance(obj2, float):
-            return obj1 * obj2
-        else:
-            return obj2.__mul__(obj1, applyReduction)
-    else:
-        return obj1.__mul__(obj2, applyReduction)
-
-def _add(obj1, obj2, applyReduction = True):
-    if isinstance(obj1, int) or isinstance(obj1, float):
-        if isinstance(obj2, int) or isinstance(obj2, float):
-            return obj1 + obj2
-        else:
-            return obj2.__add__(obj1, applyReduction)
-    else:
-        return obj1.__add__(obj2, applyReduction)
-
-def _sub(obj1, obj2, applyReduction = True):
-    if isinstance(obj1, int) or isinstance(obj1, float):
-        if isinstance(obj2, int) or isinstance(obj2, float):
-            return obj1 - obj2
-        else:
-            return obj2.__sub__(obj1, applyReduction)
-    else:
-        return obj1.__sub__(obj2, applyReduction)
+# ##############################################
+# ##############################################
+#
+# def _is_tree_like(obj):
+#     return isinstance(obj, Tree) or isinstance(obj, Forest) or
+#
+# def _mul(obj1, obj2, applyReduction = True):
+#     if not (isinstance):
+#         if isinstance(obj2, int) or isinstance(obj2, float):
+#             return obj1 * obj2
+#         else:
+#             return obj2.__mul__(obj1, applyReduction)
+#     else:
+#         return obj1.__mul__(obj2, applyReduction)
+#
+# def _add(obj1, obj2, applyReduction = True):
+#     if isinstance(obj1, int) or isinstance(obj1, float):
+#         if isinstance(obj2, int) or isinstance(obj2, float):
+#             return obj1 + obj2
+#         else:
+#             return obj2.__add__(obj1, applyReduction)
+#     else:
+#         return obj1.__add__(obj2, applyReduction)
+#
+# def _sub(obj1, obj2, applyReduction = True):
+#     if isinstance(obj1, int) or isinstance(obj1, float):
+#         if isinstance(obj2, int) or isinstance(obj2, float):
+#             return obj1 - obj2
+#         else:
+#             return obj2.__sub__(obj1, applyReduction)
+#     else:
+#         return obj1.__sub__(obj2, applyReduction)

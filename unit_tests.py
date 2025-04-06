@@ -11,7 +11,7 @@ trees = [Tree(None),
          Tree([[[],[]]]),
          Tree([[[[]]]])]
 
-class GeneralTests(unittest.TestCase):
+class TreeTests(unittest.TestCase):
 
     def test_conversion(self):
         for t in trees:
@@ -219,10 +219,13 @@ class GeneralTests(unittest.TestCase):
              [0,0,1,0]]
         b = [1./6,1./3,1./3,1./6]
 
-        f = lambda x : RK_elementary_weights(x, A, b)
+        scheme = RK(A,b)
 
         for t in trees:
-            self.assertAlmostEqual(t.apply(exact_weights), t.apply(f))
+            self.assertAlmostEqual(t.apply(exact_weights), scheme.elementary_weights(t))
+
+    def test_apply_power(self):
+        pass
 
 
 if __name__ == '__main__':

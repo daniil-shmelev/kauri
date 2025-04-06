@@ -1,43 +1,66 @@
 from .trees import Tree, Forest, ForestSum
+from .gentrees import trees_of_order
+import copy
 
-# These are just convenience functions to be used with "apply" and "apply_product"
+class Map:
+    def __init__(self, func):
+        self.func = func
 
-def ident(t):
-    """The identity map, :math:`t \mapsto t`"""
-    return t
+    def __call__(self, t):
+        return t.apply(self.func)
 
-def counit(t):
-    """The counit map, :math:`t \mapsto \epsilon(t)`, where :math:`\epsilon(t) = 1` if :math:`t = \emptyset` and :math:`0` otherwise."""
-    if t == Tree(None):
-        return 1
-    else:
-        return 0
+    def inverse(self):
+        return Map(lambda x : self(x.antipode()))
 
-def S(t):
-    """The antipode map, :math:`t \mapsto S(t)`"""
-    return t.antipode()
+    def __pow__(self, n):
+        if not isinstance(n, int):
+            raise ValueError("Map.__pow__ received invalid exponent")
 
-def exact_weights(t):
-    """The map :math:`t \mapsto 1 / t!`, giving the coefficients of the B-series of the exact solution to the ODE
-    :math:`dy/dt = f(y)`."""
-    return 1. / t.factorial()
+        return Map(lambda x : x.apply_power(self.func, n))
 
-def _RK_internal_weights(i, t, A, b, s):
-    return sum(A[i][j] * _RK_derivative_weights(j, t, A, b, s) for j in range(s))
+    def __imul__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            self.func = lambda x : other * self.func(x)
+        elif isinstance(other, Map):
+            self.func = lambda x: x.apply_product(self.func, other.func)
+        else:
+            raise
 
-def _RK_derivative_weights(i, t, A, b, s):
-    if t == Tree(None) or t == Tree([]):
-        return 1
-    else:
-        out = 1
-        for subtree in t.unjoin().tree_list:
-            out *= _RK_internal_weights(i, subtree, A, b, s)
-        return out
+    def __mul__(self, other):
+        temp = copy.deepcopy(self)
+        temp *= other
+        return temp
+
+    def __iadd__(self, other):
+        if isinstance(other, Map):
+            self.func = lambda x: self.func(x) + other.func(x)
+        else:
+            raise
+
+    def __add__(self, other):
+        temp = copy.deepcopy(self)
+        temp += other
+        return temp
+
+    def __neg__(self):
+        return Map(lambda x : -self.func(x))
+
+    def __isub__(self, other):
+        self.__iadd__(-other)
+
+    def __sub__(self, other):
+        temp = copy.deepcopy(self)
+        temp -= other
+        return temp
+
+    __rmul__ = __mul__
+    __radd__ = __add__
+    __rsub__ = __sub__
 
 
-def RK_elementary_weights(t, A, b):
-    """The elementary weights function for a Runge-Kutta scheme with parameters, :math:`(A,b)`."""
-    if t == Tree(None):
-        return 1
-    s = len(b)
-    return sum(b[i] * _RK_derivative_weights(i, t, A, b, s) for i in range(s))
+# These are just convenience maps to be used with "apply" and "apply_product"
+
+ident = Map(lambda x : x)
+counit = Map(lambda x : 1 if x == Tree(None) else 0)
+S = Map(lambda x : x.antipode())
+exact_weights = Map(lambda x : 1. / x.factorial())

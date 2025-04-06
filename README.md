@@ -63,6 +63,9 @@ whilst `display(s2)` plots:<br><br>
 ```python
 t.nodes()  # Returns the number of nodes in a tree or forest t
 t.factorial()  # Returns the tree factorial of a tree or forest t
+t.sigma() # Returns the symmetry factor sigma of a tree
+t.alpha() # Returns the number of heap-orderings of a tree
+t.beta() # Returns the number of orderings of a tree
 t.sorted()  # Returns the sorted representation of the tree, with the heaviest branches moved to the left
 t.join()  # For a forest t, returns the tree formed by joining the trees of the forest with a common root
 t.unjoin()  # For a tree t, returns the forest formed by deleting the root
