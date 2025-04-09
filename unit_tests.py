@@ -13,6 +13,14 @@ trees = [Tree(None),
 
 class TreeTests(unittest.TestCase):
 
+    def test_repr(self):
+        self.assertEqual(repr(Tree([[[]], []])), '[[[]], []]')
+        self.assertEqual(repr(Tree([[[]], []]).as_forest()), '[[[]], []]')
+        self.assertEqual(repr(Tree([[[]], []]).as_forest_sum()), '1*[[[]], []]')
+        self.assertEqual(repr(Tree(None)), "∅")
+        self.assertEqual(repr(Forest([])), "∅")
+        self.assertEqual(repr(ForestSum([],[])), "0*∅")
+
     def test_conversion(self):
         for t in trees:
             self.assertEqual(repr(t), repr(t.as_forest()), repr(t) + " " + repr(t.as_forest()))
@@ -82,6 +90,11 @@ class TreeTests(unittest.TestCase):
         t1 = Tree([]) ** 0
         self.assertEqual(1, t1)
 
+        with self.assertRaises(ValueError):
+            t1 ** -1
+        with self.assertRaises(ValueError):
+            t1 ** 1.5
+
     def test_pow_forest(self):
         t1 = Forest([Tree([]), Tree(None)]) ** 3
         t2 = Tree([]) * Tree([]) * Tree([])
@@ -93,6 +106,11 @@ class TreeTests(unittest.TestCase):
         t1 = Tree([]).as_forest() ** 0
         self.assertEqual(1, t1)
 
+        with self.assertRaises(ValueError):
+            t1 ** -1
+        with self.assertRaises(ValueError):
+            t1 ** 1.5
+
     def test_pow_forest_sum(self):
         t1 = (Tree([]) - 2 * Tree([[]])) ** 2
         t2 = Tree([]) * Tree([]) - 4 * Tree([]) * Tree([[]]) + 4 * Tree([[]]) * Tree([[]])
@@ -100,6 +118,11 @@ class TreeTests(unittest.TestCase):
 
         t1 = Tree([]).as_forest_sum() ** 0
         self.assertEqual(1, t1)
+
+        with self.assertRaises(ValueError):
+            t1 ** -1
+        with self.assertRaises(ValueError):
+            t1 ** 1.5
 
     def test_equality(self):
         self.assertEqual(Tree([[],[[]]]), Tree([[[]],[]]))
@@ -128,11 +151,12 @@ class TreeTests(unittest.TestCase):
         self.assertTrue(s1 == (2 * f1 - t3), repr(s1) + ", " + repr(2 * f1 - t3))
         self.assertTrue(s2 == (2 * f1 - t3 + 5), repr(s2) + ", " + repr(2 * f1 - t3 + 5))
 
-    def test_num_nodes(self):
+    def test_nodes(self):
         nums = [0,1,2,3,3,4,4,4,4]
         for t, n in zip(trees, nums):
             self.assertEqual(n, t.nodes(), repr(t) + " Tree")
             self.assertEqual(n, t.as_forest().nodes(), repr(t) + " Forest")
+            self.assertEqual(n, t.as_forest_sum().nodes(), repr(t) + " Forest")
 
     def test_sigma(self):
         vals = [1, 1, 1, 1, 2, 1, 2, 1, 6, 1, 2, 1, 1, 6, 2, 2, 2, 24]
@@ -225,8 +249,19 @@ class TreeTests(unittest.TestCase):
             self.assertAlmostEqual(t.apply(exact_weights), scheme.elementary_weights(t))
 
     def test_apply_power(self):
+        for t in trees:
+            self.assertEqual(t.apply_product(lambda x : x.apply_product(S, S), S), t.apply_power(S, 3))
+
+class MapTests(unittest.TestCase):
+    def test_map(self):
         pass
 
+    def test_inverse(self):
+        pass
+
+class RKTests(unittest.TestCase):
+    def test_rk(self):
+        pass
 
 if __name__ == '__main__':
     unittest.main()

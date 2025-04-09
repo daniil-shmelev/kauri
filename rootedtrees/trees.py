@@ -5,6 +5,15 @@ from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_
 
 ######################################
 class Tree():
+    """
+    A single planar rooted tree.
+
+    :param list_repr: The nested list representation of the tree
+
+    Example usage::
+
+            t = Tree([[[]],[]])
+    """
 ######################################
     def __init__(self, list_repr):
         self.list_repr = list_repr
@@ -14,9 +23,9 @@ class Tree():
 
     def unjoin(self):
         """
-        For a tree :math:`t = [t_1, t_2, ..., t_k]`, returns the forest :math:`t_1 t_2 \cdots t_k`
+        For a tree :math:`t = [t_1, t_2, ..., t_k]`, returns the forest :math:`t_1 t_2 \\cdots t_k`
 
-        :return: :math:`t_1 t_2 \cdots t_k`
+        :return: :math:`t_1 t_2 \\cdots t_k`
         :rtype: Forest
 
         Example usage::
@@ -60,7 +69,7 @@ class Tree():
     def sigma(self):
         """
         Computes the symmetry factor :math:`\\sigma(t)`, the order of the symmetric group of the tree. For a tree
-        :math:`t = [t_1^{m_1} t_2^{m_2} \cdots t_k^{m_k}]`, the symmetry factor satisfies the recursion
+        :math:`t = [t_1^{m_1} t_2^{m_2} \\cdots t_k^{m_k}]`, the symmetry factor satisfies the recursion
 
         .. math::
             \\sigma(t) = \\prod_{i=1}^k m_i! \\sigma(t_i)^{m_i}.
@@ -78,7 +87,7 @@ class Tree():
     def alpha(self):
         """
         For a tree :math:`t` with :math:`n` nodes, computes the number of distinct ways of labelling the nodes of the tree
-        with symbols :math:`\{1, 2, \ldots, n\}`, such that:
+        with symbols :math:`\\{1, 2, \\ldots, n\\}`, such that:
 
         - Each vertex receives one and only one label,
         - Labellings that are equivalent under the symmetry group are counted only once,
@@ -102,7 +111,7 @@ class Tree():
     def beta(self):
         """
         For a tree :math:`t` with :math:`n` nodes, computes the number of distinct ways of labelling the nodes of the tree
-        with symbols :math:`\{1, 2, \ldots, n\}`, such that:
+        with symbols :math:`\\{1, 2, \\ldots, n\\}`, such that:
 
         - Each vertex receives one and only one label,
         - Labellings that are equivalent under the symmetry group are counted only once.
@@ -128,7 +137,7 @@ class Tree():
 
         .. math::
 
-            \Delta(t) = \sum P_c(t) \otimes R_c(t)
+            \\Delta(t) = \\sum P_c(t) \\otimes R_c(t)
 
         :return: Values of :math:`R_c(t)`
         :rtype: list
@@ -173,7 +182,7 @@ class Tree():
 
         .. math::
 
-            S(t) = -t-\sum S(P_c(t)) R_c(t)
+            S(t) = -t-\\sum S(P_c(t)) R_c(t)
 
         :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
             Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
@@ -227,8 +236,8 @@ class Tree():
         :rtype: ForestSum
 
         .. note::
-            Since the antipode and sign functions commute, this function is equivalent to both self.sign().antipode() and
-            self.antipode().sign().
+            Since the antipode and sign functions commute, this function is equivalent to both ``self.sign().antipode()`` and
+            ``self.antipode().sign()``.
 
         Example usage::
 
@@ -238,6 +247,23 @@ class Tree():
         return self.sign().antipode()
 
     def __mul__(self, other, apply_reduction = True):
+        """
+        Multiplies a tree by a:
+
+        - scalar, returning a ForestSum
+        - Tree, returning a Forest,
+        - Forest, returning a Forest,
+        - ForestSum, returning a ForestSum.
+
+        :param other: A scalar, Tree, Forest or ForestSum
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+
+        Example usage::
+
+            t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
+        """
         if isinstance(other, int) or isinstance(other, float):
             out = ForestSum([Forest([self])], [other])
         elif isinstance(other, Tree):
@@ -258,6 +284,18 @@ class Tree():
     __rmul__ = __mul__
 
     def __pow__(self, n, apply_reduction = True):
+        """
+        Returns the :math:`n^{th}` power of a tree for a positive integer :math:`n`, given by a forest with :math:`n` copies of the tree.
+
+        :param n: Exponent, a positive integer
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+
+        Example usage::
+
+            t = Tree([[]]) ** 3
+        """
         if not isinstance(n, int) or n < 0:
             raise ValueError("Tree.__pow__ received invalid argument")
         if n == 0:
@@ -269,6 +307,19 @@ class Tree():
         return out
 
     def __add__(self, other, apply_reduction = True):
+        """
+        Adds a tree to a scalar, Tree, Forest or ForestSum.
+
+        :param other: A scalar, Tree, Forest or ForestSum
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+        :rtype: ForestSum
+
+        Example usage::
+
+            t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
+        """
         if isinstance(other, int) or isinstance(other, float):
             out = ForestSum([Forest([self]), Forest([Tree(None)])], [1, other])
         elif isinstance(other, Tree):
@@ -294,6 +345,19 @@ class Tree():
         return self.__mul__(-1, False)
 
     def __eq__(self, other):
+        """
+        Compares the tree with another object and returns true if they represent the same tree, regardless of class type
+        (Tree, Forest or ForestSum) or possible reorderings of the same tree.
+
+        :param other: Tree, Forest or ForestSum
+        :rtype: bool
+
+        Example usage::
+
+            Tree([[],[]]) == Tree([[],[]]).as_forest() #True
+            Tree([[],[]]) == Tree([[],[]]).as_forest_sum() #True
+            Tree([[[]],[]]) == Tree([[],[[]]]) #True
+        """
         return self.as_forest_sum() == other
 
     def sorted_list_repr(self):
@@ -312,8 +376,8 @@ class Tree():
 
     def level_sequence(self):
         """
-        Returns the level sequence of the tree, defined as the list :math:`{\ell_1, \ell_2, \cdots, \ell_n}`, where
-        :math:`\ell_i` is the level of the :math:`i^{th}` node when the nodes are ordered lexicographically.
+        Returns the level sequence of the tree, defined as the list :math:`{\\ell_1, \\ell_2, \\cdots, \\ell_n}`, where
+        :math:`\\ell_i` is the level of the :math:`i^{th}` node when the nodes are ordered lexicographically.
 
         :return: Level sequence
         :rtype: list
@@ -396,7 +460,7 @@ class Tree():
 
         .. math::
 
-            (f \cdot g)(t) := \mu \circ (f \otimes g) \circ \Delta (t)
+            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
 
         and negative powers are defined as :math:`f^{-n} = f^n \\circ S`, where :math:`S` is the antipode.
 
@@ -435,7 +499,7 @@ class Tree():
 
         .. math::
 
-            (f \cdot g)(t) := \mu \circ (f \otimes g) \circ \Delta (t)
+            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
 
         :param func1: A function defined on trees
         :type func1: callable
@@ -471,11 +535,23 @@ class Tree():
 
 ######################################
 class Forest():
+    """
+    A commutative product of trees.
+
+    :param tree_list: A list of trees contained in the forest
+
+    Example usage::
+
+            t1 = Tree([])
+            t2 = Tree([[]])
+            t3 = Tree([[[]],[]])
+
+            f = Forest([t1,t2,t3])
+    """
 ######################################
     def __init__(self, tree_list):
         self.tree_list = tree_list
         self.reduce()
-
     
     def reduce(self):  # Remove redundant empty trees
         """
@@ -508,9 +584,9 @@ class Forest():
     
     def join(self):
         """
-        For a forest :math:`t_1 t_2 \cdots t_k`, returns the tree :math:`[t_1, t_2, \cdots, t_k]`.
+        For a forest :math:`t_1 t_2 \\cdots t_k`, returns the tree :math:`[t_1, t_2, \\cdots, t_k]`.
 
-        :return: :math:`[t_1, t_2, \cdots, t_k]`
+        :return: :math:`[t_1, t_2, \\cdots, t_k]`
         :rtype: Tree
 
         Example usage::
@@ -525,7 +601,7 @@ class Forest():
     
     def nodes(self):
         """
-        For a forest :math:`t_1 t_2 \cdots t_k`, returns the number of nodes in the forest, :math:`\sum_{i=1}^k |t_i|`.
+        For a forest :math:`t_1 t_2 \\cdots t_k`, returns the number of nodes in the forest, :math:`\\sum_{i=1}^k |t_i|`.
 
         :return: Number of nodes
         :rtype: int
@@ -537,9 +613,9 @@ class Forest():
         """
         return sum(t.nodes() for t in self.tree_list)
 
-    def len(self):
+    def num_trees(self):
         """
-        For a forest :math:`t_1 t_2 \cdots t_k`, returns the number of trees in the forest, :math:`k`.
+        For a forest :math:`t_1 t_2 \\cdots t_k`, returns the number of trees in the forest, :math:`k`.
 
         :return: Number of trees
         :rtype: int
@@ -554,10 +630,10 @@ class Forest():
     
     def factorial(self):
         """
-        Apply the tree factorial to the forest as a multiplicative map. For a forest :math:`t_1 t_2 \cdots t_k`,
-        returns :math:`\prod_{i=1}^k t_i!`.
+        Apply the tree factorial to the forest as a multiplicative map. For a forest :math:`t_1 t_2 \\cdots t_k`,
+        returns :math:`\\prod_{i=1}^k t_i!`.
 
-        :return: :math:`\prod_{i=1}^k t_i!`
+        :return: :math:`\\prod_{i=1}^k t_i!`
         :rtype: int
 
         Example usage::
@@ -570,8 +646,8 @@ class Forest():
     
     def antipode(self, apply_reduction = True):
         """
-        Apply the antipode to the forest as a multiplicative map. For a forest :math:`t_1 t_2 \cdots t_k`,
-        returns :math:`\prod_{i=1}^k S(t_i)`.
+        Apply the antipode to the forest as a multiplicative map. For a forest :math:`t_1 t_2 \\cdots t_k`,
+        returns :math:`\\prod_{i=1}^k S(t_i)`.
 
         :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
             Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
@@ -623,8 +699,8 @@ class Forest():
         :rtype: ForestSum
 
         .. note::
-            Since the antipode and sign functions commute, this function is equivalent to both self.sign().antipode() and
-            self.antipode().sign().
+            Since the antipode and sign functions commute, this function is equivalent to both ``self.sign().antipode()`` and
+            ``self.antipode().sign()``.
 
         Example usage::
 
@@ -634,6 +710,23 @@ class Forest():
         return self.sign().antipode()
 
     def __mul__(self, other, apply_reduction = True):
+        """
+        Multiplies a forest by a:
+
+        - scalar, returning a ForestSum
+        - Tree, returning a Forest,
+        - Forest, returning a Forest,
+        - ForestSum, returning a ForestSum.
+
+        :param other: A scalar, Tree, Forest or ForestSum
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+
+        Example usage::
+
+            t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
+        """
         if isinstance(other, int) or isinstance(other, float):
             out = ForestSum([self], [other])
         elif isinstance(other, Tree):
@@ -656,6 +749,19 @@ class Forest():
 
 
     def __pow__(self, n, apply_reduction = True):
+        """
+        Returns the :math:`n^{th}` power of a forest for a positive integer :math:`n`, given by a forest with :math:`n`
+        copies of the original forest.
+
+        :param n: Exponent, a positive integer
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+
+        Example usage::
+
+            t = ( Tree([]) * Tree([[]]) ) ** 3
+        """
         if not isinstance(n, int) or n < 0:
             raise ValueError("Forest.__pow__ received invalid argument")
         if n == 0:
@@ -675,6 +781,19 @@ class Forest():
             return self
 
     def __add__(self, other, apply_reduction = True):
+        """
+        Adds a forest to a scalar, Tree, Forest or ForestSum.
+
+        :param other: A scalar, Tree, Forest or ForestSum
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+        :rtype: ForestSum
+
+        Example usage::
+
+            t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
+        """
         if isinstance(other, int) or isinstance(other, float):
             out = ForestSum([self, Forest([Tree(None)])], [1, other])
         elif isinstance(other, Tree):
@@ -715,11 +834,29 @@ class Forest():
         return len(l2) == 0
 
     def __eq__(self, other):
+        """
+        Compares the forest with another object and returns true if they represent the same forest, regardless of class type
+        (Forest or ForestSum) or possible reorderings of trees.
+
+        :param other: Forest or ForestSum
+        :rtype: bool
+
+        Example usage::
+
+            t1 = Tree([])
+            t2 = Tree([[]])
+            t3 = Tree([[[]],[]])
+            t4 = Tree([[],[[]]])
+
+            t1 * t2 == t2 * t1 #True
+            t1 * t2 == (t1 * t2).as_forest_sum() #True
+            t1 * t3 == t1 * t4 #True
+        """
         return self.as_forest_sum() == other
 
     def as_forest_sum(self):
         """
-        Returns the forest f as a forest sum. Equivalent to ForestSum([f]).
+        Returns the forest f as a forest sum. Equivalent to ``ForestSum([f])``.
 
         :return: Forest as a forest sum
         :rtype: ForestSum
@@ -735,7 +872,7 @@ class Forest():
     def apply(self, func, apply_reduction = True):
         """
         Given a function defined on trees, apply it multiplicatively to the forest. For a function :math:`g` and forest
-        :math:`t_1 t_2 \cdots t_k`, returns :math:`\prod_{i=1}^k g(t_i)`.
+        :math:`t_1 t_2 \\cdots t_k`, returns :math:`\\prod_{i=1}^k g(t_i)`.
 
         :param func: A function defined on trees
         :type func: callable
@@ -766,7 +903,7 @@ class Forest():
 
         .. math::
 
-            (f \cdot g)(t) := \mu \circ (f \otimes g) \circ \Delta (t)
+            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
 
         and negative powers are defined as :math:`f^{-n} = f^n \\circ S`, where :math:`S` is the antipode. Extended multiplicatively to forests.
 
@@ -805,7 +942,7 @@ class Forest():
 
         .. math::
 
-            (f \cdot g)(t) := \mu \circ (f \otimes g) \circ \Delta (t)
+            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
 
         and extended multiplicatively to forests.
 
@@ -860,9 +997,33 @@ class Forest():
 
 ######################################
 class ForestSum():
+    """
+    A linear combination of forests.
+
+    :param forest_list: A list of forests contained in the sum. If the list contains a tree, it will be converted to a
+        forest on initialisation.
+    :param coeff_list: A list of coefficients corresponding to the forests in forest_list. If coeff_list is None (default),
+        it is assumed all coefficients in the sum equal 1.
+
+    Example usage::
+
+            t1 = Tree([])
+            t2 = Tree([[]])
+            t3 = Tree([[[]],[]])
+
+            s = ForestSum([t1,t1*t2,t2*t3], [1, -2, 1])
+            s == t1 - 2 * t1 * t2 + t2 * t3 #True
+    """
 ######################################
     def __init__(self, forest_list, coeff_list = None):
-        self.forest_list = forest_list
+        self.forest_list = copy.deepcopy(forest_list)
+
+        for i in range(len(self.forest_list)):
+            if isinstance(self.forest_list[i], Tree):
+                self.forest_list[i] = self.forest_list[i].as_forest()
+            elif not isinstance(self.forest_list[i], Forest):
+                raise ValueError("forest list must only contain forests and trees")
+
         if coeff_list == None:
             self.coeff_list = [1] * len(forest_list)
         else:
@@ -882,6 +1043,51 @@ class ForestSum():
             r += repr(c) + "*" + repr(f) + " + "
         r += repr(self.coeff_list[-1]) + "*" + repr(self.forest_list[-1])
         return r
+
+    def nodes(self):
+        """
+        For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`, returns the total number of nodes in the
+        forest sum, :math:`\\sum_{i=1}^m \\sum_{j=1}^{k_i} |t_{ij}|`.
+
+        :return: Number of nodes
+        :rtype: int
+
+        Example usage::
+
+            f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
+            f.nodes() #Returns 6
+        """
+        return sum(t.nodes() for t in self.forest_list)
+
+    def num_trees(self):
+        """
+        For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`, returns the total number of trees in the
+        forest sum, :math:`\\sum_{i=1}^m k_i`.
+
+        :return: Number of trees
+        :rtype: int
+
+        Example usage::
+
+            f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
+            f.num_trees() #Returns 3
+        """
+        return sum(x.num_trees() for x in self.forest_list)
+
+    def num_forests(self):
+        """
+        For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`, returns the total number of forests in the
+        forest sum, :math:`m`.
+
+        :return: Number of forests
+        :rtype: int
+
+        Example usage::
+
+            f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
+            f.num_trees() #Returns 2
+        """
+        return len(self.forest_list)
 
     
     def reduce(self):
@@ -925,10 +1131,10 @@ class ForestSum():
 
     def factorial(self):
         """
-        Apply the tree factorial to the forest sum as a multiplicative linear map. For a forest sum :math:`\sum_{i=1}^m c_i \prod_{j=1}^{k_i} t_{ij}`,
-        returns :math:`\sum_{i=1}^m c_i \prod_{j=1}^{k_i} t_{ij}!`.
+        Apply the tree factorial to the forest sum as a multiplicative linear map. For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`,
+        returns :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}!`.
 
-        :return: :math:`\sum_{i=1}^m c_i \prod_{j=1}^{k_i} t_{ij}!`
+        :return: :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}!`
         :rtype: int
 
         Example usage::
@@ -941,8 +1147,8 @@ class ForestSum():
     
     def antipode(self, applyReduction = True):
         """
-        Apply the antipode to the forest sum as a multiplicative linear map. For a forest sum :math:`\sum_{i=1}^m c_i \prod_{j=1}^{k_i} t_{ij}`,
-        returns :math:`\sum_{i=1}^m c_i \prod_{j=1}^{k_i} S(t_{ij})`.
+        Apply the antipode to the forest sum as a multiplicative linear map. For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`,
+        returns :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} S(t_{ij})`.
 
         :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
             Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
@@ -995,8 +1201,8 @@ class ForestSum():
         :rtype: ForestSum
 
         .. note::
-            Since the antipode and sign functions commute, this function is equivalent to both self.sign().antipode() and
-            self.antipode().sign().
+            Since the antipode and sign functions commute, this function is equivalent to both ``self.sign().antipode()`` and
+            ``self.antipode().sign()``.
 
         Example usage::
 
@@ -1021,6 +1227,19 @@ class ForestSum():
         return self
 
     def __mul__(self, other, apply_reduction = True):
+        """
+        Multiplies a ForestSum by a scalar, Tree, Forest or ForestSum, returning a ForestSum.
+
+        :param other: A scalar, Tree, Forest or ForestSum
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+        :rtype: ForestSum
+
+        Example usage::
+
+            t = 2 * Tree([[]]) * ForestSum([Tree([]), Tree([[],[]])], [1, -2])
+        """
         temp = copy.deepcopy(self)
         temp.__imul__(other, apply_reduction)
         return temp
@@ -1029,6 +1248,19 @@ class ForestSum():
 
 
     def __pow__(self, n, apply_reduction = True):
+        """
+        Returns the :math:`n^{th}` power of a forest sum for a positive integer :math:`n`.
+
+        :param n: Exponent, a positive integer
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+        :rtype: ForestSum
+
+        Example usage::
+
+            t = ( Tree([]) * Tree([[]]) + Tree([[],[]]) ) ** 3
+        """
         if not isinstance(n, int) or n < 0:
             raise ValueError("ForestSum.__pow__ received invalid argument")
         if n == 0:
@@ -1063,6 +1295,19 @@ class ForestSum():
         return self
 
     def __add__(self, other, applyReduction = True):
+        """
+        Adds a ForestSum to a scalar, Tree, Forest or ForestSum.
+
+        :param other: A scalar, Tree, Forest or ForestSum
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+        :rtype: ForestSum
+
+        Example usage::
+
+            t = 2 + Tree([[]]) + ForestSum([Tree([]), Tree([[],[]])], [1, -2])
+        """
         temp = copy.deepcopy(self)
         temp.__iadd__(other, applyReduction)
         return temp
@@ -1084,6 +1329,23 @@ class ForestSum():
 
     
     def __eq__(self, other):
+        """
+        Compares the forest sum with another forest sum and returns true if they represent the same forest sum,
+        regardless of possible reorderings of trees.
+
+        :param other: ForestSum
+        :rtype: bool
+
+        Example usage::
+
+            t1 = Tree([])
+            t2 = Tree([[]])
+            t3 = Tree([[[]],[]])
+            t4 = Tree([[],[[]]])
+
+            t1 * t2 + t3 == t3 + t2 * t1 # True
+            t1 * t2 + t3 == t1 * t2 + t4 # True
+        """
         temp = copy.copy(other)
         if isinstance(temp, int) or isinstance(temp, float):
             temp = Tree(None).__mul__(temp, False)
@@ -1110,8 +1372,8 @@ class ForestSum():
     
     def apply(self, func, apply_reduction = True):
         """
-        Given a function defined on trees, apply it as a multiplicative linear map to the forest sum. For a forest sum :math:`\sum_{i=1}^m c_i \prod_{j=1}^{k_i} t_{ij}`,
-        returns :math:`\sum_{i=1}^m c_i \prod_{j=1}^{k_i} g(t_{ij})`.
+        Given a function defined on trees, apply it as a multiplicative linear map to the forest sum. For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`,
+        returns :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} g(t_{ij})`.
 
         :param func: A function defined on trees
         :type func: callable
@@ -1146,7 +1408,7 @@ class ForestSum():
 
         .. math::
 
-            (f \cdot g)(t) := \mu \circ (f \otimes g) \circ \Delta (t)
+            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
 
         and negative powers are defined as :math:`f^{-n} = f^n \\circ S`, where :math:`S` is the antipode. Extended to a multiplicative linear map on forest sums.
 
@@ -1185,7 +1447,7 @@ class ForestSum():
 
         .. math::
 
-            (f \cdot g)(t) := \mu \circ (f \otimes g) \circ \Delta (t)
+            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
 
         and extended to a multiplicative linear map on forest sums.
 

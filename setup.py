@@ -26,5 +26,5 @@ setuptools.setup(name='rootedtrees',
         url="https://github.com/daniil-shmelev/RootedTrees",
         author="Daniil Shmelev",
         author_email="daniil.shmelev23@imperial.ac.uk",
-        install_requires=['matplotlib']
+        install_requires=['matplotlib', 'numpy', 'scipy', 'sympy']
       )
