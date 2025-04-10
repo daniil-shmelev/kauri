@@ -47,12 +47,14 @@ class Map:
         return Map(lambda x : x.apply_power(self.func, n))
 
     def __imul__(self, other):
+        func_ = self.func
         if isinstance(other, int) or isinstance(other, float):
-            self.func = lambda x : other * self.func(x)
+            self.func = lambda x : other * func_(x)
         elif isinstance(other, Map):
-            self.func = lambda x: x.apply_product(self.func, other.func)
+            self.func = lambda x: x.apply_product(func_, other.func)
         else:
             raise
+        return self
 
     def __mul__(self, other):
         """
@@ -81,10 +83,12 @@ class Map:
         return temp
 
     def __iadd__(self, other):
+        func_ = self.func
         if isinstance(other, Map):
-            self.func = lambda x: self.func(x) + other.func(x)
+            self.func = lambda x: func_(x) + other.func(x)
         else:
             raise
+        return self
 
     def __add__(self, other):
         """
@@ -106,6 +110,7 @@ class Map:
 
     def __isub__(self, other):
         self.__iadd__(-other)
+        return self
 
     def __sub__(self, other):
         temp = copy.deepcopy(self)
@@ -132,7 +137,7 @@ class Map:
             consider defining the composition manually as ``Map(lambda x : self(x).apply(other, apply_reduction = False))``
             and calling ``.reduce()`` on the final result of the computation.
         """
-        return Map(lambda x : self(x).apply(other))
+        return Map(lambda x : other(x).apply(self))
 
 
 # Some common examples provided for convenience

@@ -231,6 +231,11 @@ class TreeTests(unittest.TestCase):
         for t in trees[1:]:
             self.assertEqual(0, t.apply(f))
 
+    def test_exact_weights(self):
+        for t in trees:
+            self.assertAlmostEqual(t.apply(exact_weights), t.apply_product(exact_weights, exact_weights) / 2**t.nodes())
+            self.assertAlmostEqual(t.apply(exact_weights), t.apply_power(exact_weights, -1) * (-1) ** t.nodes())
+
     def test_adjoint_flow(self):
         for t in trees:
             self.assertAlmostEqual(t.apply(exact_weights), t.antipode().sign().apply(exact_weights))
@@ -252,12 +257,87 @@ class TreeTests(unittest.TestCase):
         for t in trees:
             self.assertEqual(t.apply_product(lambda x : x.apply_product(S, S), S), t.apply_power(S, 3))
 
+    def test_apply_negative_power(self):
+        func_ = lambda x : x**2
+        func3_ = lambda x : x.apply_power(func_, 3)
+        func_neg_3_ = lambda x : x.apply_power(func_, -3)
+        for t in trees:
+            self.assertEqual(counit(t), t.apply_product(func3_, func_neg_3_))
+
+    def test_apply_negative_power_scalar(self):
+        func_ = lambda x : x.nodes() if x.list_repr is not None else 1
+        func3_ = lambda x : x.apply_power(func_, 3)
+        func_neg_3_ = lambda x : x.apply_power(func_, -3)
+        for t in trees:
+            self.assertEqual(counit(t), t.apply_product(func3_, func_neg_3_))
+
 class MapTests(unittest.TestCase):
-    def test_map(self):
-        pass
+    def test_mul(self):
+        f = Map(lambda x : x)
+        g = Map(lambda x : x.antipode())
+        h = f * g
+        counit = Map(lambda x : 1 if x == Tree(None) else 0)
+
+        for t in trees:
+            self.assertEqual(counit(t), h(t))
+
+    def test_add(self):
+        f = Map(lambda x : x.antipode())
+        g = -f
+
+        for t in trees:
+            self.assertEqual(0, (g+f)(t))
 
     def test_inverse(self):
-        pass
+        f = Map(lambda x : x.nodes() if x.list_repr is not None else 1)
+
+        g = f * (f**(-1))
+        for t in trees:
+            self.assertEqual(counit(t), g(t))
+
+    def test_exact_weights(self):
+        for t in trees:
+            self.assertAlmostEqual(exact_weights(t), (exact_weights ** 2)(t) / 2**t.nodes())
+            self.assertAlmostEqual(exact_weights(t), (exact_weights ** (-1))(t) * (-1) ** t.nodes())
+
+    def test_antipode_property(self):
+        for t in trees:
+            self.assertEqual(counit(t), t.apply_product(S, ident))
+
+    def test_antipode_squared(self):
+        f = Map(lambda x : x.antipode())
+        g = f @ f
+        for t in trees:
+            self.assertEqual(t, g(t))
+
+    def test_antipode_squared_2(self):
+        f = Map(lambda x: x.antipode())
+        g = f @ f
+
+        for t in trees[1:]:
+            self.assertEqual(0, ((ident - g) ** t.nodes()) (t))
+
+    def test_antipode_squared_3(self):
+        f = Map(lambda x: x.antipode())
+        g = f @ f
+
+        h = Map(lambda x : ((ident - g)**(x.nodes() - 1))(x))
+        m = (ident + f) @ h
+
+        for t in trees[1:]:
+            self.assertEqual(0, m(t))
+
+    def test_composition(self):
+        f = Map(lambda x : x**2)
+
+        for t in trees:
+            self.assertEqual((f @ S)(t), f(t.antipode()))
+
+    def compose_scalar(self):
+        f = lambda x : x.factorial()
+
+        for t in trees:
+            self.assertEqual(f(t), (counit @ f)(t))
 
 class RKTests(unittest.TestCase):
     def test_rk(self):

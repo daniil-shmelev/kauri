@@ -3,6 +3,9 @@ import copy
 import math
 from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence
 
+def _counit(t):
+    return 1*Tree(None) if t.list_repr is None else 0 * Tree(None)
+
 ######################################
 class Tree():
     """
@@ -17,6 +20,14 @@ class Tree():
 ######################################
     def __init__(self, list_repr):
         self.list_repr = list_repr
+
+    def __copy__(self):
+        return Tree(copy.copy(self.list_repr))
+
+    def __deepcopy__(self, memodict={}):
+        if memodict is None:
+            memodict = {}
+        return Tree(copy.deepcopy(self.list_repr, memodict))
 
     def __repr__(self):
         return repr(self.list_repr) if self.list_repr is not None else "\u2205"
@@ -481,11 +492,11 @@ class Tree():
             t.apply(func, 3)
         """
         if n == 0:
-            return self
+            return self.apply(_counit)
         elif n == 1:
             return self.apply(func, apply_reduction)
         elif n < 0:
-            return self.apply_power(lambda x : func(x.antipode(apply_reduction = False)), -n, apply_reduction)
+            return self.antipode().apply_power(func, -n, apply_reduction)
         else:
             res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
             if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
@@ -552,6 +563,14 @@ class Forest():
     def __init__(self, tree_list):
         self.tree_list = tree_list
         self.reduce()
+
+    def __copy__(self):
+        return Forest(copy.copy(self.tree_list))
+
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
+        return Forest(copy.deepcopy(self.tree_list, memodict))
     
     def reduce(self):  # Remove redundant empty trees
         """
@@ -923,17 +942,18 @@ class Forest():
             f = Tree([[],[[]]]) * Tree([[]])
             f.apply(func, 3)
         """
+        res = None
         if n == 0:
-            return self
+            return self.apply(_counit)
         if n == 1:
             return self.apply(func, apply_reduction)
         elif n < 0:
-            return self.apply_power(lambda x : func(x.antipode(apply_reduction = False)), -n, apply_reduction)
+            res = self.antipode().apply_power(func, -n, apply_reduction)
         else:
-            res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
-            if apply_reduction and not isinstance(res, Tree):
-                res.reduce()
-            return res
+            res = self.apply_product(func, lambda x: x.apply_power(func, n - 1, False), False)
+        if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
+            res.reduce()
+        return res
 
     
     def apply_product(self, func1, func2, apply_reduction = True):
@@ -1033,6 +1053,20 @@ class ForestSum():
                 self.coeff_list = coeff_list
 
         self.reduce()
+
+    def __copy__(self):
+        return ForestSum(
+            copy.copy(self.forest_list),
+            copy.copy(self.coeff_list)
+        )
+
+    def __deepcopy__(self, memodict=None):
+        if memodict is None:
+            memodict = {}
+        return ForestSum(
+            copy.deepcopy(self.forest_list, memodict),
+            copy.copy(self.coeff_list)
+        )
 
     def __repr__(self):
         if len(self.forest_list) == 0:
@@ -1428,17 +1462,18 @@ class ForestSum():
             s = Tree([[],[[]]]) * Tree([[]]) + 2 * Tree([])
             s.apply(func, 3)
         """
+        res = None
         if n == 0:
-            return self
+            return self.apply(_counit)
         if n == 1:
             return self.apply(func, apply_reduction)
         elif n < 0:
-            return self.apply_power(lambda x : func(x.antipode(apply_reduction = False)), -n, apply_reduction)
+            res = self.antipode().apply_power(func, -n, apply_reduction)
         else:
-            res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
-            if apply_reduction and not isinstance(res, Tree):
-                res.reduce()
-            return res
+            res = self.apply_product(func, lambda x: x.apply_power(func, n - 1, False), False)
+        if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
+            res.reduce()
+        return res
 
     
     def apply_product(self, func1, func2, apply_reduction = True):
