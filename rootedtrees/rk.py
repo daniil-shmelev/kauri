@@ -63,7 +63,7 @@ def RK_symbolic_weight(t, s, explicit = False, A_mask = None, b_mask = None, mat
         are non-zero. If not None, sets :math:`b_i = 0` for all :math:`i` such that ``b_mask[i] = 0``.
     :param mathematica_code: If true, outputs the expression as mathematica code.
     :type mathematica_code: bool
-    :param rationalise: If true, will attempt to rationalise the coefficients
+    :param rationalise: If true, will attempt to rationalise the coefficients in the expression
     :type rationalise: bool
     :returns: The elementary weight of :math:`t`, as a SymPy symbolic expression if `mathematica_code` is False or as a
         string if `mathematica_code` is True.
@@ -111,6 +111,56 @@ def RK_symbolic_weight(t, s, explicit = False, A_mask = None, b_mask = None, mat
     if mathematica_code:
         out = sp.mathematica_code(out)
     return out
+
+
+def RK_order_cond(t, s, explicit=False, A_mask=None, b_mask=None, mathematica_code = False, rationalise = True):
+    """
+    Returns the Runge--Kutta order condition associated with tree :math:`t` as a SymPy symbolic expression.
+
+    :param t: A Tree
+    :param s: The number of Runge--Kutta stages
+    :type s: int
+    :param explicit: If true, assumes the Runge--Kutta scheme is explicit, i.e. :math:`a_{ij} = 0` for :math:`i \\leq j`.
+    :type explicit: bool
+    :param A_mask: A two-dimensional array specifying which coefficients of the Runge--Kutta parameter matrix :math:`A`
+        are non-zero. If not None, sets :math:`a_{ij} = 0` for all :math:`i,j` such that ``A_mask[i][j] = 0``.
+    :param b_mask: A one-dimensional array or list specifying which coefficients of the Runge--Kutta parameter vector :math:`b`
+        are non-zero. If not None, sets :math:`b_i = 0` for all :math:`i` such that ``b_mask[i] = 0``.
+    :param mathematica_code: If true, outputs the expression as mathematica code.
+    :type mathematica_code: bool
+    :param rationalise: If true, will attempt to rationalise the coefficients in the expression
+    :type rationalise: bool
+    :returns: The order condition associated with the tree :math:`t`, as a SymPy symbolic expression if `mathematica_code` is False or as a
+        string if `mathematica_code` is True.
+    :rtype: sympy.core.add.Add | string
+
+    Example usage::
+
+            t = Tree([[],[]])
+            RK_order_cond(t, 2) # Returns b0*(a00 + a01)**2 + b1*(a10 + a11)**2 - 1/3
+            RK_order_cond(t, 2, explicit = True) # Returns a10**2*b1 - 1/3
+
+            A_mask = [[1,0],[0,1]]
+            b_mask = [0,1]
+            RK_order_cond(t, 2, A_mask = A_mask, b_mask = b_mask) #Returns a11**2*b1 - 1/3
+
+    .. code-block:: python
+
+        #Generate order conditions as mathematica equations and write to text file
+
+        strs = []
+
+        for i,t in enumerate(trees_of_order(4)):
+            cond = RK_symbolic_weight(t, 3, explicit = True, mathematica_code = True, rationalise = True)
+            str_ = "eq" + str(i) + " = " + cond + " == 0; \\n"
+            strs.append(str_)
+
+        with open("mathematica_code.txt", "w") as text_file:
+            for s in strs:
+                text_file.write(s)
+
+    """
+    return RK_symbolic_weight(t - 1. / t.factorial(), s, explicit, A_mask, b_mask, mathematica_code, rationalise)
 
 class RK:
     """

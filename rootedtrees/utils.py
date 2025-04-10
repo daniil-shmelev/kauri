@@ -62,6 +62,7 @@ def _sorted_list_repr(rep):
     else:
         return tuple(sorted(map(_sorted_list_repr, rep), reverse=True))
 
+@lru_cache(maxsize=None)
 def _list_repr_to_level_sequence(rep):
     if rep is None:
         return []

@@ -1026,7 +1026,7 @@ class Forest():
         """
         out = self.reduce()
         if len(out.tree_list) > 1:
-            new_tree_list = tuple(filter(lambda x: x.list_repr != [], out.tree_list))
+            new_tree_list = tuple(filter(lambda x: x.list_repr != tuple(), out.tree_list))
             if len(new_tree_list) == 0:
                 new_tree_list = (SINGLETON_TREE,)
             out = Forest(new_tree_list)
