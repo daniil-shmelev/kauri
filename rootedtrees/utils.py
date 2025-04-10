@@ -1,4 +1,5 @@
 import math
+from functools import lru_cache
 
 def _to_tuple(obj):
     if isinstance(obj, list):
@@ -18,6 +19,7 @@ def _nodes(rep):
     else:
         return 1 + sum(_nodes(r) for r in rep)
 
+@lru_cache(maxsize=None)
 def _factorial(rep):
     if rep is None:
         return 1, 0
@@ -39,27 +41,26 @@ def _sigma(rep):
     rep_dict = {}
     unique_rep = []
     for r in rep:
-        r_str = repr(r)
-        if r_str in rep_dict.keys():
-            rep_dict[r_str] += 1
+        if r in rep_dict.keys():
+            rep_dict[r] += 1
         else:
-            rep_dict[r_str] = 1
+            rep_dict[r] = 1
             unique_rep.append(r)
 
     out = 1
     for r in unique_rep:
-        r_str = repr(r)
-        k = rep_dict[r_str]
+        k = rep_dict[r]
         out *= math.factorial(k) * (_sigma(r) ** k)
     return out
 
+@lru_cache(maxsize=None)
 def _sorted_list_repr(rep):
     if rep is None:
         return None
     elif rep == tuple():
         return tuple()
     else:
-        return tuple(sorted([_sorted_list_repr(r) for r in rep], reverse = True))
+        return tuple(sorted(map(_sorted_list_repr, rep), reverse=True))
 
 def _list_repr_to_level_sequence(rep):
     if rep is None:

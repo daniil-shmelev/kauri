@@ -134,6 +134,26 @@ class TreeTests(unittest.TestCase):
         self.assertEqual(Tree([]) - Tree([[]]), -Tree([[]]) + Tree([]))
         self.assertEqual(ForestSum([Tree([[]]).as_forest(), Tree([]).as_forest(), Tree([]).as_forest()],[1,1,-1]), Tree([[]]).as_forest_sum())
 
+    def test_equality_2(self):
+        self.assertEqual(
+            2*Tree([[]]) * Tree([]),
+            2*Tree([]) * Tree([[]])
+        )
+
+        self.assertEqual(
+            -Tree([]) * Tree([]) * Tree([]) + 2 * Tree([[]]) * Tree([]) - Tree([[], []]),
+            - Tree([[], []]) + 2 * Tree([]) * Tree([[]]) -Tree([]) * Tree([]) * Tree([])
+        )
+
+    def test_hash(self):
+        self.assertEqual(hash(Tree([[],[[]]])), hash(Tree([[[]],[]])))
+        self.assertEqual(hash(Tree([[],[[],[]]])), hash(Tree([[[],[]], []])))
+        self.assertEqual(hash(Tree([[[]],[],[]])), hash(Tree([[],[[]],[]])))
+        self.assertEqual(hash(Tree([[[]], [], []])), hash(Tree([[], [], [[]]])))
+        self.assertEqual(hash(Forest([Tree([[]]), Tree([]), Tree([[],[]])])), hash(Forest([Tree([]), Tree([[],[]]), Tree([[]])])))
+        self.assertEqual(hash(Tree([]) - Tree([[]])), hash(-Tree([[]]) + Tree([])))
+        self.assertEqual(hash(ForestSum([Tree([[]]).as_forest(), Tree([]).as_forest(), Tree([]).as_forest()],[1,1,-1])), hash(Tree([[]]).as_forest_sum()))
+
     def test_mixed_arithmetic(self):
         t0 = Tree(None)
         t1 = Tree([])

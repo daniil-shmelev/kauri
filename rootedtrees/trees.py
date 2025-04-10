@@ -2,7 +2,9 @@ import itertools
 import copy
 import math
 from dataclasses import dataclass
+from collections import Counter
 from typing import Union, Optional
+from functools import lru_cache
 from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence, _to_tuple, _to_list
 
 def _counit(t):
@@ -39,6 +41,9 @@ class Tree():
 
     def __repr__(self):
         return repr(_to_list(self.list_repr)) if self.list_repr is not None else "\u2205"
+
+    def __hash__(self):
+        return hash(self.sorted_list_repr())
 
     def unjoin(self):
         """
@@ -195,6 +200,7 @@ class Tree():
 
         return new_tree_list, new_forest_list
 
+    @lru_cache(maxsize=None)
     def antipode(self, apply_reduction = True):
         """
         Returns the antipode of a tree,
@@ -377,7 +383,16 @@ class Tree():
             Tree([[],[]]) == Tree([[],[]]).as_forest_sum() #True
             Tree([[[]],[]]) == Tree([[],[[]]]) #True
         """
-        return self.as_forest_sum() == other
+        if isinstance(other, int) or isinstance(other, float):
+            return self.as_forest_sum() == other * EMPTY_TREE
+        if isinstance(other, Tree):
+            return self._equals(other)
+        elif isinstance(other, Forest):
+            return self.as_forest() == other
+        elif isinstance(other, ForestSum):
+            return self.as_forest_sum() == other
+        else:
+            raise ValueError("Invalid argument in Tree.__eq__()")
 
     def sorted_list_repr(self):
         """
@@ -473,6 +488,7 @@ class Tree():
         """
         return func(self)
 
+    @lru_cache(maxsize=None)
     def apply_power(self, func, n, apply_reduction = True):
         """
         Apply the power of a function defined on trees, where the product of functions is defined by
@@ -513,7 +529,7 @@ class Tree():
             res = res.reduce()
         return res
 
-    
+    @lru_cache(maxsize=None)
     def apply_product(self, func1, func2, apply_reduction = True):
         """
         Apply the product of two functions, defined by
@@ -583,6 +599,10 @@ class Forest():
     def __deepcopy__(self, memodict={}):
         memodict[id(self)] = self
         return self
+
+    def __hash__(self):
+        counts = Counter(self.reduce().tree_list)
+        return hash(frozenset(counts.items()))
     
     def reduce(self):  # Remove redundant empty trees
         """
@@ -850,20 +870,8 @@ class Forest():
     def __neg__(self):
         return self.__mul__(-1, False)
 
-    
     def _equals(self, other_forest):
-        l1 = list(self.tree_list)
-        l2 = list(other_forest.tree_list)
-        for t in l1:
-            flag = False
-            for i in range(len(l2)):
-                if t._equals(l2[i]):
-                    l2.pop(i)
-                    flag = True
-                    break
-            if not flag:
-                return False
-        return len(l2) == 0
+        return Counter(self.reduce().tree_list) == Counter(other_forest.reduce().tree_list)
 
     def __eq__(self, other):
         """
@@ -884,7 +892,16 @@ class Forest():
             t1 * t2 == (t1 * t2).as_forest_sum() #True
             t1 * t3 == t1 * t4 #True
         """
-        return self.as_forest_sum() == other
+        if isinstance(other, int) or isinstance(other, float):
+            return self.as_forest_sum() == other * EMPTY_TREE
+        if isinstance(other, Tree):
+            return self._equals(other.as_forest())
+        elif isinstance(other, Forest):
+            return self._equals(other)
+        elif isinstance(other, ForestSum):
+            return self.as_forest_sum() == other
+        else:
+            raise ValueError("Invalid argument in Tree.__eq__()")
 
     def as_forest_sum(self):
         """
@@ -955,19 +972,7 @@ class Forest():
             f = Tree([[],[[]]]) * Tree([[]])
             f.apply(func, 3)
         """
-        res = None
-        if n == 0:
-            return self.apply(_counit)
-        elif n == 1:
-            return self.apply(func, apply_reduction)
-        elif n < 0:
-            res = self.antipode().apply_power(func, -n, False)
-        else:
-            res = self.apply_product(func, lambda x: x.apply_power(func, n - 1, False), False)
-
-        if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
-            res = res.reduce()
-        return res
+        return self.apply(lambda x : x.apply_power(func, n, apply_reduction))
 
     
     def apply_product(self, func1, func2, apply_reduction = True):
@@ -997,13 +1002,7 @@ class Forest():
             f = Tree([[],[[]]]) * Tree([[]])
             f.apply(func1, func2) #Returns f
         """
-        out = 1
-        for t in self.tree_list:
-            out = out * t.apply_product(func1, func2)
-
-        if apply_reduction and not (isinstance(out, int) or isinstance(out, float)):
-            out = out.reduce()
-        return out
+        self.apply(lambda x : x.apply_product(func1, func2, apply_reduction))
 
     def singleton_reduced(self):
         """
@@ -1084,6 +1083,10 @@ class ForestSum():
     def __deepcopy__(self, memodict={}):
         memodict[id(self)] = self
         return self
+
+    def __hash__(self):
+        self_reduced = self.reduce()
+        return hash(frozenset(Counter(zip(self_reduced.forest_list, self_reduced.coeff_list)).items()))
 
     def __repr__(self):
         if len(self.forest_list) == 0:
@@ -1372,6 +1375,11 @@ class ForestSum():
     def __neg__(self):
         return self.__mul__(-1, False)
 
+    def _equals(self, other):
+        self_reduced = self.reduce()
+        other_reduced = other.reduce()
+        return Counter(zip(self_reduced.forest_list, self_reduced.coeff_list)) == Counter(zip(other_reduced.forest_list, other_reduced.coeff_list))
+
     
     def __eq__(self, other):
         """
@@ -1391,35 +1399,16 @@ class ForestSum():
             t1 * t2 + t3 == t3 + t2 * t1 # True
             t1 * t2 + t3 == t1 * t2 + t4 # True
         """
-        self_reduced = self.reduce()
-        other_reduced = other
-
-        if isinstance(other, Forest) or isinstance(other, ForestSum):
-            other_reduced = other.reduce()
-
-        if isinstance(other_reduced, int) or isinstance(other_reduced, float):
-            other_reduced = Tree(None).__mul__(other_reduced, False)
-        elif not isinstance(other_reduced, ForestSum):
-            other_reduced = other_reduced.as_forest_sum()
-
-        f1 = self_reduced.forest_list
-        c1 = self_reduced.coeff_list
-        f2 = list(other_reduced.forest_list)
-        c2 = list(other_reduced.coeff_list)
-        for forest1,coeff1 in zip(f1, c1):
-            flag = False
-            for i in range(len(f2)):
-                if forest1 is None:
-                    ii = 0
-                if forest1._equals(f2[i]) and coeff1 == c2[i]:
-                    f2.pop(i)
-                    c2.pop(i)
-                    flag = True
-                    break
-            if not flag:
-                return False
-
-        return len(f2) == 0
+        if isinstance(other, int) or isinstance(other, float):
+            return self._equals(other * EMPTY_TREE)
+        if isinstance(other, Tree):
+            return self._equals(other.as_forest_sum())
+        elif isinstance(other, Forest):
+            return self._equals(other.as_forest_sum())
+        elif isinstance(other, ForestSum):
+            return self._equals(other)
+        else:
+            raise ValueError("Invalid argument in Tree.__eq__()")
 
     
     def apply(self, func, apply_reduction = True):
@@ -1480,19 +1469,7 @@ class ForestSum():
             s = Tree([[],[[]]]) * Tree([[]]) + 2 * Tree([])
             s.apply(func, 3)
         """
-        res = None
-        if n == 0:
-            return self.apply(_counit)
-        elif n == 1:
-            return self.apply(func, apply_reduction)
-        elif n < 0:
-            res = self.antipode().apply_power(func, -n, False)
-        else:
-            res = self.apply_product(func, lambda x: x.apply_power(func, n - 1, False), False)
-
-        if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
-            res = res.reduce()
-        return res
+        return self.apply(lambda x : x.apply_power(func, n, apply_reduction))
 
     
     def apply_product(self, func1, func2, apply_reduction = True):
@@ -1522,18 +1499,7 @@ class ForestSum():
             s = Tree([[],[[]]]) * Tree([[]]) + 2 * Tree([])
             s.apply(func1, func2) #Returns s
         """
-        out = 0
-        for f,c in zip(self.forest_list, self.coeff_list):
-            term = 1
-            for t in f.tree_list:
-                #term *= t.apply_product(func1, func2)
-                term = _mul(term, t.apply_product(func1, func2), False)
-            #out += c * term
-            out = _add(out, _mul(c, term, False), False)
-
-        if apply_reduction and not (isinstance(out, int) or isinstance(out, float)):
-            out = out.reduce()
-        return out
+        return self.apply(lambda x : x.apply_product(func1, func2, apply_reduction))
 
     def singleton_reduced(self):
         """
@@ -1548,7 +1514,7 @@ class ForestSum():
             s1 = Tree([]) * Tree([[],[]]) + Tree([]) * Tree([]) * Tree([])
             s1.singleton_reduced() #Returns Tree([[],[]]) + Tree([])
         """
-        return ForestSum([x.singleton_reduced() for x in self.forest_list], self.coeff_list)
+        return ForestSum(tuple(x.singleton_reduced() for x in self.forest_list), self.coeff_list)
 
 
 ##############################################
