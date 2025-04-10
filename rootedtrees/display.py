@@ -79,7 +79,7 @@ def display(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None):
     x, y = 0, 0
     h = 0
 
-    for f, c, i in zip(forest_sum.forest_list, forest_sum.coeff_list, range(len(forest_sum.coeff_list))):
+    for i, (c, f) in enumerate(forest_sum.term_list):
         if i > 0:
             c = abs(c)
 
@@ -115,8 +115,8 @@ def display(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None):
                 h = max(h, h_)
         x += coeff_gap / 2
 
-        if i < len(forest_sum.forest_list) - 1:
-            op = "+" if forest_sum.coeff_list[i + 1] > 0 else "-"
+        if i < len(forest_sum.term_list) - 1:
+            op = "+" if forest_sum.term_list[i + 1][0] > 0 else "-"
             traces.append(go.Scatter(
                 x=[x], y=[y], text=[op], mode='text',
                 showlegend=False

@@ -4,7 +4,7 @@ import math
 from dataclasses import dataclass
 from collections import Counter, defaultdict
 from typing import Union, Optional
-from functools import lru_cache
+from functools import cache
 from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence, _to_tuple, _to_list
 
 def _counit(t):
@@ -61,7 +61,7 @@ class Tree():
             return EMPTY_FOREST
         return Forest(tuple(Tree(rep) for rep in self.list_repr))
 
-
+    @cache
     def nodes(self):
         """
         Returns the number of nodes in a tree, :math:`|t|`
@@ -76,6 +76,7 @@ class Tree():
         """
         return _nodes(self.list_repr)
 
+    @cache
     def factorial(self):
         """
         Compute the tree factorial, :math:`t!`
@@ -90,6 +91,7 @@ class Tree():
         """
         return _factorial(self.list_repr)[0]
 
+    @cache
     def sigma(self):
         """
         Computes the symmetry factor :math:`\\sigma(t)`, the order of the symmetric group of the tree. For a tree
@@ -200,7 +202,7 @@ class Tree():
 
         return new_tree_list, new_forest_list
 
-    @lru_cache(maxsize=None)
+    @cache
     def antipode(self, apply_reduction = True):
         """
         Returns the antipode of a tree,
@@ -223,7 +225,7 @@ class Tree():
         if self.list_repr is None:
             return EMPTY_FOREST_SUM
         elif self.list_repr == tuple():
-            return SINGLETON_FOREST_SUM.__mul__(-1, False)
+            return -SINGLETON_FOREST_SUM
         
         subtrees, branches = self.split()
         out = -self.as_forest_sum()
@@ -290,17 +292,15 @@ class Tree():
             t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
         """
         if isinstance(other, int) or isinstance(other, float):
-            out = ForestSum((Forest((self,)),), (other,))
+            out = ForestSum(( (other,self),  ))
         elif isinstance(other, Tree):
             out = Forest((self, other))
         elif isinstance(other, Forest):
             out = Forest((self,) + other.tree_list)
         elif isinstance(other, ForestSum):
-            c = copy.copy(other.coeff_list)
-            f = tuple(self * x for x in other.forest_list)
-            out = ForestSum(f, c)
+            out = ForestSum(tuple((c, self * f) for c,f in other.term_list))
         else:
-            raise ValueError("oh no")
+            raise ValueError("Cannot multiply Tree by object of type " + str(type(other)))
 
         if apply_reduction:
             out = out.reduce()
@@ -321,8 +321,10 @@ class Tree():
 
             t = Tree([[]]) ** 3
         """
-        if not isinstance(n, int) or n < 0:
-            raise ValueError("Tree.__pow__ received invalid argument")
+        if not isinstance(n, int):
+            raise ValueError("Exponent in Tree.__pow__ must be an int, not " + str(type(n)))
+        if n < 0:
+            raise ValueError("Cannot raise Tree to a negative power")
         if n == 0:
             return EMPTY_TREE
 
@@ -346,15 +348,13 @@ class Tree():
             t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
         """
         if isinstance(other, int) or isinstance(other, float):
-            out = ForestSum((Forest((self,)), EMPTY_FOREST), (1, other))
-        elif isinstance(other, Tree):
-            out = ForestSum((Forest((self,)), Forest((other,))), None)
-        elif isinstance(other, Forest):
-            out = ForestSum((Forest((self,)), other), None)
+            out = ForestSum((  (1, self), (other, EMPTY_FOREST)  ))
+        elif isinstance(other, Tree) or isinstance(other, Forest):
+            out = ForestSum((  (1, self), (1, other)  ))
         elif isinstance(other, ForestSum):
-            out = ForestSum((Forest((self,)),) + other.forest_list, (1,) + other.coeff_list)
+            out = ForestSum( ((1, self),) + other.term_list )
         else:
-            raise ValueError("Cannot add " + str(type(self)) + " and " + str(type(other)))
+            raise ValueError("Cannot add Tree and " + str(type(other)))
 
         if apply_reduction:
             out = out.reduce()
@@ -392,7 +392,7 @@ class Tree():
         elif isinstance(other, ForestSum):
             return self.as_forest_sum() == other
         else:
-            raise ValueError("Invalid argument in Tree.__eq__()")
+            raise ValueError("Cannot check equality of Tree and " + str(type(other)))
 
     def sorted_list_repr(self):
         """
@@ -466,7 +466,7 @@ class Tree():
             t = Tree([[],[[]]])
             t.as_forest_sum() #Returns ForestSum([Forest([Tree([[[]],[]])])])
         """
-        return ForestSum((Forest((self,)),), None)
+        return ForestSum(( (1, self), ))
 
     def apply(self, func, apply_reduction = True):
         """
@@ -488,7 +488,7 @@ class Tree():
         """
         return func(self)
 
-    @lru_cache(maxsize=None)
+    @cache
     def apply_power(self, func, n, apply_reduction = True):
         """
         Apply the power of a function defined on trees, where the product of functions is defined by
@@ -529,7 +529,7 @@ class Tree():
             res = res.reduce()
         return res
 
-    @lru_cache(maxsize=None)
+    @cache
     def apply_product(self, func1, func2, apply_reduction = True):
         """
         Apply the product of two functions, defined by
@@ -622,7 +622,7 @@ class Forest():
         filtered = tuple(t for t in self.tree_list if t.list_repr is not None)
 
         if not filtered:
-            return Forest((Tree(None),))
+            return EMPTY_FOREST
         elif len(filtered) == len(self.tree_list):
             return self
         else:
@@ -718,7 +718,7 @@ class Forest():
             f.antipode()
         """
         if self.tree_list is None or self.tree_list == tuple():
-            raise ValueError("Forest antipode received empty tree list")
+            raise ValueError("Forest is misspecified in Forest.antipode(): self.tree_list is empty")
         elif len(self.tree_list) == 1 and self.tree_list[0]._equals(SINGLETON_TREE):
             return -SINGLETON_FOREST_SUM
         
@@ -785,25 +785,21 @@ class Forest():
             t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
         """
         if isinstance(other, int) or isinstance(other, float):
-            out = ForestSum((self,), (other,))
+            out = ForestSum(( (other, self), ))
         elif isinstance(other, Tree):
             out = Forest(self.tree_list + (other,))
         elif isinstance(other, Forest):
             out = Forest(self.tree_list + other.tree_list)
         elif isinstance(other, ForestSum):
-            f = copy.copy(other.forest_list)
-            c = copy.copy(other.coeff_list)
-            f = [self.__mul__(x, False) for x in f]
-            out = ForestSum(f, c)
+            out = ForestSum(tuple( (c, self.__mul__(f, False)) for c, f in other.term_list ))
         else:
-            raise ValueError("oh no")
+            raise ValueError("Cannot multiply Forest and " + str(type(other)))
 
         if apply_reduction:
             out = out.reduce()
         return out
 
     __rmul__ = __mul__
-
 
     def __pow__(self, n, apply_reduction = True):
         """
@@ -819,23 +815,16 @@ class Forest():
 
             t = ( Tree([]) * Tree([[]]) ) ** 3
         """
-        if not isinstance(n, int) or n < 0:
-            raise ValueError("Forest.__pow__ received invalid argument")
+        if not isinstance(n, int):
+            raise ValueError("Exponent in Forest.__pow__ must be an int, not " + str(type(n)))
+        if n < 0:
+            raise ValueError("Cannot raise Forest to a negative power")
         if n == 0:
-            return Forest([Tree(None)])
+            return EMPTY_FOREST
         out = Forest(self.tree_list * n)
         if apply_reduction:
             out = out.reduce()
         return out
-
-    
-    def __imul__(self, other):
-        if isinstance(other, Tree):
-            self.tree_list.append(other)
-            return self
-        if isinstance(other, Forest):
-            self.tree_list += other.tree_list
-            return self
 
     def __add__(self, other, apply_reduction = True):
         """
@@ -852,15 +841,13 @@ class Forest():
             t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
         """
         if isinstance(other, int) or isinstance(other, float):
-            out = ForestSum((self, EMPTY_FOREST), (1, other))
-        elif isinstance(other, Tree):
-            out = ForestSum((self, Forest((other,))), None)
-        elif isinstance(other, Forest):
-            out = ForestSum((self, other), None)
+            out = ForestSum((  (1, self), (other, EMPTY_FOREST)  ))
+        elif isinstance(other, Tree) or isinstance(other, Forest):
+            out = ForestSum(( (1, self), (1, other) ))
         elif isinstance(other, ForestSum):
-            out = ForestSum((self,) + other.forest_list, (1,) + other.coeff_list)
+            out = ForestSum( ((1, self),) + other.term_list )
         else:
-            raise ValueError("oh no")
+            raise ValueError("Cannot add Forest and " + str(type(other)))
 
         if apply_reduction:
             out.reduce()
@@ -906,7 +893,7 @@ class Forest():
         elif isinstance(other, ForestSum):
             return self.as_forest_sum() == other
         else:
-            raise ValueError("Invalid argument in Tree.__eq__()")
+            raise ValueError("Cannot check equality of Forest and " + str(type(other)))
 
     def as_forest_sum(self):
         """
@@ -920,7 +907,7 @@ class Forest():
             f = Tree([[],[[]]]) * Tree([[]])
             f.as_forest_sum() #Returns ForestSum([t])
         """
-        return ForestSum([self], None)
+        return ForestSum(( (1,self), ))
 
     
     def apply(self, func, apply_reduction = True):
@@ -1039,10 +1026,8 @@ class ForestSum():
     """
     A linear combination of forests.
 
-    :param forest_list: A list of forests contained in the sum. If the list contains a tree, it will be converted to a
-        forest on initialisation.
-    :param coeff_list: A list of coefficients corresponding to the forests in forest_list. If coeff_list is None (default),
-        it is assumed all coefficients in the sum equal 1.
+    :param term_list: A list or tuple containing tuples of coefficients and forests representing terms of the sum.
+     If a term contains a tree, it will be converted to a forest on initialisation.
 
     Example usage::
 
@@ -1050,37 +1035,28 @@ class ForestSum():
             t2 = Tree([[]])
             t3 = Tree([[[]],[]])
 
-            s = ForestSum([t1,t1*t2,t2*t3], [1, -2, 1])
+            s = ForestSum([(1, t1), (-2, t1*t2), (1, t2*t3)])
             s == t1 - 2 * t1 * t2 + t2 * t3 #True
     """
 ######################################
-    forest_list: Union[tuple, list]
-    coeff_list : Union[tuple, list, None] = None
+    term_list : Union[tuple, list]
 
     def __post_init__(self):
+        new_term_list = []
 
-        new_forest_list = []
-        new_coeff_list = []
-
-        for i in range(len(self.forest_list)):
-            if isinstance(self.forest_list[i], Forest):
-                new_forest_list.append(self.forest_list[i])
-            elif isinstance(self.forest_list[i], Tree):
-                new_forest_list.append(self.forest_list[i].as_forest())
+        for i in range(len(self.term_list)):
+            if isinstance(self.term_list[i][1], Forest):
+                new_term_list.append(self.term_list[i])
+            elif isinstance(self.term_list[i][1], Tree):
+                new_term_list.append((self.term_list[i][0], self.term_list[i][1].as_forest()))
             else:
-                raise ValueError("forest list must only contain forests and trees")
+                raise ValueError("Terms must be tuples of type (int | float, Tree | Forest)")
 
-        new_forest_list = tuple(new_forest_list)
+            if not (isinstance(self.term_list[i][0], int) or isinstance(self.term_list[i][0], float)):
+                raise ValueError("Terms must be tuples of type (int | float, Tree | Forest)")
 
-        if self.coeff_list is None:
-            new_coeff_list = tuple(1 for i in range(len(new_forest_list)))
-        else:
-            new_coeff_list = tuple(self.coeff_list)
-            if len(new_coeff_list) != len(new_forest_list):
-                raise ValueError("forest list and coefficient list are of different lengths")
-
-        object.__setattr__(self, 'forest_list', new_forest_list)
-        object.__setattr__(self, 'coeff_list', new_coeff_list)
+        new_term_list = tuple(new_term_list)
+        object.__setattr__(self, 'term_list', new_term_list)
 
     def __copy__(self):
         return self
@@ -1091,16 +1067,16 @@ class ForestSum():
 
     def __hash__(self):
         self_reduced = self.reduce()
-        return hash(frozenset(Counter(zip(self_reduced.forest_list, self_reduced.coeff_list)).items()))
+        return hash(frozenset(Counter(self.term_list).items()))
 
     def __repr__(self):
-        if len(self.forest_list) == 0:
+        if len(self.term_list) == 0:
             return "0"
         
         r = ""
-        for f, c in zip(self.forest_list[:-1], self.coeff_list[:-1]):
+        for c, f in self.term_list[:-1]:
             r += repr(c) + "*" + repr(f) + " + "
-        r += repr(self.coeff_list[-1]) + "*" + repr(self.forest_list[-1])
+        r += repr(self.term_list[-1][0]) + "*" + repr(self.term_list[-1][1])
         return r
 
     def nodes(self):
@@ -1116,7 +1092,7 @@ class ForestSum():
             f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
             f.nodes() #Returns 6
         """
-        return sum(t.nodes() for t in self.forest_list)
+        return sum(f.nodes() for c, f in self.term_list)
 
     def num_trees(self):
         """
@@ -1131,7 +1107,7 @@ class ForestSum():
             f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
             f.num_trees() #Returns 3
         """
-        return sum(x.num_trees() for x in self.forest_list)
+        return sum(f.num_trees() for c, f in self.term_list)
 
     def num_forests(self):
         """
@@ -1146,7 +1122,7 @@ class ForestSum():
             f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
             f.num_trees() #Returns 2
         """
-        return len(self.forest_list)
+        return len(self.term_list)
 
     
     def reduce(self):
@@ -1164,7 +1140,7 @@ class ForestSum():
         new_forest_list = []
         new_coeff_list = []
 
-        for f, c in zip(self.forest_list, self.coeff_list):
+        for c, f in self.term_list:
             f_reduced = f.reduce()
 
             for i, f2 in enumerate(new_forest_list):
@@ -1175,13 +1151,12 @@ class ForestSum():
                 new_forest_list.append(f_reduced)
                 new_coeff_list.append(c)
 
-        result = [(f, c) for f, c in zip(new_forest_list, new_coeff_list) if c != 0]
+        result = tuple((c, f) for c, f in zip(new_coeff_list, new_forest_list) if c != 0)
 
         if not result:
             return ZERO_FOREST_SUM
         else:
-            forests, coeffs = zip(*result)
-            return ForestSum(forests, coeffs)
+            return ForestSum(result)
 
     def factorial(self):
         """
@@ -1215,11 +1190,11 @@ class ForestSum():
             s = Tree([[[]],[]]) * Tree([[]]) + 2 * Tree([])
             s.antipode()
         """
-        out = self.coeff_list[0] * self.forest_list[0].antipode()
-        for i in range(1, len(self.forest_list)):
-            #out += self.coeff_list[i] * self.forest_list[i].antipode()
+        c, f = self.term_list[0]
+        out = c * f.antipode(False)
+        for c, f in self.term_list[1:]:
             out = out.__add__(
-                _mul(self.coeff_list[i], self.forest_list[i].antipode(False), False)
+                _mul(c, f.antipode(False), False)
             , False)
 
         if applyReduction:
@@ -1239,13 +1214,7 @@ class ForestSum():
             s = Tree([[[]],[]]) * Tree([[]]) + 2 * Tree([])
             s.sign() #Returns Tree([[[]],[]]) * Tree([[]]) - 2 * Tree([])
         """
-        new_coeffs = []
-        for i in range(len(self.coeff_list)):
-            if self.forest_list[i].nodes() % 2 == 0:
-                new_coeffs.append(self.coeff_list[i])
-            else:
-                new_coeffs.append(-self.coeff_list[i])
-        return ForestSum(self.forest_list, new_coeffs)
+        return ForestSum(tuple((-c if f.nodes() % 2 else c, f) for c,f in self.term_list))
 
     def signed_antipode(self):
         """
@@ -1279,21 +1248,16 @@ class ForestSum():
 
             t = 2 * Tree([[]]) * ForestSum([Tree([]), Tree([[],[]])], [1, -2])
         """
-        new_forest_list = None
-        new_coeff_list = None
         if isinstance(other, int) or isinstance(other, float):
-            new_forest_list = copy.copy(self.forest_list)
-            new_coeff_list = tuple(x * other for x in self.coeff_list)
+            new_term_list = tuple( (c * other, f) for c, f in self.term_list )
         elif isinstance(other, Tree) or isinstance(other, Forest):
-            new_forest_list = tuple(x * other for x in self.forest_list)
-            new_coeff_list = copy.copy(self.coeff_list)
+            new_term_list = tuple( (c, f * other) for c, f in self.term_list )
         elif isinstance(other, ForestSum):
-            new_forest_list = tuple(x * y for x in self.forest_list for y in other.forest_list)
-            new_coeff_list = tuple(x * y for x in self.coeff_list for y in other.coeff_list)
+            new_term_list = tuple( (c1 * c2, f1 * f2)  for c1, f1 in self.term_list for c2, f2 in other.term_list)
         else:
-            raise ValueError("oh no")
+            raise ValueError("Cannot multiply ForestSum and " + str(type(object)))
 
-        out = ForestSum(new_forest_list, new_coeff_list)
+        out = ForestSum(new_term_list)
         if apply_reduction:
             out = out.reduce()
         return out
@@ -1315,10 +1279,12 @@ class ForestSum():
 
             t = ( Tree([]) * Tree([[]]) + Tree([[],[]]) ) ** 3
         """
-        if not isinstance(n, int) or n < 0:
-            raise ValueError("ForestSum.__pow__ received invalid argument")
+        if not isinstance(n, int):
+            raise ValueError("Exponent in ForestSum.__pow__ must be an int, not " + str(type(n)))
+        if n < 0:
+            raise ValueError("Cannot raise ForestSum to a negative power")
         if n == 0:
-            return Tree(None).as_forest_sum()
+            return EMPTY_FOREST_SUM
         temp = self
         for i in range(n-1):
             temp = temp.__mul__(self, False)
@@ -1340,24 +1306,16 @@ class ForestSum():
 
             t = 2 + Tree([[]]) + ForestSum([Tree([]), Tree([[],[]])], [1, -2])
         """
-        new_forest_list = None
-        new_coeff_list = None
         if isinstance(other, int) or isinstance(other, float):
-            new_forest_list = self.forest_list + (EMPTY_FOREST,)
-            new_coeff_list = self.coeff_list + (other,)
-        elif isinstance(other, Tree):
-            new_forest_list = self.forest_list + (Forest((other,)),)
-            new_coeff_list = self.coeff_list + (1,)
-        elif isinstance(other, Forest):
-            new_forest_list = self.forest_list + (other,)
-            new_coeff_list = self.coeff_list + (1,)
+            new_term_list = self.term_list + ((other, EMPTY_FOREST),)
+        elif isinstance(other, Tree) or isinstance(other, Forest):
+            new_term_list = self.term_list + ((1, other),)
         elif isinstance(other, ForestSum):
-            new_forest_list = self.forest_list + other.forest_list
-            new_coeff_list = self.coeff_list + other.coeff_list
+            new_term_list = self.term_list + other.term_list
         else:
-            raise ValueError("oh no")
+            raise ValueError("Cannot add ForestSum and " + str(type(other)))
 
-        out = ForestSum(new_forest_list, new_coeff_list)
+        out = ForestSum(new_term_list)
 
         if applyReduction:
             out = out.reduce()
@@ -1375,7 +1333,7 @@ class ForestSum():
     def _equals(self, other):
         self_reduced = self.reduce()
         other_reduced = other.reduce()
-        return Counter(zip(self_reduced.forest_list, self_reduced.coeff_list)) == Counter(zip(other_reduced.forest_list, other_reduced.coeff_list))
+        return Counter(self_reduced.term_list) == Counter(other_reduced.term_list)
 
     
     def __eq__(self, other):
@@ -1405,7 +1363,7 @@ class ForestSum():
         elif isinstance(other, ForestSum):
             return self._equals(other)
         else:
-            raise ValueError("Invalid argument in Tree.__eq__()")
+            raise ValueError("Cannot check equality of ForestSum and " + str(type(other)))
 
     
     def apply(self, func, apply_reduction = True):
@@ -1428,7 +1386,7 @@ class ForestSum():
             s.apply(func)
         """
         out = 0
-        for f,c in zip(self.forest_list, self.coeff_list):
+        for c, f in self.term_list:
             term = 1
             for t in f.tree_list:
                 #term *= func(t)
@@ -1511,7 +1469,7 @@ class ForestSum():
             s1 = Tree([]) * Tree([[],[]]) + Tree([]) * Tree([]) * Tree([])
             s1.singleton_reduced() #Returns Tree([[],[]]) + Tree([])
         """
-        return ForestSum(tuple(x.singleton_reduced() for x in self.forest_list), self.coeff_list)
+        return ForestSum(tuple((c, f.singleton_reduced()) for c, f in self.term_list))
 
 
 ##############################################
@@ -1549,9 +1507,9 @@ def _sub(obj1, obj2, applyReduction = True):
 
 EMPTY_TREE = Tree(None)
 EMPTY_FOREST = Forest((EMPTY_TREE,))
-EMPTY_FOREST_SUM = ForestSum( (EMPTY_FOREST,), (1,) )
-ZERO_FOREST_SUM = ForestSum( (EMPTY_FOREST,), (0,) )
+EMPTY_FOREST_SUM = ForestSum( ( (1, EMPTY_FOREST), ) )
+ZERO_FOREST_SUM = ForestSum( ( (0, EMPTY_FOREST), ) )
 
 SINGLETON_TREE = Tree(tuple())
 SINGLETON_FOREST = Forest((SINGLETON_TREE,))
-SINGLETON_FOREST_SUM = ForestSum((SINGLETON_FOREST,), (1,))
+SINGLETON_FOREST_SUM = ForestSum( ( (1, SINGLETON_FOREST), ) )

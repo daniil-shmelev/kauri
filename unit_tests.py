@@ -19,7 +19,7 @@ class TreeTests(unittest.TestCase):
         self.assertEqual(repr(Tree([[[]], []]).as_forest_sum()), '1*[[[]], []]')
         self.assertEqual(repr(Tree(None)), "∅")
         self.assertEqual(repr(Forest([])), "∅")
-        self.assertEqual(repr(ForestSum([],[])), "0")
+        self.assertEqual(repr(ForestSum([])), "0")
 
     def test_conversion(self):
         for t in trees:
@@ -28,38 +28,38 @@ class TreeTests(unittest.TestCase):
 
     def test_add(self):
         t1 = Tree([]) + Tree([[],[]])
-        t2 = ForestSum([
-            Forest([Tree([])]),
-            Forest([Tree([[],[]])])
-        ], [1,1])
+        t2 = ForestSum((
+            (1, Forest([Tree([])])),
+            (1, Forest([Tree([[],[]])]))
+        ))
         self.assertEqual(t2, t1)
 
         t1 = Tree([]) - 2 * Tree([[], []])
-        t2 = ForestSum([
-            Forest([Tree([])]),
-            Forest([Tree([[], []])])
-        ], [1, -2])
+        t2 = ForestSum((
+            (1, Forest([Tree([])])),
+            (-2, Forest([Tree([[], []])]))
+        ))
         self.assertEqual(t2, t1)
 
         t1 = 1 + Tree([[], []])
-        t2 = ForestSum([
-            Forest([Tree(None)]),
-            Forest([Tree([[], []])])
-        ], [1, 1])
+        t2 = ForestSum((
+            (1, Forest([Tree(None)])),
+            (1, Forest([Tree([[], []])]))
+        ))
         self.assertEqual(t2, t1)
 
         t1 = Tree([[], []]) + 2
-        t2 = ForestSum([
-            Forest([Tree([[], []])]),
-            Forest([Tree(None)])
-        ], [1, 2])
+        t2 = ForestSum((
+            (1, Forest([Tree([[], []])])),
+            (2, Forest([Tree(None)]))
+        ))
         self.assertEqual(t2, t1)
 
         t1 = Tree([[], []]) + Forest([Tree([]), Tree([[]])])
-        t2 = ForestSum([
-            Forest([Tree([[], []])]),
-            Forest([Tree([]), Tree([[]])])
-        ], [1, 1])
+        t2 = ForestSum((
+            (1, Forest([Tree([[], []])])),
+            (1, Forest([Tree([]), Tree([[]])]))
+        ))
         self.assertEqual(t2, t1)
 
     def test_mul(self):
@@ -132,7 +132,7 @@ class TreeTests(unittest.TestCase):
         self.assertEqual(Tree([[[]], [], []]), Tree([[], [], [[]]]))
         self.assertEqual(Forest([Tree([[]]), Tree([]), Tree([[],[]])]), Forest([Tree([]), Tree([[],[]]), Tree([[]])]))
         self.assertEqual(Tree([]) - Tree([[]]), -Tree([[]]) + Tree([]))
-        self.assertEqual(ForestSum([Tree([[]]).as_forest(), Tree([]).as_forest(), Tree([]).as_forest()],[1,1,-1]), Tree([[]]).as_forest_sum())
+        self.assertEqual(ForestSum([(1, Tree([[]]).as_forest()), (1, Tree([]).as_forest()), (-1, Tree([]).as_forest())]), Tree([[]]).as_forest_sum())
 
     def test_equality_2(self):
         self.assertEqual(
@@ -152,7 +152,7 @@ class TreeTests(unittest.TestCase):
         self.assertEqual(hash(Tree([[[]], [], []])), hash(Tree([[], [], [[]]])))
         self.assertEqual(hash(Forest([Tree([[]]), Tree([]), Tree([[],[]])])), hash(Forest([Tree([]), Tree([[],[]]), Tree([[]])])))
         self.assertEqual(hash(Tree([]) - Tree([[]])), hash(-Tree([[]]) + Tree([])))
-        self.assertEqual(hash(ForestSum([Tree([[]]).as_forest(), Tree([]).as_forest(), Tree([]).as_forest()],[1,1,-1])), hash(Tree([[]]).as_forest_sum()))
+        self.assertEqual(hash(Tree([[]]) + Tree([]) - Tree([])), hash(Tree([[]]).as_forest_sum()))
 
     def test_mixed_arithmetic(self):
         t0 = Tree(None)
@@ -165,7 +165,7 @@ class TreeTests(unittest.TestCase):
 
         self.assertTrue(f1 == (t1 * t2))
 
-        s1 = ForestSum([f1, f2], [2, -1])  # 2*f1 - f2
+        s1 = ForestSum((  (2,f1), (-1, f2)  ))  # 2*f1 - f2
         s2 = s1 + 5 * t0
 
         self.assertTrue(s1 == (2 * f1 - t3), repr(s1) + ", " + repr(2 * f1 - t3))
