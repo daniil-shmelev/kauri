@@ -6,41 +6,10 @@ from typing import Union, Optional
 from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence, _to_tuple, _to_list
 
 def _counit(t):
-    return 1*Tree(None) if t.list_repr is None else 0 * Tree(None)
-
-def _forest_reduce(obj):
-    new_obj = obj
-    if len(obj) > 1:
-        new_obj = tuple(filter(lambda x: x.list_repr is not None, new_obj))
-        if len(new_obj) == 0:
-            new_obj = (Tree(None),)
-    return new_obj
-
-def _forest_sum_reduce(forest_list, coeff_list):
-    new_forest_list = []
-    new_coeff_list = []
-    for f, c in zip(forest_list, coeff_list):
-        try:
-            i = new_forest_list.index(f)
-            new_coeff_list[i] += c
-        except:
-            new_forest_list.append(f)
-            new_coeff_list.append(c)
-
-    zero_idx = []
-    for i in range(len(new_coeff_list)):
-        if new_coeff_list[i] == 0:
-            zero_idx.append(i)
-
-    for i in zero_idx[::-1]:
-        new_forest_list.pop(i)
-        new_coeff_list.pop(i)
-
-    if new_forest_list == []:
-        new_forest_list.append(EMPTY_FOREST)
-        new_coeff_list.append(0)
-
-    return tuple(new_forest_list), tuple(new_coeff_list)
+    if t.list_repr is None:
+        return EMPTY_FOREST_SUM
+    else:
+        return ZERO_FOREST_SUM
 
 ######################################
 @dataclass(frozen=True)
@@ -328,7 +297,7 @@ class Tree():
             raise ValueError("oh no")
 
         if apply_reduction:
-            out.reduce()
+            out = out.reduce()
         return out
 
     __rmul__ = __mul__
@@ -530,17 +499,19 @@ class Tree():
             t = Tree([[],[[]]])
             t.apply(func, 3)
         """
+        res = None
         if n == 0:
             return self.apply(_counit)
         elif n == 1:
             return self.apply(func, apply_reduction)
         elif n < 0:
-            return self.antipode().apply_power(func, -n, apply_reduction)
+            res = self.antipode().apply_power(func, -n, False)
         else:
             res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
-            if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
-                res = res.reduce()
-            return res
+
+        if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
+            res = res.reduce()
+        return res
 
     
     def apply_product(self, func1, func2, apply_reduction = True):
@@ -573,9 +544,7 @@ class Tree():
         if len(subtrees) == 0:
             return 0
         # out = branches[0].apply(func1) * subtrees[0].apply(func2)
-        temp1 = branches[0].apply(func1)
-        temp2 = subtrees[0].apply(func2)
-        out = _mul(temp1, temp2, False)
+        out = _mul(branches[0].apply(func1), subtrees[0].apply(func2), False)
         for i in range(1, len(subtrees)):
             #out += branches[i].apply(func1) * subtrees[i].apply(func2)
             out = _add(out, _mul(branches[i].apply(func1), subtrees[i].apply(func2), False), False)
@@ -605,7 +574,7 @@ class Forest():
     tree_list : Union[tuple, list]
 
     def __post_init__(self):
-        tuple_repr = _forest_reduce(tuple(self.tree_list))
+        tuple_repr = tuple(self.tree_list)
         object.__setattr__(self, 'tree_list', tuple_repr)
 
     def __copy__(self):
@@ -627,7 +596,12 @@ class Forest():
             f = Tree([[],[[]]]) * Tree(None)
             f.reduce() #Returns Tree([[],[[]]])
         """
-        return Forest(_forest_reduce(self.tree_list))
+        new_tree_list = self.tree_list
+        if len(new_tree_list) > 1:
+            new_tree_list = tuple(filter(lambda x: x.list_repr is not None, new_tree_list))
+            if len(new_tree_list) == 0:
+                new_tree_list = (Tree(None),)
+        return Forest(new_tree_list)
 
     def __repr__(self):
         if len(self.tree_list) == 0:
@@ -792,8 +766,8 @@ class Forest():
         elif isinstance(other, Forest):
             out = Forest(self.tree_list + other.tree_list)
         elif isinstance(other, ForestSum):
-            f = copy.deepcopy(other.forest_list)
-            c = copy.deepcopy(other.coeff_list)
+            f = copy.copy(other.forest_list)
+            c = copy.copy(other.coeff_list)
             f = [self.__mul__(x, False) for x in f]
             out = ForestSum(f, c)
         else:
@@ -826,7 +800,7 @@ class Forest():
             return Forest([Tree(None)])
         out = Forest(self.tree_list * n)
         if apply_reduction:
-            out.reduce()
+            out = out.reduce()
         return out
 
     
@@ -984,14 +958,15 @@ class Forest():
         res = None
         if n == 0:
             return self.apply(_counit)
-        if n == 1:
+        elif n == 1:
             return self.apply(func, apply_reduction)
         elif n < 0:
-            res = self.antipode().apply_power(func, -n, apply_reduction)
+            res = self.antipode().apply_power(func, -n, False)
         else:
             res = self.apply_product(func, lambda x: x.apply_power(func, n - 1, False), False)
+
         if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
-            res.reduce()
+            res = res.reduce()
         return res
 
     
@@ -1027,7 +1002,7 @@ class Forest():
             out = out * t.apply_product(func1, func2)
 
         if apply_reduction and not (isinstance(out, int) or isinstance(out, float)):
-            out.reduce()
+            out = out.reduce()
         return out
 
     def singleton_reduced(self):
@@ -1091,16 +1066,17 @@ class ForestSum():
             else:
                 raise ValueError("forest list must only contain forests and trees")
 
+        new_forest_list = tuple(new_forest_list)
+
         if self.coeff_list is None:
-            new_coeff_list = [1 for i in range(len(new_forest_list))]
+            new_coeff_list = tuple(1 for i in range(len(new_forest_list)))
         else:
             new_coeff_list = tuple(self.coeff_list)
             if len(new_coeff_list) != len(new_forest_list):
                 raise ValueError("forest list and coefficient list are of different lengths")
 
-        reduced_repr = _forest_sum_reduce(new_forest_list, new_coeff_list)
-        object.__setattr__(self, 'forest_list', reduced_repr[0])
-        object.__setattr__(self, 'coeff_list', reduced_repr[1])
+        object.__setattr__(self, 'forest_list', new_forest_list)
+        object.__setattr__(self, 'coeff_list', new_coeff_list)
 
     def __copy__(self):
         return self
@@ -1180,12 +1156,17 @@ class ForestSum():
         new_forest_list = []
         new_coeff_list = []
         for f, c in zip(self.forest_list, self.coeff_list):
-            try:
-                i = new_forest_list.index(f)
-                new_coeff_list[i] += c
-            except:
+            i = 0
+            for f2 in new_forest_list:
+                if f._equals(f2):
+                    break
+                i += 1
+
+            if i >= len(new_forest_list):
                 new_forest_list.append(f)
                 new_coeff_list.append(c)
+            else:
+                new_coeff_list[i] += c
 
         zero_idx = []
         for i in range(len(new_coeff_list)):
@@ -1242,7 +1223,7 @@ class ForestSum():
             , False)
 
         if applyReduction:
-            out.reduce()
+            out = out.reduce()
         return out
 
     
@@ -1338,11 +1319,11 @@ class ForestSum():
             raise ValueError("ForestSum.__pow__ received invalid argument")
         if n == 0:
             return Tree(None).as_forest_sum()
-        temp = copy.deepcopy(self)
+        temp = self
         for i in range(n-1):
             temp = temp.__mul__(self, False)
         if apply_reduction:
-            temp.reduce()
+            temp = temp.reduce()
         return temp
 
     def __add__(self, other, applyReduction = True):
@@ -1410,16 +1391,21 @@ class ForestSum():
             t1 * t2 + t3 == t3 + t2 * t1 # True
             t1 * t2 + t3 == t1 * t2 + t4 # True
         """
-        temp = copy.copy(other)
-        if isinstance(temp, int) or isinstance(temp, float):
-            temp = Tree(None).__mul__(temp, False)
-        elif not isinstance(temp, ForestSum):
-            temp = temp.as_forest_sum()
+        self_reduced = self.reduce()
+        other_reduced = other
 
-        f1 = self.forest_list
-        c1 = self.coeff_list
-        f2 = list(temp.forest_list)
-        c2 = list(temp.coeff_list)
+        if isinstance(other, Forest) or isinstance(other, ForestSum):
+            other_reduced = other.reduce()
+
+        if isinstance(other_reduced, int) or isinstance(other_reduced, float):
+            other_reduced = Tree(None).__mul__(other_reduced, False)
+        elif not isinstance(other_reduced, ForestSum):
+            other_reduced = other_reduced.as_forest_sum()
+
+        f1 = self_reduced.forest_list
+        c1 = self_reduced.coeff_list
+        f2 = list(other_reduced.forest_list)
+        c2 = list(other_reduced.coeff_list)
         for forest1,coeff1 in zip(f1, c1):
             flag = False
             for i in range(len(f2)):
@@ -1465,7 +1451,7 @@ class ForestSum():
             out = _add(out, _mul(term, c, False), False)
 
         if apply_reduction and not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
-            out.reduce()
+            out = out.reduce()
         return out
 
     def apply_power(self, func, n, apply_reduction = True):
@@ -1497,14 +1483,15 @@ class ForestSum():
         res = None
         if n == 0:
             return self.apply(_counit)
-        if n == 1:
+        elif n == 1:
             return self.apply(func, apply_reduction)
         elif n < 0:
-            res = self.antipode().apply_power(func, -n, apply_reduction)
+            res = self.antipode().apply_power(func, -n, False)
         else:
             res = self.apply_product(func, lambda x: x.apply_power(func, n - 1, False), False)
+
         if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
-            res.reduce()
+            res = res.reduce()
         return res
 
     
@@ -1545,7 +1532,7 @@ class ForestSum():
             out = _add(out, _mul(c, term, False), False)
 
         if apply_reduction and not (isinstance(out, int) or isinstance(out, float)):
-            out.reduce()
+            out = out.reduce()
         return out
 
     def singleton_reduced(self):

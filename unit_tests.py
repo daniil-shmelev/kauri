@@ -19,7 +19,7 @@ class TreeTests(unittest.TestCase):
         self.assertEqual(repr(Tree([[[]], []]).as_forest_sum()), '1*[[[]], []]')
         self.assertEqual(repr(Tree(None)), "∅")
         self.assertEqual(repr(Forest([])), "∅")
-        self.assertEqual(repr(ForestSum([],[])), "0*∅")
+        self.assertEqual(repr(ForestSum([],[])), "0")
 
     def test_conversion(self):
         for t in trees:
