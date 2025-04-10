@@ -1,17 +1,27 @@
 import math
 
+def _to_tuple(obj):
+    if isinstance(obj, list):
+        return tuple(_to_tuple(el) for el in obj)
+    return obj
+
+def _to_list(obj):
+    if isinstance(obj, tuple):
+        return list(_to_list(el) for el in obj)
+    return obj
+
 def _nodes(rep):
     if rep is None:
         return 0
-    elif rep == []:
+    elif rep == tuple():
         return 1
     else:
         return 1 + sum(_nodes(r) for r in rep)
 
 def _factorial(rep):
-    if rep == None:
+    if rep is None:
         return 1, 0
-    if rep == []:
+    if rep == tuple():
         return 1, 1
     else:
         f = 1
@@ -24,7 +34,7 @@ def _factorial(rep):
         return f, n
 
 def _sigma(rep):
-    if rep == None or rep == []:
+    if rep is None or rep == tuple():
         return 1
     rep_dict = {}
     unique_rep = []
@@ -43,14 +53,13 @@ def _sigma(rep):
         out *= math.factorial(k) * (_sigma(r) ** k)
     return out
 
-
 def _sorted_list_repr(rep):
     if rep is None:
         return None
-    elif rep == []:
-        return []
+    elif rep == tuple():
+        return tuple()
     else:
-        return sorted([_sorted_list_repr(r) for r in rep], reverse = True)
+        return tuple(sorted([_sorted_list_repr(r) for r in rep], reverse = True))
 
 def _list_repr_to_level_sequence(rep):
     if rep is None:
@@ -66,7 +75,7 @@ def _level_sequence_to_list_repr(levelSeq):
     if len(levelSeq) == 0:
         return None
     branch_layouts = _branch_level_sequences(levelSeq)
-    rep = [_level_sequence_to_list_repr(lay) for lay in branch_layouts]
+    rep = tuple(_level_sequence_to_list_repr(lay) for lay in branch_layouts)
     return rep
 
 def _branch_level_sequences(levelSeq):
