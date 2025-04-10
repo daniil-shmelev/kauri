@@ -2,7 +2,7 @@ import itertools
 import copy
 import math
 from dataclasses import dataclass
-from collections import Counter
+from collections import Counter, defaultdict
 from typing import Union, Optional
 from functools import lru_cache
 from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence, _to_tuple, _to_list
@@ -616,12 +616,17 @@ class Forest():
             f = Tree([[],[[]]]) * Tree(None)
             f.reduce() #Returns Tree([[],[[]]])
         """
-        new_tree_list = self.tree_list
-        if len(new_tree_list) > 1:
-            new_tree_list = tuple(filter(lambda x: x.list_repr is not None, new_tree_list))
-            if len(new_tree_list) == 0:
-                new_tree_list = (Tree(None),)
-        return Forest(new_tree_list)
+        if len(self.tree_list) <= 1:
+            return self
+
+        filtered = tuple(t for t in self.tree_list if t.list_repr is not None)
+
+        if not filtered:
+            return Forest((Tree(None),))
+        elif len(filtered) == len(self.tree_list):
+            return self
+        else:
+            return Forest(filtered)
 
     def __repr__(self):
         if len(self.tree_list) == 0:
@@ -1158,33 +1163,25 @@ class ForestSum():
         """
         new_forest_list = []
         new_coeff_list = []
+
         for f, c in zip(self.forest_list, self.coeff_list):
-            i = 0
-            for f2 in new_forest_list:
-                if f._equals(f2):
+            f_reduced = f.reduce()
+
+            for i, f2 in enumerate(new_forest_list):
+                if f_reduced._equals(f2):
+                    new_coeff_list[i] += c
                     break
-                i += 1
-
-            if i >= len(new_forest_list):
-                new_forest_list.append(f)
-                new_coeff_list.append(c)
             else:
-                new_coeff_list[i] += c
+                new_forest_list.append(f_reduced)
+                new_coeff_list.append(c)
 
-        zero_idx = []
-        for i in range(len(new_coeff_list)):
-            if new_coeff_list[i] == 0:
-                zero_idx.append(i)
+        result = [(f, c) for f, c in zip(new_forest_list, new_coeff_list) if c != 0]
 
-        for i in zero_idx[::-1]:
-            new_forest_list.pop(i)
-            new_coeff_list.pop(i)
-
-        if new_forest_list == []:
-            new_forest_list.append(Tree(None).as_forest())
-            new_coeff_list.append(0)
-
-        return ForestSum(new_forest_list, new_coeff_list)
+        if not result:
+            return ZERO_FOREST_SUM
+        else:
+            forests, coeffs = zip(*result)
+            return ForestSum(forests, coeffs)
 
     def factorial(self):
         """
