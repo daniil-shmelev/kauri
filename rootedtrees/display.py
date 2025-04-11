@@ -1,7 +1,7 @@
+import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from .trees import *
 from .utils import _branch_level_sequences
-
 
 def _get_node_coords(layout, x=0, y=0, scale=0.2):
     branch_gap = scale / 2
@@ -31,6 +31,9 @@ def _get_node_coords(layout, x=0, y=0, scale=0.2):
 
     return coords, width
 
+###############################################################
+#Plotly
+###############################################################
 
 def _get_tree_traces(layout, coords, scale=0.2):
     traces = []
@@ -64,7 +67,7 @@ def _get_tree_traces(layout, coords, scale=0.2):
     return traces
 
 
-def display(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None):
+def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None):
     tree_gap = scale / 2
     coeff_gap = scale / 2
 
@@ -141,3 +144,114 @@ def display(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None):
         "displayModeBar": False,
         "staticPlot": True
     })
+
+
+
+###############################################################
+#Matplotlib
+###############################################################
+
+def _display_tree(layout, coords, scale = 0.2):
+    branch_gap = scale / 2
+
+    if layout == []:
+        return
+
+    xroot, yroot = coords[0]
+
+    plt.scatter([xroot], [yroot], c='k', marker='o', linewidth= scale / 2)
+
+    branch_layouts = []
+    branch_coords = []
+    for idx, i in enumerate(layout[1:]):
+        if i == 1:
+            branch_layouts.append([0])
+            branch_coords.append([coords[idx+1]])
+        else:
+            branch_layouts[-1].append(i - 1)
+            branch_coords[-1].append(coords[idx+1])
+
+    for lay, c in zip(branch_layouts, branch_coords):
+        plt.plot([xroot, c[0][0]], [yroot, c[0][1]], color = "black")
+        _display_tree(lay, c, scale)
+
+def display_plt(forest_sum, scale = 0.2, fig_size = (15, 1), file_name = None):
+    tree_gap = scale / 4
+    coeff_gap = scale / 2
+
+    plt.figure(figsize = fig_size)
+    if not isinstance(forest_sum, ForestSum):
+        if isinstance(forest_sum, int) or isinstance(forest_sum, float):
+            forest_sum = Tree(None) * forest_sum
+        else:
+            forest_sum = forest_sum.as_forest_sum()
+    if forest_sum == ForestSum([]):
+        plt.text(0, 0, str(0))
+        h = 1
+    else:
+        x, y = 0, 0
+        h = 0
+
+        for i, (c, f) in enumerate(forest_sum.term_list):
+            if i > 0:
+                c = abs(c)
+            plt.text(x, y, str(c))
+            x += (len(str(c)) + 1) * coeff_gap
+            for t in f.tree_list:
+                c, w = _get_node_coords(t.level_sequence(), x, 0, scale)
+                c = [(c_[0] + w / 2, c_[1]) for c_ in c]
+                _display_tree(t.level_sequence(), c, scale)
+                x += w + tree_gap
+                if len(c) > 0:
+                    h_ = max(c_[1] for c_ in c)
+                    h = max(h, h_)
+            x += coeff_gap / 2
+            if i < len(forest_sum.term_list) - 1:
+                plt.text(x, y, "+" if forest_sum.term_list[i + 1][0] > 0 else "-")
+                x += coeff_gap*2
+
+    plt.xlim(- 1, 15)
+    plt.ylim(-0.5, h + 0.5)
+    plt.xticks([])
+    plt.yticks([])
+    plt.axis('off')
+    plt.tight_layout()
+
+    if file_name is not None:
+        plt.savefig(file_name + ".png")
+
+    plt.show()
+
+
+###############################################################
+#Display
+###############################################################
+
+def display(forest_sum, scale = None, fig_size = None, file_name = None, use_plt = True):
+    """
+    Plots a forest sum.
+
+    :param forest_sum: Forest sum to plot
+    :type forest_sum: ForestSum
+    :param scale: scale of the plot (default = 0.2 if use_plt is True otherwise 0.7)
+    :type scale: float
+    :param fig_size: figure size (default = (15,1) if use_plt is True otherwise (1500,50))
+    :type fig_size: tuple
+    :param file_name: If file_name is not None, will save the plot as a png file with the name file_name (default = None).
+    :type file_name: string
+    :param use_plt: If True uses matplotlib (default), otherwise uses Plotly. Plotly is quicker, but results in larger
+        file sizes when used in notebooks.
+    :type use_plt: bool
+    """
+    if use_plt:
+        if scale is None:
+            scale = 0.2
+        if fig_size is None:
+            fig_size = (15,1)
+        display_plt(forest_sum, scale, fig_size, file_name)
+    else:
+        if scale is None:
+            scale = 0.7
+        if fig_size is None:
+            fig_size = (1500, 50)
+        display_plotly(forest_sum, scale, fig_size, file_name)
