@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from collections import Counter, defaultdict
 from typing import Union, Optional
 from functools import cache
-from .utils import _nodes, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence, _to_tuple, _to_list
+from .utils import _nodes, _height, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence, _to_tuple, _to_list, _next_layout, _level_sequence_to_list_repr
 
 def _counit(t):
     if t.list_repr is None:
@@ -61,7 +61,6 @@ class Tree():
             return EMPTY_FOREST
         return Forest(tuple(Tree(rep) for rep in self.list_repr))
 
-    @cache
     def nodes(self):
         """
         Returns the number of nodes in a tree, :math:`|t|`
@@ -76,7 +75,20 @@ class Tree():
         """
         return _nodes(self.list_repr)
 
-    @cache
+    def height(self):
+        """
+        Returns the height of a tree, given by the number of nodes in the longest walk from the root to a leaf.
+
+        :return: Height
+        :rtype: int
+
+        Example usage::
+
+            t = Tree([[[]],[]])
+            t.height() #Returns 3
+        """
+        return _height(self.list_repr)
+
     def factorial(self):
         """
         Compute the tree factorial, :math:`t!`
@@ -91,7 +103,6 @@ class Tree():
         """
         return _factorial(self.list_repr)[0]
 
-    @cache
     def sigma(self):
         """
         Computes the symmetry factor :math:`\\sigma(t)`, the order of the symmetric group of the tree. For a tree
@@ -569,6 +580,25 @@ class Tree():
             out = out.reduce()
         return out
 
+    def __next__(self):
+        """
+        Generates the next tree with respect to the lexicographic order.
+
+        :return: Next tree
+        :rtype: Tree
+
+        Example usage::
+
+                t = Tree([[],[]])
+                next(t) # returns Tree([[[[]]]])
+        """
+        if self.list_repr == None:
+            return Tree([])
+
+        layout = self.level_sequence()
+        next = _next_layout(layout)
+        return Tree(_level_sequence_to_list_repr(next))
+
 
 ######################################
 @dataclass(frozen=True)
@@ -638,6 +668,9 @@ class Forest():
         r += repr(self.tree_list[-1]) + ""
         return r
 
+    def __iter__(self):
+        for t in self.tree_list:
+            yield t
     
     def join(self):
         """
@@ -1078,6 +1111,10 @@ class ForestSum():
             r += repr(c) + "*" + repr(f) + " + "
         r += repr(self.term_list[-1][0]) + "*" + repr(self.term_list[-1][1])
         return r
+
+    def __iter__(self):
+        for c,f in self.term_list:
+            yield c,f
 
     def nodes(self):
         """

@@ -13,7 +13,7 @@ Tree
 ========================
 .. autoclass:: rootedtrees.trees.Tree
    :members:
-   :special-members: __mul__, __pow__, __add__, __eq__
+   :special-members: __mul__, __pow__, __add__, __eq__, __next__
 
 Forest
 ========================
@@ -39,7 +39,6 @@ Maps
 Tree Generation
 ========================
 
-.. autofunction:: rootedtrees.gentrees.next_tree
 .. autofunction:: rootedtrees.gentrees.trees_of_order
 .. autofunction:: rootedtrees.gentrees.trees_up_to_order
 

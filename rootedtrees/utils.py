@@ -21,6 +21,15 @@ def _nodes(rep):
         return 1 + sum(_nodes(r) for r in rep)
 
 @cache
+def _height(rep):
+    if rep is None:
+        return 0
+    elif rep == tuple():
+        return 1
+    else:
+        return 1 + max(_height(r) for r in rep)
+
+@cache
 def _factorial(rep):
     if rep is None:
         return 1, 0
@@ -90,6 +99,23 @@ def _branch_level_sequences(levelSeq):
         else:
             branch_layouts[-1].append(i - 1)
     return branch_layouts
+
+def _next_layout(layout):
+    p = len(layout) - 1
+    while layout[p] == 1:
+        p -= 1
+
+    if p == 0:
+        n = len(layout)
+        return list(range(n + 1))
+
+    q = p - 1
+    while layout[q] != layout[p] - 1:
+        q -= 1
+    result = list(layout)
+    for i in range(p, len(result)):
+        result[i] = result[i - p + q]
+    return result
 
 # ##############################################
 # ##############################################

@@ -178,6 +178,11 @@ class TreeTests(unittest.TestCase):
             self.assertEqual(n, t.as_forest().nodes(), repr(t) + " Forest")
             self.assertEqual(n, t.as_forest_sum().nodes(), repr(t) + " Forest")
 
+    def test_height(self):
+        nums = [0,1,2,2,3,2,3,3,4]
+        for t, n in zip(trees, nums):
+            self.assertEqual(n, t.height(), repr(t))
+
     def test_sigma(self):
         vals = [1, 1, 1, 1, 2, 1, 2, 1, 6, 1, 2, 1, 1, 6, 2, 2, 2, 24]
         i = 0

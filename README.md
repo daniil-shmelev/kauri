@@ -28,7 +28,7 @@ The implementation works with three objects,
 - Forest - a product of trees
 - ForestSum - a linear combination of forests
 
-and supports standard arithmetic operations *, +, - with any combination of the above structures and scalars. For example:
+which are immutable, hashable, and support standard arithmetic operations *, +, - with any combination of the above structures and scalars. For example:
 
 ```python
 t0 = Tree(None) #The empty tree
@@ -41,7 +41,7 @@ f2 = Forest([t3])
 
 print(f1 == (t1 * t2)) #This will evaluate to True
 
-s1 = ForestSum([f1, f2], [2, -1]) #2*f1 - f2
+s1 = ForestSum([(2,f1), (-1,f2)]) #2*f1 - f2
 s2 = s1 + 5*t0
 
 print(s1 == (2*f1 - t3)) #This will evaluate to True

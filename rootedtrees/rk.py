@@ -495,12 +495,12 @@ class RK:
 
     def elementary_weights(self, t):
         """
-        Returns the elementary weight of the Runge-Kutta method at tree :math:`t`.
+        Returns the elementary weight function of the Runge-Kutta method applied to a Tree, Forest or ForestSum :math:`t`.
 
-        :type t: Tree
+        :param t: Tree, Forest or ForestSum
         :rtype: float
         """
-        return self._elementary_weights(t.list_repr)
+        return t.apply(lambda x : self._elementary_weights(x.list_repr))
 
     def order(self, tol = 1e-15):
         """
