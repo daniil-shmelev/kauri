@@ -1,4 +1,4 @@
-RootedTrees
+Kauri
 ========================
 
 .. note::
@@ -11,43 +11,43 @@ RootedTrees
 
 Tree
 ========================
-.. autoclass:: rootedtrees.trees.Tree
+.. autoclass:: kauri.trees.Tree
    :members:
    :special-members: __mul__, __pow__, __add__, __eq__, __next__
 
 Forest
 ========================
 
-.. autoclass:: rootedtrees.trees.Forest
+.. autoclass:: kauri.trees.Forest
    :members:
    :special-members: __mul__, __pow__, __add__, __eq__
 
 ForestSum
 ========================
 
-.. autoclass:: rootedtrees.trees.ForestSum
+.. autoclass:: kauri.trees.ForestSum
    :members:
    :special-members: __mul__, __pow__, __add__, __eq__
 
 Maps
 ========================
 
-.. autoclass:: rootedtrees.maps.Map
+.. autoclass:: kauri.maps.Map
    :members:
    :special-members: __mul__, __pow__, __add__, __matmul__
 
 Tree Generation
 ========================
 
-.. autofunction:: rootedtrees.gentrees.trees_of_order
-.. autofunction:: rootedtrees.gentrees.trees_up_to_order
+.. autofunction:: kauri.gentrees.trees_of_order
+.. autofunction:: kauri.gentrees.trees_up_to_order
 
 Runge--Kutta Schemes
 ========================
 
-.. autofunction:: rootedtrees.rk.RK_symbolic_weight
-.. autofunction:: rootedtrees.rk.RK_order_cond
+.. autofunction:: kauri.rk.RK_symbolic_weight
+.. autofunction:: kauri.rk.RK_order_cond
 
-.. autoclass:: rootedtrees.rk.RK
+.. autoclass:: kauri.rk.RK
    :members:
    :special-members: __mul__, __pow__, __add__

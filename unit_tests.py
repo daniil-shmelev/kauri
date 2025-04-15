@@ -1,5 +1,5 @@
 import unittest
-from rootedtrees import *
+from kauri import *
 
 trees = [Tree(None),
          Tree([]),

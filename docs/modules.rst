@@ -1,7 +1,7 @@
-RootedTrees
+Kauri
 ===========
 
 .. toctree::
    :maxdepth: 4
 
-   rootedtrees
+   kauri
