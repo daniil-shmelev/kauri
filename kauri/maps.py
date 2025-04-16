@@ -56,6 +56,14 @@ class Map:
             raise
         return self
 
+    def __ixor__(self, other):
+        func_ = self.func
+        if isinstance(other, Map):
+            self.func = lambda x: x.apply_cem_product(func_, other.func)
+        else:
+            raise
+        return self
+
     def __mul__(self, other):
         """
         Returns the product of maps, defined by
@@ -80,6 +88,11 @@ class Map:
         """
         temp = copy.deepcopy(self)
         temp *= other
+        return temp
+
+    def __xor__(self, other):
+        temp = copy.deepcopy(self)
+        temp ^= other
         return temp
 
     def __iadd__(self, other):
@@ -137,11 +150,74 @@ class Map:
             consider defining the composition manually as ``Map(lambda x : self(x).apply(other, apply_reduction = False))``
             and calling ``.reduce()`` on the final result of the computation.
         """
-        return Map(lambda x : other(x).apply(self))
+        return Map(lambda x : (other(x) * Tree(None)).apply(self))
+
+    def modified_equation(self):
+        """
+        Assuming the given map :math:`\\phi` corresponds to the elementary weights function of a B-series method, returns the map
+        corresponding to the elementary weights function of the modified (B-series) vector field, :math:`\\widetilde{\\phi}`,
+        defined by
+
+        .. math::
+
+            (\\widetilde{\\phi} \\star e)(t) = \\phi(t)
+
+        where :math:`e(t) = 1 / t!` is the elementary weights function of the exact solution, or equivalently
+
+        .. math::
+
+            \\widetilde{\\phi}(t) = (\\phi \\star e^{\\star (-1)})(t)
+
+        where :math:`\\mathrm{Id}` is the identity map on trees and :math:`e^{\\star (-1)} = e \\circ S_{CEM}` :cite:`chartier2010algebraic`.
+
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :return: Elementary weights map of the modified vector field
+        """
+        return self.logarithm()
+
+    def preprocessed_integrator(self, apply_reduction = True):
+        #TODO
+        return exact_weights ^ (self @ S_CEM)
+
+    def exponential(self):
+        """
+        Returns the exponential of the map, defined as
+
+        .. math::
+
+            \\exp(\\phi) = \\phi \\star e
+
+        where :math:`e(t) = 1 / t!` is the elementary weights function of the exact solution :cite:`chartier2010algebraic, murua2006hopf`.
+
+        :return: Exponential map
+        :rtype: Map
+        """
+        return self ^ exact_weights
+
+    def logarithm(self):
+        """
+        Returns the logarithm of the map, defined as
+
+        .. math::
+
+            \\log(\\phi) = \\phi \\star e^{\\star (-1)}
+
+        where :math:`e(t) = 1 / t!` is the elementary weights function of the exact solution and :math:`e^{\\star (-1)} = e \\circ S_{CEM}`
+        :cite:`chartier2010algebraic, murua2006hopf`.
+
+        :return: Exponential map
+        :rtype: Map
+        """
+        return self ^ (exact_weights @ S_CEM)
 
 
 # Some common examples provided for convenience
 ident = Map(lambda x : x)
 counit = Map(lambda x : 1 if x == Tree(None) else 0)
+counit_CEM = Map(lambda x : 1 if x == Tree([]) else 0)
 S = Map(lambda x : x.antipode())
+S_CEM = Map(lambda x : x.cem_antipode())
 exact_weights = Map(lambda x : 1. / x.factorial())
+
+omega = Map(lambda x : 1 if x == Tree(None) or x == Tree([]) else 0).logarithm()

@@ -1,5 +1,6 @@
 import math
 from functools import cache
+import sympy as sp
 
 def _to_tuple(obj):
     if isinstance(obj, list):
@@ -116,6 +117,20 @@ def _next_layout(layout):
     for i in range(p, len(result)):
         result[i] = result[i - p + q]
     return result
+
+def _contract_single_edge(rep, edge):
+    # An edge is given by a list or tuple
+    # E.g., for the tree [[[]],[]] the edge connecting the heighest leaf is denoted (0,0). The right-most edge is (1)
+    pass
+
+def _rationalise(c, tol = 1e-10):
+    return str(sp.nsimplify(c, tolerance=tol, rational = True))
+
+def _str(c, rationalise = False, tol = 1e-10):
+    if rationalise:
+        return _rationalise(c, tol)
+    else:
+        return str(c)
 
 # ##############################################
 # ##############################################

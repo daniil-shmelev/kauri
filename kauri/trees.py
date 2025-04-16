@@ -168,7 +168,7 @@ class Tree():
         """
         return math.factorial(self.nodes()) / self.sigma()
 
-    def split(self):
+    def coproduct(self):
         """
         Returns the coproduct of a tree,
 
@@ -195,7 +195,7 @@ class Tree():
         forest_list = []
         for rep in self.list_repr:
             t = Tree(rep)
-            s, b = t.split()
+            s, b = t.coproduct()
             tree_list.append(s)
             forest_list.append(b)
 
@@ -210,6 +210,77 @@ class Tree():
             for f in p:
                 t += f.tree_list
             new_forest_list.append(Forest(t))
+
+        return new_tree_list, new_forest_list
+
+    def cem_coproduct(self):
+        """
+        Computes the Calaque, Ebrahimi-Fard and Manchon :cite:`calaque2011two` coproduct on trees, given by
+
+        .. math::
+
+            \\Delta_{CEM}(t) = \\sum (t \\setminus p) \\otimes p_t,
+
+        where, for a tree :math:`t` with edge set :math:`E`, the sum is over all sets of edges :math:`p \\subset E`, and
+
+        - :math:`t \\setminus p` is the forest formed by removing all edges in :math:`p` from the tree :math:`t`,
+        - :math:`p_t` is the tree formed by contracting each tree of :math:`t \\setminus p` to a single vertex and re-establishing the edges in :math:`p`. :cite:`chartier2010algebraic`
+
+        :return: Values of :math:`p_t`
+        :rtype: list
+        :return: Values of :math:`t \\setminus p`
+        :rtype: list
+
+        Example usage::
+
+            t = Tree([[[]],[]])
+            t.partition()
+        """
+        if self.list_repr is None:
+            raise
+        if self.list_repr == tuple():
+            return [SINGLETON_TREE], [SINGLETON_FOREST]
+
+        tree_list = []
+        forest_list = []
+        for rep in self.list_repr:
+            t = Tree(rep)
+            s, b = t.cem_coproduct()
+            tree_list.append(s)
+            forest_list.append(b)
+
+        new_tree_list = []
+        new_forest_list = []
+
+        num_branches = len(tree_list)
+
+        for edges in itertools.product([0, 1], repeat=num_branches):
+
+            for p in itertools.product(*tree_list):
+                rep = []
+                for i,t in enumerate(p):
+                    if t.list_repr is None:
+                        continue
+                    if edges[i]:
+                        rep += t.list_repr
+                    else:
+                        rep += [t.list_repr]
+                new_tree_list.append(Tree(rep))
+
+            for p in itertools.product(*forest_list):
+                #Must ensure that the first tree in the forest is connected to the root
+                #If no such tree, add an empty tree to the forest to signify this
+                #Forest constructor does not call Forest.reduce(), meaning this empty tree will survive
+                t = []
+                root_tree_repr = []
+                for i,f in enumerate(p):
+                    if edges[i]:
+                        root_tree_repr += [f.tree_list[0].list_repr]
+                        t += f.tree_list[1:]
+                    else:
+                        t += f.tree_list
+                t = [Tree(root_tree_repr)] + t
+                new_forest_list.append(Forest(t))
 
         return new_tree_list, new_forest_list
 
@@ -238,7 +309,7 @@ class Tree():
         elif self.list_repr == tuple():
             return -SINGLETON_FOREST_SUM
         
-        subtrees, branches = self.split()
+        subtrees, branches = self.coproduct()
         out = -self.as_forest_sum()
         for i in range(len(subtrees)):
             if subtrees[i]._equals(self) or subtrees[i]._equals(EMPTY_TREE):
@@ -247,6 +318,33 @@ class Tree():
             out = out.__sub__(
                 branches[i].antipode(False).__mul__(subtrees[i], False)
                   , False)
+
+        if apply_reduction:
+            out = out.reduce()
+        return out
+
+    @cache
+    def cem_antipode(self, apply_reduction=True):
+        # TODO
+        if self.list_repr is None:
+            return ZERO_FOREST_SUM
+        elif self.list_repr == tuple():
+            return SINGLETON_FOREST_SUM
+
+        subtrees, branches = self.cem_coproduct()
+        out = -self.as_forest_sum()
+        for i in range(len(subtrees)):
+            if branches[i]._equals(self.as_forest()) or subtrees[i]._equals(self):
+                continue
+            # out -= branches[i].cem_antipode() * subtrees[i]
+            # out = out.__sub__(
+            #     branches[i].cem_antipode(False).__mul__(subtrees[i], False)
+            #     , False)
+            out = out.__sub__(
+                subtrees[i].cem_antipode(False).__mul__(branches[i], False)
+                , False)
+
+        out = out.singleton_reduced()
 
         if apply_reduction:
             out = out.reduce()
@@ -564,9 +662,9 @@ class Tree():
             func2 = lambda x : x.antipode()
 
             t = Tree([[],[[]]])
-            t.apply(func1, func2) #Returns t
+            t.apply_product(func1, func2) #Returns t
         """
-        subtrees, branches = self.split()
+        subtrees, branches = self.coproduct()
         #a(branches) * b(subtrees)
         if len(subtrees) == 0:
             return 0
@@ -579,6 +677,90 @@ class Tree():
         if apply_reduction and not (isinstance(out, int) or isinstance(out, float)):
             out = out.reduce()
         return out
+
+    @cache
+    def apply_cem_product(self, func1, func2, apply_reduction=True):
+        """
+        Apply the Calaque, Ebrahimi-Fard and Manchon product of two functions, defined by
+
+        .. math::
+
+            (f \\star g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta_{CEM} (t).
+
+        For the definition of :math:`\\Delta_{CEM}`, see the documentation for `Tree.cem_coproduct()`.
+
+        :param func1: A function defined on trees
+        :type func1: callable
+        :param func2: A function defined on trees
+        :type func2: callable
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :type apply_reduction: bool
+        :return: Value of the product of functions evaluated on the tree
+
+        Example usage::
+
+            func1 = lambda x : x
+            func2 = lambda x : x.antipode()
+
+            t = Tree([[],[[]]])
+            t.apply_cem_product(func1, func2)
+        """
+        if self.list_repr is None:
+            return func2(EMPTY_TREE)
+
+        subtrees, branches = self.cem_coproduct()
+        # a(branches) * b(subtrees)
+        if len(subtrees) == 0:
+            raise
+        # out = branches[0].apply(func1) * subtrees[0].apply(func2)
+        out = _mul(branches[0].apply(func1), subtrees[0].apply(func2), False)
+        for i in range(1, len(subtrees)):
+            # out += branches[i].apply(func1) * subtrees[i].apply(func2)
+            out = _add(out, _mul(branches[i].apply(func1), subtrees[i].apply(func2), False), False)
+
+
+        if not (isinstance(out, int) or isinstance(out, float)):
+            out = out.singleton_reduced()
+            if apply_reduction:
+                out = out.reduce()
+        return out
+
+    def modified_equation_term(self, apply_reduction = True):
+        """
+        Returns a forest sum representing a term of the modified equation used in backward error analysis.\n\n
+
+        As described in :cite:`chartier2010algebraic`, given a B-series method :math:`\\Phi_h(y) = B(\\phi, hf, y)`,
+        the modified differential equation is a B-series vector field :math:`hf_h(y) = B(\\widetilde{\\phi}, hf, y)` defined
+        by
+
+        .. math::
+
+            (\\widetilde{\\phi} \\star e)(t) = \\phi(t)
+
+        where :math:`e(t) = 1 / t!` is the elementary weights function of the exact solution, or equivalently
+
+        .. math::
+
+            \\widetilde{\\phi}(t) = (\\phi \\star e^{\\star (-1)})(t) = \\phi( (\\mathrm{Id} \\star e^{\\star (-1)})(t))
+
+        where :math:`\\mathrm{Id}` is the identity map on trees and :math:`e^{\\star (-1)} = e \\circ S_{CEM}`. This function
+        returns :math:`(\\mathrm{Id} \\star e^{\\star (-1)})(t)`, such that applying a map :math:`\\phi` to the result of this
+        function returns :math:`\\widetilde{\\phi}`.
+
+        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
+            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
+        :return: :math:`(\\mathrm{Id} \\star e^{\\star (-1)})(t)`
+        """
+        ident_ = lambda x : x
+        exact_weights_inverse_ = lambda x: x.cem_antipode(False).apply(lambda x : 1. / x.factorial())
+        return self.apply_cem_product(ident_, exact_weights_inverse_, apply_reduction)
+
+    def preprocessed_integrator_term(self, apply_reduction = True):
+        #TODO
+        exact_weights_ = lambda x : 1. / x.factorial()
+        ident_inverse_ = lambda x : x.cem_antipode(False)
+        return self.apply_cem_product(exact_weights_, ident_inverse_, apply_reduction)
 
     def __next__(self):
         """
@@ -759,6 +941,22 @@ class Forest():
         for i in range(1, len(self.tree_list)):
             #out *= self.treeList[i].antipode()
             out = out.__mul__(self.tree_list[i].antipode(False), False)
+
+        if apply_reduction:
+            out = out.reduce()
+        return out
+
+    def cem_antipode(self, apply_reduction=True):
+        # TODO
+        if self.tree_list is None or self.tree_list == tuple():
+            raise ValueError("Forest is misspecified in Forest.cem_antipode(): self.tree_list is empty")
+        elif len(self.tree_list) == 1 and self.tree_list[0]._equals(SINGLETON_TREE):
+            return SINGLETON_FOREST_SUM
+
+        out = self.tree_list[0].cem_antipode(False)
+        for i in range(1, len(self.tree_list)):
+            # out *= self.treeList[i].cem_antipode()
+            out = out.__mul__(self.tree_list[i].cem_antipode(False), False)
 
         if apply_reduction:
             out = out.reduce()
@@ -1029,6 +1227,10 @@ class Forest():
         """
         self.apply(lambda x : x.apply_product(func1, func2, apply_reduction))
 
+    def apply_substitution_product(self, func1, func2, apply_reduction = True):
+        #TODO
+        self.apply(lambda x : x.apply_cem_product(func1, func2, apply_reduction))
+
     def singleton_reduced(self):
         """
         Removes redundant occurrences of the single-node tree in the forest. If the forest contains a tree with more than
@@ -1211,7 +1413,7 @@ class ForestSum():
         return self.apply(lambda x : x.factorial(), False)
 
     
-    def antipode(self, applyReduction = True):
+    def antipode(self, apply_reduction = True):
         """
         Apply the antipode to the forest sum as a multiplicative linear map. For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`,
         returns :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} S(t_{ij})`.
@@ -1234,10 +1436,22 @@ class ForestSum():
                 _mul(c, f.antipode(False), False)
             , False)
 
-        if applyReduction:
+        if apply_reduction:
             out = out.reduce()
         return out
 
+    def cem_antipode(self, apply_reduction=True):
+        # TODO
+        c, f = self.term_list[0]
+        out = c * f.cem_antipode(False)
+        for c, f in self.term_list[1:]:
+            out = out.__add__(
+                _mul(c, f.cem_antipode(False), False)
+                , False)
+
+        if apply_reduction:
+            out = out.reduce()
+        return out
     
     def sign(self):
         """
@@ -1492,6 +1706,10 @@ class ForestSum():
             s.apply(func1, func2) #Returns s
         """
         return self.apply(lambda x : x.apply_product(func1, func2, apply_reduction))
+
+    def apply_substitution_product(self, func1, func2, apply_reduction=True):
+        #TODO
+        return self.apply(lambda x: x.apply_cem_product(func1, func2, apply_reduction))
 
     def singleton_reduced(self):
         """

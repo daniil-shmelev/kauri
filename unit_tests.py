@@ -296,6 +296,29 @@ class TreeTests(unittest.TestCase):
         for t in trees:
             self.assertEqual(counit(t), t.apply_product(func3_, func_neg_3_))
 
+    def test_partition(self):
+        t = [
+            Tree([]),
+             Tree([[]]),
+             Tree([[],[]]),
+             Tree([[[]]]),
+             Tree([[[],[]]])
+        ]
+        p = [
+            ([Tree([])],[Tree([])]),
+            ([Tree([]), Tree([[]])], [Tree([[]]), Tree([])**2]),
+            ([Tree([]), Tree([[]]), Tree([[],[]])], [Tree([[],[]]), 2*Tree([])*Tree([[]]), Tree([])**3]),
+            ([Tree([]), Tree([[]]), Tree([[[]]])], [Tree([[[]]]), 2*Tree([])*Tree([[]]), Tree([])**3]),
+            ([Tree([]), Tree([[]]), Tree([[]]), Tree([[]]), Tree([[],[]]), Tree([[[]]]), Tree([[[]]]), Tree([[[],[]]])],
+             [Tree([[[],[]]]), Tree([]) * Tree([[],[]]), Tree([]) * Tree([[[]]]), Tree([]) * Tree([[[]]]), Tree([[]]) * Tree([])**2, Tree([[]]) * Tree([])**2, Tree([[]]) * Tree([])**2, Tree([])**4])
+        ]
+
+        for t_, p_ in zip(t,p):
+            t_p = t_.cem_coproduct()
+            a = sum(x * y for x,y in zip(p_[0], p_[1]))
+            b = sum(x * y for x,y in zip(t_p[0], t_p[1]))
+            self.assertEqual(a,b)
+
 class MapTests(unittest.TestCase):
     def test_mul(self):
         f = Map(lambda x : x)
@@ -358,11 +381,89 @@ class MapTests(unittest.TestCase):
         for t in trees:
             self.assertEqual((f @ S)(t), f(t.antipode()))
 
-    def compose_scalar(self):
+    def test_compose_scalar(self):
         f = lambda x : x.factorial()
 
         for t in trees:
             self.assertEqual(f(t), (counit @ f)(t))
+
+    def test_inverse_identity(self):
+        a = Map(lambda x : 1 if x == Tree(None) or x == Tree([]) else 0) ** (-1)
+        for t in trees:
+            self.assertEqual((-1)**t.nodes(), a(t), repr(t))
+
+class CEMTests(unittest.TestCase):
+
+    def test_antipode(self):
+        trees_ = [
+            Tree([]),
+            Tree([[]]),
+            Tree([[],[]]),
+            Tree([[[]]])
+        ]
+        antipodes_ = [
+            Tree([]),
+            -Tree([[]]),
+            -Tree([[],[]]) + 2 * Tree([[]])**2,
+            -Tree([[[]]]) + 2 * Tree([[]])**2
+        ]
+        for t, a in zip(trees_, antipodes_):
+            self.assertEqual(a, t.cem_antipode())
+
+    def test_antipode_property(self):
+        for t in trees[1:]:
+            self.assertEqual(counit_CEM(t) * Tree([]), t.apply_cem_product(S_CEM, ident), repr(t))
+
+    def test_antipode_squared(self):
+        f = Map(lambda x : x.cem_antipode())
+        g = f @ f
+        for t in trees[1:]:
+            self.assertEqual(t, g(t))
+
+    def test_antipode_squared_2(self):
+        f = Map(lambda x: x.cem_antipode())
+        g = f @ f
+
+        for t in trees[1:]:
+            self.assertEqual(0, ((ident - g) ** t.nodes()) (t))
+
+    def test_antipode_squared_3(self):
+        f = Map(lambda x: x.cem_antipode())
+        g = f @ f
+
+        h = Map(lambda x : ((ident - g)**(x.nodes() - 1))(x))
+        m = (ident + f) @ h
+
+        for t in trees[1:]:
+            self.assertEqual(0, m(t))
+
+    def test_substitution_relations(self):
+        b = Map(lambda x : x.nodes())
+        b1 = Map(lambda x : x.nodes() ** 2)
+        b2 = Map(lambda x : x.factorial() - 1)
+
+        a = Map(lambda x : x.nodes() + 1)
+        a1 = Map(lambda x : x.nodes() ** 2 + 1)
+        a2 = Map(lambda x : x.factorial())
+
+        m1 = (b1 ^ b2) ^ a
+        m2 = b1 ^ (b2 ^ a)
+
+        m3 = b ^ (a1 * a2)
+        m4 = (b ^ a1) * (b ^ a2)
+
+        m5 = (b ^ a) ** (-1)
+        m6 = b ^ (a ** (-1))
+
+        for t in trees[1:]:
+            self.assertAlmostEqual(m1(t), m2(t), msg = repr(t))
+            self.assertAlmostEqual(m3(t), m4(t), msg = repr(t))
+            self.assertAlmostEqual(m5(t), m6(t), msg = repr(t))
+
+    def test_omega(self):
+        omegas_ = [0, 1, -1/2, 1/6, 1/3, 0, -1/12, -1/6, -1/4]
+        for i,t in enumerate(trees):
+            self.assertAlmostEqual(omegas_[i], omega(t))
 
 class RKTests(unittest.TestCase):
     def test_rk(self):

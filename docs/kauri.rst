@@ -51,3 +51,9 @@ Runge--Kutta Schemes
 .. autoclass:: kauri.rk.RK
    :members:
    :special-members: __mul__, __pow__, __add__
+
+
+References
+========================
+
+.. bibliography::

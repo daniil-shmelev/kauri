@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 from .trees import *
-from .utils import _branch_level_sequences
+from .utils import _branch_level_sequences, _str
 
 def _get_node_coords(layout, x=0, y=0, scale=0.2):
     branch_gap = scale / 2
@@ -67,7 +67,7 @@ def _get_tree_traces(layout, coords, scale=0.2):
     return traces
 
 
-def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None):
+def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None, rationalise = True):
     tree_gap = scale / 2
     coeff_gap = scale / 2
 
@@ -88,11 +88,11 @@ def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None):
 
         # Add coefficient as text
         traces.append(go.Scatter(
-            x=[x], y=[y], text=[str(c)], mode='text',
+            x=[x], y=[y], text=[_str(c, rationalise)], mode='text',
             showlegend=False
         ))
 
-        x += (len(str(c)) + 1) * coeff_gap
+        x += (len(_str(c, rationalise)) + 1) * coeff_gap
 
         for t in f.tree_list:
             level_seq = t.level_sequence()
@@ -151,7 +151,7 @@ def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None):
 #Matplotlib
 ###############################################################
 
-def _display_tree(layout, coords, scale = 0.2):
+def _display_tree(layout, coords, scale = 0.2, rationalise = True):
     branch_gap = scale / 2
 
     if layout == []:
@@ -175,7 +175,7 @@ def _display_tree(layout, coords, scale = 0.2):
         plt.plot([xroot, c[0][0]], [yroot, c[0][1]], color = "black")
         _display_tree(lay, c, scale)
 
-def display_plt(forest_sum, scale = 0.2, fig_size = (15, 1), file_name = None):
+def display_plt(forest_sum, scale = 0.2, fig_size = (15, 1), file_name = None, rationalise = True):
     tree_gap = scale / 4
     coeff_gap = scale / 2
 
@@ -195,8 +195,8 @@ def display_plt(forest_sum, scale = 0.2, fig_size = (15, 1), file_name = None):
         for i, (c, f) in enumerate(forest_sum.term_list):
             if i > 0:
                 c = abs(c)
-            plt.text(x, y, str(c))
-            x += (len(str(c)) + 1) * coeff_gap
+            plt.text(x, y, _str(c, rationalise))
+            x += (len(_str(c, rationalise)) + 1) * coeff_gap
             for t in f.tree_list:
                 c, w = _get_node_coords(t.level_sequence(), x, 0, scale)
                 c = [(c_[0] + w / 2, c_[1]) for c_ in c]
@@ -227,8 +227,8 @@ def display_plt(forest_sum, scale = 0.2, fig_size = (15, 1), file_name = None):
 #Display
 ###############################################################
 
-def display(forest_sum, scale = None, fig_size = None, file_name = None, use_plt = True):
-    """
+def display(forest_sum, scale = None, fig_size = None, file_name = None, use_plt = True, rationalise = False):
+    """ #TODO
     Plots a forest sum.
 
     :param forest_sum: Forest sum to plot
@@ -248,10 +248,10 @@ def display(forest_sum, scale = None, fig_size = None, file_name = None, use_plt
             scale = 0.2
         if fig_size is None:
             fig_size = (15,1)
-        display_plt(forest_sum, scale, fig_size, file_name)
+        display_plt(forest_sum, scale, fig_size, file_name, rationalise)
     else:
         if scale is None:
             scale = 0.7
         if fig_size is None:
             fig_size = (1500, 50)
-        display_plotly(forest_sum, scale, fig_size, file_name)
+        display_plotly(forest_sum, scale, fig_size, file_name, rationalise)

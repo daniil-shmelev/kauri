@@ -502,6 +502,10 @@ class RK:
         """
         return t.apply(lambda x : self._elementary_weights(x.list_repr))
 
+    def modified_equation_weights(self, t):
+        #TODO
+        return t.modified_equation_term().apply(self.elementary_weights())
+
     def order(self, tol = 1e-15):
         """
         Returns the order of the RK scheme.
