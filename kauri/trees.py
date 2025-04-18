@@ -285,7 +285,7 @@ class Tree():
         return new_tree_list, new_forest_list
 
     @cache
-    def antipode(self, apply_reduction = True):
+    def antipode(self):
         """
         Returns the antipode of a tree,
 
@@ -293,9 +293,6 @@ class Tree():
 
             S(t) = -t-\\sum S(P_c(t)) R_c(t)
 
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Antipode, :math:`S(t)`
         :rtype: ForestSum
 
@@ -314,17 +311,12 @@ class Tree():
         for i in range(len(subtrees)):
             if subtrees[i]._equals(self) or subtrees[i]._equals(EMPTY_TREE):
                 continue
-            #out -= branches[i].antipode() * subtrees[i]
-            out = out.__sub__(
-                branches[i].antipode(False).__mul__(subtrees[i], False)
-                  , False)
+            out = out - branches[i].antipode() * subtrees[i]
 
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
     @cache
-    def cem_antipode(self, apply_reduction=True):
+    def cem_antipode(self):
         # TODO
         if self.list_repr is None:
             return ZERO_FOREST_SUM
@@ -336,19 +328,9 @@ class Tree():
         for i in range(len(subtrees)):
             if branches[i]._equals(self.as_forest()) or subtrees[i]._equals(self):
                 continue
-            # out -= branches[i].cem_antipode() * subtrees[i]
-            # out = out.__sub__(
-            #     branches[i].cem_antipode(False).__mul__(subtrees[i], False)
-            #     , False)
-            out = out.__sub__(
-                subtrees[i].cem_antipode(False).__mul__(branches[i], False)
-                , False)
+            out = out - subtrees[i].cem_antipode() * branches[i]
 
-        out = out.singleton_reduced()
-
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.singleton_reduced().reduce()
 
     def sign(self):
         """
@@ -382,7 +364,7 @@ class Tree():
         """
         return self.sign().antipode()
 
-    def __mul__(self, other, apply_reduction = True):
+    def __mul__(self, other):
         """
         Multiplies a tree by a:
 
@@ -392,9 +374,6 @@ class Tree():
         - ForestSum, returning a ForestSum.
 
         :param other: A scalar, Tree, Forest or ForestSum
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
 
         Example usage::
 
@@ -411,20 +390,15 @@ class Tree():
         else:
             raise ValueError("Cannot multiply Tree by object of type " + str(type(other)))
 
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
     __rmul__ = __mul__
 
-    def __pow__(self, n, apply_reduction = True):
+    def __pow__(self, n):
         """
         Returns the :math:`n^{th}` power of a tree for a positive integer :math:`n`, given by a forest with :math:`n` copies of the tree.
 
         :param n: Exponent, a positive integer
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
 
         Example usage::
 
@@ -438,18 +412,13 @@ class Tree():
             return EMPTY_TREE
 
         out = Forest((self,) * n)
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
-    def __add__(self, other, apply_reduction = True):
+    def __add__(self, other):
         """
         Adds a tree to a scalar, Tree, Forest or ForestSum.
 
         :param other: A scalar, Tree, Forest or ForestSum
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :rtype: ForestSum
 
         Example usage::
@@ -465,18 +434,17 @@ class Tree():
         else:
             raise ValueError("Cannot add Tree and " + str(type(other)))
 
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
-    def __sub__(self, other, apply_reduction = True):
-        return self.__add__(-other, apply_reduction)
+    def __sub__(self, other):
+        return self + (-other)
 
     __radd__ = __add__
     __rsub__ = __sub__
 
     def __neg__(self):
-        return self.__mul__(-1, False)
+        temp = self * (-1)
+        return temp
 
     def __eq__(self, other):
         """
@@ -577,15 +545,12 @@ class Tree():
         """
         return ForestSum(( (1, self), ))
 
-    def apply(self, func, apply_reduction = True):
+    def apply(self, func):
         """
         Apply a function defined on trees.
 
         :param func: A function defined on trees
         :type func: callable
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of func on the tree
 
         Example usage::
@@ -598,7 +563,7 @@ class Tree():
         return func(self)
 
     @cache
-    def apply_power(self, func, n, apply_reduction = True):
+    def apply_power(self, func, n):
         """
         Apply the power of a function defined on trees, where the product of functions is defined by
 
@@ -612,9 +577,6 @@ class Tree():
         :type func: callable
         :param n: Exponent
         :type n: int
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of func^n on the tree
 
         Example usage::
@@ -626,20 +588,20 @@ class Tree():
         """
         res = None
         if n == 0:
-            return self.apply(_counit)
+            res = self.apply(_counit)
         elif n == 1:
-            return self.apply(func, apply_reduction)
+            res = self.apply(func)
         elif n < 0:
-            res = self.antipode().apply_power(func, -n, False)
+            res = self.antipode().apply_power(func, -n)
         else:
-            res = self.apply_product(func, lambda x : x.apply_power(func, n-1, False), False)
+            res = self.apply_product(func, lambda x : x.apply_power(func, n-1))
 
-        if apply_reduction and not (isinstance(res, int) or isinstance(res, float) or isinstance(res, Tree)):
+        if not (isinstance(res, int) or isinstance(res, float)):
             res = res.reduce()
         return res
 
     @cache
-    def apply_product(self, func1, func2, apply_reduction = True):
+    def apply_product(self, func1, func2):
         """
         Apply the product of two functions, defined by
 
@@ -651,9 +613,6 @@ class Tree():
         :type func1: callable
         :param func2: A function defined on trees
         :type func2: callable
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of the product of functions evaluated on the tree
 
         Example usage::
@@ -668,18 +627,17 @@ class Tree():
         #a(branches) * b(subtrees)
         if len(subtrees) == 0:
             return 0
-        # out = branches[0].apply(func1) * subtrees[0].apply(func2)
-        out = _mul(branches[0].apply(func1), subtrees[0].apply(func2), False)
+        out = branches[0].apply(func1) * subtrees[0].apply(func2)
         for i in range(1, len(subtrees)):
-            #out += branches[i].apply(func1) * subtrees[i].apply(func2)
-            out = _add(out, _mul(branches[i].apply(func1), subtrees[i].apply(func2), False), False)
+            out += branches[i].apply(func1) * subtrees[i].apply(func2)
 
-        if apply_reduction and not (isinstance(out, int) or isinstance(out, float)):
+        if not (isinstance(out, int) or isinstance(out, float)):
             out = out.reduce()
+
         return out
 
     @cache
-    def apply_cem_product(self, func1, func2, apply_reduction=True):
+    def apply_cem_product(self, func1, func2):
         """
         Apply the Calaque, Ebrahimi-Fard and Manchon product of two functions, defined by
 
@@ -693,9 +651,6 @@ class Tree():
         :type func1: callable
         :param func2: A function defined on trees
         :type func2: callable
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of the product of functions evaluated on the tree
 
         Example usage::
@@ -713,20 +668,15 @@ class Tree():
         # a(branches) * b(subtrees)
         if len(subtrees) == 0:
             raise
-        # out = branches[0].apply(func1) * subtrees[0].apply(func2)
-        out = _mul(branches[0].apply(func1), subtrees[0].apply(func2), False)
+        out = branches[0].apply(func1) * subtrees[0].apply(func2)
         for i in range(1, len(subtrees)):
-            # out += branches[i].apply(func1) * subtrees[i].apply(func2)
-            out = _add(out, _mul(branches[i].apply(func1), subtrees[i].apply(func2), False), False)
-
+            out += branches[i].apply(func1) * subtrees[i].apply(func2)
 
         if not (isinstance(out, int) or isinstance(out, float)):
-            out = out.singleton_reduced()
-            if apply_reduction:
-                out = out.reduce()
+            out = out.singleton_reduced().reduce()
         return out
 
-    def modified_equation_term(self, apply_reduction = True):
+    def modified_equation_term(self):
         """
         Returns a forest sum representing a term of the modified equation used in backward error analysis.\n\n
 
@@ -748,19 +698,17 @@ class Tree():
         returns :math:`(\\mathrm{Id} \\star e^{\\star (-1)})(t)`, such that applying a map :math:`\\phi` to the result of this
         function returns :math:`\\widetilde{\\phi}`.
 
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
         :return: :math:`(\\mathrm{Id} \\star e^{\\star (-1)})(t)`
         """
         ident_ = lambda x : x
-        exact_weights_inverse_ = lambda x: x.cem_antipode(False).apply(lambda x : 1. / x.factorial())
-        return self.apply_cem_product(ident_, exact_weights_inverse_, apply_reduction)
+        exact_weights_inverse_ = lambda x: x.cem_antipode().apply(lambda x : 1. / x.factorial())
+        return self.apply_cem_product(ident_, exact_weights_inverse_)
 
-    def preprocessed_integrator_term(self, apply_reduction = True):
+    def preprocessed_integrator_term(self):
         #TODO
         exact_weights_ = lambda x : 1. / x.factorial()
-        ident_inverse_ = lambda x : x.cem_antipode(False)
-        return self.apply_cem_product(exact_weights_, ident_inverse_, apply_reduction)
+        ident_inverse_ = lambda x : x.cem_antipode()
+        return self.apply_cem_product(exact_weights_, ident_inverse_)
 
     def __next__(self):
         """
@@ -916,14 +864,11 @@ class Forest():
         return self.apply(lambda x : x.factorial())
 
     
-    def antipode(self, apply_reduction = True):
+    def antipode(self):
         """
         Apply the antipode to the forest as a multiplicative map. For a forest :math:`t_1 t_2 \\cdots t_k`,
         returns :math:`\\prod_{i=1}^k S(t_i)`.
 
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Antipode
         :rtype: ForestSum
 
@@ -936,31 +881,25 @@ class Forest():
             raise ValueError("Forest is misspecified in Forest.antipode(): self.tree_list is empty")
         elif len(self.tree_list) == 1 and self.tree_list[0]._equals(SINGLETON_TREE):
             return -SINGLETON_FOREST_SUM
-        
-        out = self.tree_list[0].antipode(False)
+
+        out = self.tree_list[0].antipode()
         for i in range(1, len(self.tree_list)):
-            #out *= self.treeList[i].antipode()
-            out = out.__mul__(self.tree_list[i].antipode(False), False)
+            out *= self.tree_list[i].antipode()
 
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
-    def cem_antipode(self, apply_reduction=True):
+    def cem_antipode(self):
         # TODO
         if self.tree_list is None or self.tree_list == tuple():
             raise ValueError("Forest is misspecified in Forest.cem_antipode(): self.tree_list is empty")
         elif len(self.tree_list) == 1 and self.tree_list[0]._equals(SINGLETON_TREE):
             return SINGLETON_FOREST_SUM
 
-        out = self.tree_list[0].cem_antipode(False)
+        out = self.tree_list[0].cem_antipode()
         for i in range(1, len(self.tree_list)):
-            # out *= self.treeList[i].cem_antipode()
-            out = out.__mul__(self.tree_list[i].cem_antipode(False), False)
+            out *= self.tree_list[i].cem_antipode()
 
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
     def sign(self):
         """
@@ -997,7 +936,7 @@ class Forest():
         """
         return self.sign().antipode()
 
-    def __mul__(self, other, apply_reduction = True):
+    def __mul__(self, other):
         """
         Multiplies a forest by a:
 
@@ -1007,9 +946,6 @@ class Forest():
         - ForestSum, returning a ForestSum.
 
         :param other: A scalar, Tree, Forest or ForestSum
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
 
         Example usage::
 
@@ -1022,25 +958,20 @@ class Forest():
         elif isinstance(other, Forest):
             out = Forest(self.tree_list + other.tree_list)
         elif isinstance(other, ForestSum):
-            out = ForestSum(tuple( (c, self.__mul__(f, False)) for c, f in other.term_list ))
+            out = ForestSum(tuple( (c, self * f) for c, f in other.term_list ))
         else:
             raise ValueError("Cannot multiply Forest and " + str(type(other)))
 
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
     __rmul__ = __mul__
 
-    def __pow__(self, n, apply_reduction = True):
+    def __pow__(self, n):
         """
         Returns the :math:`n^{th}` power of a forest for a positive integer :math:`n`, given by a forest with :math:`n`
         copies of the original forest.
 
         :param n: Exponent, a positive integer
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
 
         Example usage::
 
@@ -1053,18 +984,13 @@ class Forest():
         if n == 0:
             return EMPTY_FOREST
         out = Forest(self.tree_list * n)
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
-    def __add__(self, other, apply_reduction = True):
+    def __add__(self, other):
         """
         Adds a forest to a scalar, Tree, Forest or ForestSum.
 
         :param other: A scalar, Tree, Forest or ForestSum
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :rtype: ForestSum
 
         Example usage::
@@ -1080,18 +1006,16 @@ class Forest():
         else:
             raise ValueError("Cannot add Forest and " + str(type(other)))
 
-        if apply_reduction:
-            out.reduce()
-        return out
+        return out.reduce()
 
-    def __sub__(self, other, apply_reduction = True):
-        return self.__add__(-other, apply_reduction)
+    def __sub__(self, other):
+        return self + (-other)
 
     __radd__ = __add__
     __rsub__ = __sub__
 
     def __neg__(self):
-        return self.__mul__(-1, False)
+        return self * (-1)
 
     def _equals(self, other_forest):
         return Counter(self.reduce().tree_list) == Counter(other_forest.reduce().tree_list)
@@ -1141,16 +1065,13 @@ class Forest():
         return ForestSum(( (1,self), ))
 
     
-    def apply(self, func, apply_reduction = True):
+    def apply(self, func):
         """
         Given a function defined on trees, apply it multiplicatively to the forest. For a function :math:`g` and forest
         :math:`t_1 t_2 \\cdots t_k`, returns :math:`\\prod_{i=1}^k g(t_i)`.
 
         :param func: A function defined on trees
         :type func: callable
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of func on the forest
 
         Example usage::
@@ -1162,14 +1083,13 @@ class Forest():
         """
         out = 1
         for t in self.tree_list:
-            #out = out * t.apply(func)
-            out = _mul(out, t.apply(func), False)
+            out = out * t.apply(func)
 
-        if apply_reduction and not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
+        if not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
             out = out.reduce()
         return out
 
-    def apply_power(self, func, n, apply_reduction = True):
+    def apply_power(self, func, n):
         """
         Apply the power of a function defined on trees, where the product of functions is defined by
 
@@ -1183,9 +1103,6 @@ class Forest():
         :type func: callable
         :param n: Exponent
         :type n: int
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of func^n on the forest
 
         Example usage::
@@ -1195,10 +1112,10 @@ class Forest():
             f = Tree([[],[[]]]) * Tree([[]])
             f.apply(func, 3)
         """
-        return self.apply(lambda x : x.apply_power(func, n, apply_reduction))
+        return self.apply(lambda x : x.apply_power(func, n))
 
     
-    def apply_product(self, func1, func2, apply_reduction = True):
+    def apply_product(self, func1, func2):
         """
         Apply the product of two functions, defined by
 
@@ -1212,9 +1129,6 @@ class Forest():
         :type func1: callable
         :param func2: A function defined on trees
         :type func2: callable
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of the product of functions evaluated on the forest
 
         Example usage::
@@ -1225,11 +1139,11 @@ class Forest():
             f = Tree([[],[[]]]) * Tree([[]])
             f.apply(func1, func2) #Returns f
         """
-        self.apply(lambda x : x.apply_product(func1, func2, apply_reduction))
+        self.apply(lambda x : x.apply_product(func1, func2))
 
-    def apply_substitution_product(self, func1, func2, apply_reduction = True):
+    def apply_substitution_product(self, func1, func2):
         #TODO
-        self.apply(lambda x : x.apply_cem_product(func1, func2, apply_reduction))
+        self.apply(lambda x : x.apply_cem_product(func1, func2))
 
     def singleton_reduced(self):
         """
@@ -1410,17 +1324,14 @@ class ForestSum():
             s = Tree([[],[[]]]) * Tree([]) + Tree([[]])
             s.factorial() #Returns 10
         """
-        return self.apply(lambda x : x.factorial(), False)
+        return self.apply(lambda x : x.factorial())
 
     
-    def antipode(self, apply_reduction = True):
+    def antipode(self):
         """
         Apply the antipode to the forest sum as a multiplicative linear map. For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`,
         returns :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} S(t_{ij})`.
 
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Antipode
         :rtype: ForestSum
 
@@ -1430,28 +1341,20 @@ class ForestSum():
             s.antipode()
         """
         c, f = self.term_list[0]
-        out = c * f.antipode(False)
+        out = c * f.antipode()
         for c, f in self.term_list[1:]:
-            out = out.__add__(
-                _mul(c, f.antipode(False), False)
-            , False)
+            out = out + c * f.antipode()
 
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
-    def cem_antipode(self, apply_reduction=True):
+    def cem_antipode(self):
         # TODO
         c, f = self.term_list[0]
-        out = c * f.cem_antipode(False)
+        out = c * f.cem_antipode()
         for c, f in self.term_list[1:]:
-            out = out.__add__(
-                _mul(c, f.cem_antipode(False), False)
-                , False)
+            out = out + c * f.cem_antipode()
 
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
     
     def sign(self):
         """
@@ -1485,14 +1388,11 @@ class ForestSum():
         """
         return self.sign().antipode()
 
-    def __mul__(self, other, apply_reduction = True):
+    def __mul__(self, other):
         """
         Multiplies a ForestSum by a scalar, Tree, Forest or ForestSum, returning a ForestSum.
 
         :param other: A scalar, Tree, Forest or ForestSum
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :rtype: ForestSum
 
         Example usage::
@@ -1509,21 +1409,16 @@ class ForestSum():
             raise ValueError("Cannot multiply ForestSum and " + str(type(object)))
 
         out = ForestSum(new_term_list)
-        if apply_reduction:
-            out = out.reduce()
-        return out
+        return out.reduce()
 
     __rmul__ = __mul__
 
 
-    def __pow__(self, n, apply_reduction = True):
+    def __pow__(self, n):
         """
         Returns the :math:`n^{th}` power of a forest sum for a positive integer :math:`n`.
 
         :param n: Exponent, a positive integer
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :rtype: ForestSum
 
         Example usage::
@@ -1536,21 +1431,18 @@ class ForestSum():
             raise ValueError("Cannot raise ForestSum to a negative power")
         if n == 0:
             return EMPTY_FOREST_SUM
+
         temp = self
         for i in range(n-1):
-            temp = temp.__mul__(self, False)
-        if apply_reduction:
-            temp = temp.reduce()
-        return temp
+            temp = temp * self
 
-    def __add__(self, other, applyReduction = True):
+        return temp.reduce()
+
+    def __add__(self, other):
         """
         Adds a ForestSum to a scalar, Tree, Forest or ForestSum.
 
         :param other: A scalar, Tree, Forest or ForestSum
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :rtype: ForestSum
 
         Example usage::
@@ -1567,19 +1459,16 @@ class ForestSum():
             raise ValueError("Cannot add ForestSum and " + str(type(other)))
 
         out = ForestSum(new_term_list)
+        return out.reduce()
 
-        if applyReduction:
-            out = out.reduce()
-        return out
-
-    def __sub__(self, other, applyReduction = True):
+    def __sub__(self, other):
         return self + (- other)
 
     __radd__ = __add__
     __rsub__ = __sub__
 
     def __neg__(self):
-        return self.__mul__(-1, False)
+        return self * (-1)
 
     def _equals(self, other):
         self_reduced = self.reduce()
@@ -1617,16 +1506,13 @@ class ForestSum():
             raise ValueError("Cannot check equality of ForestSum and " + str(type(other)))
 
     
-    def apply(self, func, apply_reduction = True):
+    def apply(self, func):
         """
         Given a function defined on trees, apply it as a multiplicative linear map to the forest sum. For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`,
         returns :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} g(t_{ij})`.
 
         :param func: A function defined on trees
         :type func: callable
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of func on the forest sum
 
         Example usage::
@@ -1640,16 +1526,14 @@ class ForestSum():
         for c, f in self.term_list:
             term = 1
             for t in f.tree_list:
-                #term *= func(t)
-                term = _mul(term, func(t), False)
-            #out += c * term
-            out = _add(out, _mul(term, c, False), False)
+                term = term * func(t)
+            out += c * term
 
-        if apply_reduction and not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
+        if not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
             out = out.reduce()
         return out
 
-    def apply_power(self, func, n, apply_reduction = True):
+    def apply_power(self, func, n):
         """
         Apply the power of a function defined on trees, where the product of functions is defined by
 
@@ -1663,9 +1547,6 @@ class ForestSum():
         :type func: callable
         :param n: Exponent
         :type n: int
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of func^n on the forest sum
 
         Example usage::
@@ -1675,10 +1556,10 @@ class ForestSum():
             s = Tree([[],[[]]]) * Tree([[]]) + 2 * Tree([])
             s.apply(func, 3)
         """
-        return self.apply(lambda x : x.apply_power(func, n, apply_reduction))
+        return self.apply(lambda x : x.apply_power(func, n))
 
     
-    def apply_product(self, func1, func2, apply_reduction = True):
+    def apply_product(self, func1, func2):
         """
         Apply the product of two functions, defined by
 
@@ -1692,9 +1573,6 @@ class ForestSum():
         :type func1: callable
         :param func2: A function defined on trees
         :type func2: callable
-        :param apply_reduction: If set to True (default), will simplify the output by cancelling terms where applicable.
-            Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
-        :type apply_reduction: bool
         :return: Value of the product of functions evaluated on the forest sum
 
         Example usage::
@@ -1705,11 +1583,11 @@ class ForestSum():
             s = Tree([[],[[]]]) * Tree([[]]) + 2 * Tree([])
             s.apply(func1, func2) #Returns s
         """
-        return self.apply(lambda x : x.apply_product(func1, func2, apply_reduction))
+        return self.apply(lambda x : x.apply_product(func1, func2))
 
-    def apply_substitution_product(self, func1, func2, apply_reduction=True):
+    def apply_substitution_product(self, func1, func2):
         #TODO
-        return self.apply(lambda x: x.apply_cem_product(func1, func2, apply_reduction))
+        return self.apply(lambda x: x.apply_cem_product(func1, func2))
 
     def singleton_reduced(self):
         """
@@ -1732,33 +1610,6 @@ class ForestSum():
 
 def _is_tree_like(obj):
     return isinstance(obj, Tree) or isinstance(obj, Forest) or isinstance(obj, ForestSum)
-
-def _mul(obj1, obj2, applyReduction = True):
-    if not _is_tree_like(obj1):
-        if not _is_tree_like(obj2):
-            return obj1 * obj2
-        else:
-            return obj2.__mul__(obj1, applyReduction)
-    else:
-        return obj1.__mul__(obj2, applyReduction)
-
-def _add(obj1, obj2, applyReduction = True):
-    if not _is_tree_like(obj1):
-        if not _is_tree_like(obj2):
-            return obj1 + obj2
-        else:
-            return obj2.__add__(obj1, applyReduction)
-    else:
-        return obj1.__add__(obj2, applyReduction)
-
-def _sub(obj1, obj2, applyReduction = True):
-    if not _is_tree_like(obj1):
-        if not _is_tree_like(obj2):
-            return obj1 - obj2
-        else:
-            return obj2.__sub__(obj1, applyReduction)
-    else:
-        return obj1.__sub__(obj2, applyReduction)
 
 EMPTY_TREE = Tree(None)
 EMPTY_FOREST = Forest((EMPTY_TREE,))
