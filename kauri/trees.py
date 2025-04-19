@@ -1,9 +1,8 @@
 import itertools
-import copy
 import math
 from dataclasses import dataclass
-from collections import Counter, defaultdict
-from typing import Union, Optional
+from collections import Counter
+from typing import Union
 from functools import cache
 from .utils import _nodes, _height, _factorial, _sigma, _sorted_list_repr, _list_repr_to_level_sequence, _to_tuple, _to_list, _next_layout, _level_sequence_to_list_repr
 
@@ -168,51 +167,6 @@ class Tree():
         """
         return math.factorial(self.nodes()) / self.sigma()
 
-    def coproduct(self):
-        """
-        Returns the coproduct of a tree,
-
-        .. math::
-
-            \\Delta(t) = \\sum P_c(t) \\otimes R_c(t)
-
-        :return: Values of :math:`R_c(t)`
-        :rtype: list
-        :return: Values of :math:`P_c(t)`
-        :rtype: list
-
-        Example usage::
-
-            t = Tree([[[]],[]])
-            t.split()
-        """
-        if self.list_repr is None:
-            return [EMPTY_TREE], [EMPTY_FOREST]
-        if self.list_repr == tuple():
-            return [SINGLETON_TREE, EMPTY_TREE], [EMPTY_FOREST, SINGLETON_FOREST]
-
-        tree_list = []
-        forest_list = []
-        for rep in self.list_repr:
-            t = Tree(rep)
-            s, b = t.coproduct()
-            tree_list.append(s)
-            forest_list.append(b)
-
-        new_tree_list = [EMPTY_TREE]
-        new_forest_list = [Forest((self,))]
-
-        for p in itertools.product(*tree_list):
-            new_tree_list.append(Tree(tuple(t.list_repr for t in p if t.list_repr is not None)))
-
-        for p in itertools.product(*forest_list):
-            t = []
-            for f in p:
-                t += f.tree_list
-            new_forest_list.append(Forest(t))
-
-        return new_tree_list, new_forest_list
-
     def cem_coproduct(self):
         """
         Computes the Calaque, Ebrahimi-Fard and Manchon :cite:`calaque2011two` coproduct on trees, given by
@@ -283,37 +237,6 @@ class Tree():
                 new_forest_list.append(Forest(t))
 
         return new_tree_list, new_forest_list
-
-    @cache
-    def antipode(self):
-        """
-        Returns the antipode of a tree,
-
-        .. math::
-
-            S(t) = -t-\\sum S(P_c(t)) R_c(t)
-
-        :return: Antipode, :math:`S(t)`
-        :rtype: ForestSum
-
-        Example usage::
-
-            t = Tree([[[]],[]])
-            t.antipode()
-        """
-        if self.list_repr is None:
-            return EMPTY_FOREST_SUM
-        elif self.list_repr == tuple():
-            return -SINGLETON_FOREST_SUM
-        
-        subtrees, branches = self.coproduct()
-        out = -self.as_forest_sum()
-        for i in range(len(subtrees)):
-            if subtrees[i]._equals(self) or subtrees[i]._equals(EMPTY_TREE):
-                continue
-            out = out - branches[i].antipode() * subtrees[i]
-
-        return out.reduce()
 
     @cache
     def cem_antipode(self):
@@ -545,170 +468,22 @@ class Tree():
         """
         return ForestSum(( (1, self), ))
 
-    def apply(self, func):
-        """
-        Apply a function defined on trees.
-
-        :param func: A function defined on trees
-        :type func: callable
-        :return: Value of func on the tree
-
-        Example usage::
-
-            func = lambda x : 1. / x.factorial()
-
-            t = Tree([[],[[]]])
-            t.apply(func) #Returns 1/8
-        """
-        return func(self)
-
-    @cache
-    def apply_power(self, func, n):
-        """
-        Apply the power of a function defined on trees, where the product of functions is defined by
-
-        .. math::
-
-            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
-
-        and negative powers are defined as :math:`f^{-n} = f^n \\circ S`, where :math:`S` is the antipode.
-
-        :param func: A function defined on trees
-        :type func: callable
-        :param n: Exponent
-        :type n: int
-        :return: Value of func^n on the tree
-
-        Example usage::
-
-            func = lambda x : 1. / x.factorial()
-
-            t = Tree([[],[[]]])
-            t.apply(func, 3)
-        """
-        res = None
-        if n == 0:
-            res = self.apply(_counit)
-        elif n == 1:
-            res = self.apply(func)
-        elif n < 0:
-            res = self.antipode().apply_power(func, -n)
-        else:
-            res = self.apply_product(func, lambda x : x.apply_power(func, n-1))
-
-        if not (isinstance(res, int) or isinstance(res, float)):
-            res = res.reduce()
-        return res
-
-    @cache
-    def apply_product(self, func1, func2):
-        """
-        Apply the product of two functions, defined by
-
-        .. math::
-
-            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
-
-        :param func1: A function defined on trees
-        :type func1: callable
-        :param func2: A function defined on trees
-        :type func2: callable
-        :return: Value of the product of functions evaluated on the tree
-
-        Example usage::
-
-            func1 = lambda x : x
-            func2 = lambda x : x.antipode()
-
-            t = Tree([[],[[]]])
-            t.apply_product(func1, func2) #Returns t
-        """
-        subtrees, branches = self.coproduct()
-        #a(branches) * b(subtrees)
-        if len(subtrees) == 0:
-            return 0
-        out = branches[0].apply(func1) * subtrees[0].apply(func2)
-        for i in range(1, len(subtrees)):
-            out += branches[i].apply(func1) * subtrees[i].apply(func2)
-
-        if not (isinstance(out, int) or isinstance(out, float)):
-            out = out.reduce()
-
-        return out
-
-    @cache
-    def apply_cem_product(self, func1, func2):
-        """
-        Apply the Calaque, Ebrahimi-Fard and Manchon product of two functions, defined by
-
-        .. math::
-
-            (f \\star g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta_{CEM} (t).
-
-        For the definition of :math:`\\Delta_{CEM}`, see the documentation for `Tree.cem_coproduct()`.
-
-        :param func1: A function defined on trees
-        :type func1: callable
-        :param func2: A function defined on trees
-        :type func2: callable
-        :return: Value of the product of functions evaluated on the tree
-
-        Example usage::
-
-            func1 = lambda x : x
-            func2 = lambda x : x.antipode()
-
-            t = Tree([[],[[]]])
-            t.apply_cem_product(func1, func2)
-        """
-        if self.list_repr is None:
-            return func2(EMPTY_TREE)
-
-        subtrees, branches = self.cem_coproduct()
-        # a(branches) * b(subtrees)
-        if len(subtrees) == 0:
-            raise
-        out = branches[0].apply(func1) * subtrees[0].apply(func2)
-        for i in range(1, len(subtrees)):
-            out += branches[i].apply(func1) * subtrees[i].apply(func2)
-
-        if not (isinstance(out, int) or isinstance(out, float)):
-            out = out.singleton_reduced().reduce()
-        return out
-
-    def modified_equation_term(self):
-        """
-        Returns a forest sum representing a term of the modified equation used in backward error analysis.\n\n
-
-        As described in :cite:`chartier2010algebraic`, given a B-series method :math:`\\Phi_h(y) = B(\\phi, hf, y)`,
-        the modified differential equation is a B-series vector field :math:`hf_h(y) = B(\\widetilde{\\phi}, hf, y)` defined
-        by
-
-        .. math::
-
-            (\\widetilde{\\phi} \\star e)(t) = \\phi(t)
-
-        where :math:`e(t) = 1 / t!` is the elementary weights function of the exact solution, or equivalently
-
-        .. math::
-
-            \\widetilde{\\phi}(t) = (\\phi \\star e^{\\star (-1)})(t) = \\phi( (\\mathrm{Id} \\star e^{\\star (-1)})(t))
-
-        where :math:`\\mathrm{Id}` is the identity map on trees and :math:`e^{\\star (-1)} = e \\circ S_{CEM}`. This function
-        returns :math:`(\\mathrm{Id} \\star e^{\\star (-1)})(t)`, such that applying a map :math:`\\phi` to the result of this
-        function returns :math:`\\widetilde{\\phi}`.
-
-        :return: :math:`(\\mathrm{Id} \\star e^{\\star (-1)})(t)`
-        """
-        ident_ = lambda x : x
-        exact_weights_inverse_ = lambda x: x.cem_antipode().apply(lambda x : 1. / x.factorial())
-        return self.apply_cem_product(ident_, exact_weights_inverse_)
-
-    def preprocessed_integrator_term(self):
-        #TODO
-        exact_weights_ = lambda x : 1. / x.factorial()
-        ident_inverse_ = lambda x : x.cem_antipode()
-        return self.apply_cem_product(exact_weights_, ident_inverse_)
+    # def apply(self, func):
+    #     """
+    #     Apply a function defined on trees.
+    #
+    #     :param func: A function defined on trees
+    #     :type func: callable
+    #     :return: Value of func on the tree
+    #
+    #     Example usage::
+    #
+    #         func = lambda x : 1. / x.factorial()
+    #
+    #         t = Tree([[],[[]]])
+    #         t.apply(func) #Returns 1/8
+    #     """
+    #     return func(self)
 
     def __next__(self):
         """
@@ -861,45 +636,7 @@ class Forest():
             f = Tree([[]]) * Tree([[],[]])
             f.factorial() #Returns 6
         """
-        return self.apply(lambda x : x.factorial())
-
-    
-    def antipode(self):
-        """
-        Apply the antipode to the forest as a multiplicative map. For a forest :math:`t_1 t_2 \\cdots t_k`,
-        returns :math:`\\prod_{i=1}^k S(t_i)`.
-
-        :return: Antipode
-        :rtype: ForestSum
-
-        Example usage::
-
-            f = Tree([[]]) * Tree([[],[]])
-            f.antipode()
-        """
-        if self.tree_list is None or self.tree_list == tuple():
-            raise ValueError("Forest is misspecified in Forest.antipode(): self.tree_list is empty")
-        elif len(self.tree_list) == 1 and self.tree_list[0]._equals(SINGLETON_TREE):
-            return -SINGLETON_FOREST_SUM
-
-        out = self.tree_list[0].antipode()
-        for i in range(1, len(self.tree_list)):
-            out *= self.tree_list[i].antipode()
-
-        return out.reduce()
-
-    def cem_antipode(self):
-        # TODO
-        if self.tree_list is None or self.tree_list == tuple():
-            raise ValueError("Forest is misspecified in Forest.cem_antipode(): self.tree_list is empty")
-        elif len(self.tree_list) == 1 and self.tree_list[0]._equals(SINGLETON_TREE):
-            return SINGLETON_FOREST_SUM
-
-        out = self.tree_list[0].cem_antipode()
-        for i in range(1, len(self.tree_list)):
-            out *= self.tree_list[i].cem_antipode()
-
-        return out.reduce()
+        return math.prod(x.factorial() for x in self.tree_list)
 
     def sign(self):
         """
@@ -917,24 +654,6 @@ class Forest():
             f1.sign() #Returns Tree([]) * Tree([[],[]])
         """
         return self if self.nodes() % 2 == 0 else -self
-
-    def signed_antipode(self):
-        """
-        Returns the antipode of the signed forest, :math:`S((-1)^{|f|} f)`.
-
-        :return: Antipode of the signed forest, :math:`S((-1)^{|f|} f)`
-        :rtype: ForestSum
-
-        .. note::
-            Since the antipode and sign functions commute, this function is equivalent to both ``self.sign().antipode()`` and
-            ``self.antipode().sign()``.
-
-        Example usage::
-
-            f = Tree([[[]],[]]) * Tree([[]])
-            f.signed_antipode() #Same as f.sign().antipode() and f.antipode().sign()
-        """
-        return self.sign().antipode()
 
     def __mul__(self, other):
         """
@@ -1063,87 +782,6 @@ class Forest():
             f.as_forest_sum() #Returns ForestSum([t])
         """
         return ForestSum(( (1,self), ))
-
-    
-    def apply(self, func):
-        """
-        Given a function defined on trees, apply it multiplicatively to the forest. For a function :math:`g` and forest
-        :math:`t_1 t_2 \\cdots t_k`, returns :math:`\\prod_{i=1}^k g(t_i)`.
-
-        :param func: A function defined on trees
-        :type func: callable
-        :return: Value of func on the forest
-
-        Example usage::
-
-            func = lambda x : 1. / x.factorial()
-
-            f = Tree([[],[[]]]) * Tree([[]])
-            f.apply(func) #Returns 1/16
-        """
-        out = 1
-        for t in self.tree_list:
-            out = out * t.apply(func)
-
-        if not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
-            out = out.reduce()
-        return out
-
-    def apply_power(self, func, n):
-        """
-        Apply the power of a function defined on trees, where the product of functions is defined by
-
-        .. math::
-
-            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
-
-        and negative powers are defined as :math:`f^{-n} = f^n \\circ S`, where :math:`S` is the antipode. Extended multiplicatively to forests.
-
-        :param func: A function defined on trees
-        :type func: callable
-        :param n: Exponent
-        :type n: int
-        :return: Value of func^n on the forest
-
-        Example usage::
-
-            func = lambda x : 1. / x.factorial()
-
-            f = Tree([[],[[]]]) * Tree([[]])
-            f.apply(func, 3)
-        """
-        return self.apply(lambda x : x.apply_power(func, n))
-
-    
-    def apply_product(self, func1, func2):
-        """
-        Apply the product of two functions, defined by
-
-        .. math::
-
-            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
-
-        and extended multiplicatively to forests.
-
-        :param func1: A function defined on trees
-        :type func1: callable
-        :param func2: A function defined on trees
-        :type func2: callable
-        :return: Value of the product of functions evaluated on the forest
-
-        Example usage::
-
-            func1 = lambda x : x
-            func2 = lambda x : x.antipode()
-
-            f = Tree([[],[[]]]) * Tree([[]])
-            f.apply(func1, func2) #Returns f
-        """
-        self.apply(lambda x : x.apply_product(func1, func2))
-
-    def apply_substitution_product(self, func1, func2):
-        #TODO
-        self.apply(lambda x : x.apply_cem_product(func1, func2))
 
     def singleton_reduced(self):
         """
@@ -1324,38 +962,8 @@ class ForestSum():
             s = Tree([[],[[]]]) * Tree([]) + Tree([[]])
             s.factorial() #Returns 10
         """
-        return self.apply(lambda x : x.factorial())
+        return sum(c * f.factorial() for c,f in self.term_list)
 
-    
-    def antipode(self):
-        """
-        Apply the antipode to the forest sum as a multiplicative linear map. For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`,
-        returns :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} S(t_{ij})`.
-
-        :return: Antipode
-        :rtype: ForestSum
-
-        Example usage::
-
-            s = Tree([[[]],[]]) * Tree([[]]) + 2 * Tree([])
-            s.antipode()
-        """
-        c, f = self.term_list[0]
-        out = c * f.antipode()
-        for c, f in self.term_list[1:]:
-            out = out + c * f.antipode()
-
-        return out.reduce()
-
-    def cem_antipode(self):
-        # TODO
-        c, f = self.term_list[0]
-        out = c * f.cem_antipode()
-        for c, f in self.term_list[1:]:
-            out = out + c * f.cem_antipode()
-
-        return out.reduce()
-    
     def sign(self):
         """
         Returns the forest sum where every forest is replaced by its signed value, :math:`(-1)^{|f|} f`.
@@ -1369,24 +977,6 @@ class ForestSum():
             s.sign() #Returns Tree([[[]],[]]) * Tree([[]]) - 2 * Tree([])
         """
         return ForestSum(tuple((-c if f.nodes() % 2 else c, f) for c,f in self.term_list))
-
-    def signed_antipode(self):
-        """
-        Returns the antipode of the signed forest sum.
-
-        :return: Antipode of the signed forest sum
-        :rtype: ForestSum
-
-        .. note::
-            Since the antipode and sign functions commute, this function is equivalent to both ``self.sign().antipode()`` and
-            ``self.antipode().sign()``.
-
-        Example usage::
-
-            s = Tree([[[]],[]]) * Tree([[]]) + 2 * Tree([])
-            s.signed_antipode() #Same as s.sign().antipode() and s.antipode().sign()
-        """
-        return self.sign().antipode()
 
     def __mul__(self, other):
         """
@@ -1505,90 +1095,6 @@ class ForestSum():
         else:
             raise ValueError("Cannot check equality of ForestSum and " + str(type(other)))
 
-    
-    def apply(self, func):
-        """
-        Given a function defined on trees, apply it as a multiplicative linear map to the forest sum. For a forest sum :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}`,
-        returns :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} g(t_{ij})`.
-
-        :param func: A function defined on trees
-        :type func: callable
-        :return: Value of func on the forest sum
-
-        Example usage::
-
-            func = lambda x : 1. / x.factorial()
-
-            s = Tree([[],[[]]]) * Tree([[]]) + 2 * Tree([])
-            s.apply(func)
-        """
-        out = 0
-        for c, f in self.term_list:
-            term = 1
-            for t in f.tree_list:
-                term = term * func(t)
-            out += c * term
-
-        if not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
-            out = out.reduce()
-        return out
-
-    def apply_power(self, func, n):
-        """
-        Apply the power of a function defined on trees, where the product of functions is defined by
-
-        .. math::
-
-            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
-
-        and negative powers are defined as :math:`f^{-n} = f^n \\circ S`, where :math:`S` is the antipode. Extended to a multiplicative linear map on forest sums.
-
-        :param func: A function defined on trees
-        :type func: callable
-        :param n: Exponent
-        :type n: int
-        :return: Value of func^n on the forest sum
-
-        Example usage::
-
-            func = lambda x : 1. / x.factorial()
-
-            s = Tree([[],[[]]]) * Tree([[]]) + 2 * Tree([])
-            s.apply(func, 3)
-        """
-        return self.apply(lambda x : x.apply_power(func, n))
-
-    
-    def apply_product(self, func1, func2):
-        """
-        Apply the product of two functions, defined by
-
-        .. math::
-
-            (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta (t)
-
-        and extended to a multiplicative linear map on forest sums.
-
-        :param func1: A function defined on trees
-        :type func1: callable
-        :param func2: A function defined on trees
-        :type func2: callable
-        :return: Value of the product of functions evaluated on the forest sum
-
-        Example usage::
-
-            func1 = lambda x : x
-            func2 = lambda x : x.antipode()
-
-            s = Tree([[],[[]]]) * Tree([[]]) + 2 * Tree([])
-            s.apply(func1, func2) #Returns s
-        """
-        return self.apply(lambda x : x.apply_product(func1, func2))
-
-    def apply_substitution_product(self, func1, func2):
-        #TODO
-        return self.apply(lambda x: x.apply_cem_product(func1, func2))
-
     def singleton_reduced(self):
         """
         Removes redundant occurrences of the single-node tree in each forest of the forest sum. If the forest contains a tree with more than
@@ -1604,9 +1110,11 @@ class ForestSum():
         """
         return ForestSum(tuple((c, f.singleton_reduced()) for c, f in self.term_list))
 
+##############################################
+##############################################
 
-##############################################
-##############################################
+def _is_reducible(obj):
+    return isinstance(obj, Forest) or isinstance(obj, ForestSum)
 
 def _is_tree_like(obj):
     return isinstance(obj, Tree) or isinstance(obj, Forest) or isinstance(obj, ForestSum)

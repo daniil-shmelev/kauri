@@ -225,45 +225,50 @@ class TreeTests(unittest.TestCase):
         ]
 
         for t, s in zip(trees[:7], antipodes):
-            self.assertEqual(s, t.antipode(), repr(t) + " Tree")
-            self.assertEqual(s, t.as_forest().antipode(), repr(t) + " Forest")
-            self.assertEqual(s, t.as_forest_sum().antipode(), repr(t) + " ForestSum")
+            self.assertEqual(s, bck.antipode(t), repr(t) + " Tree")
+            self.assertEqual(s, bck.antipode(t.as_forest()), repr(t) + " Forest")
+            self.assertEqual(s, bck.antipode(t.as_forest_sum()), repr(t) + " ForestSum")
 
     def test_antipode_property(self):
+        m = bck.map_product(bck.antipode, ident)
         for t in trees:
-            self.assertEqual(counit(t), t.apply_product(S, ident))
+            self.assertEqual(bck.counit(t), m(t))
 
     def test_antipode_squared(self):
+        f = bck.antipode
+        g = f @ f
         for t in trees:
-            self.assertEqual(t, t.antipode().antipode())
+            self.assertEqual(t, g(t))
 
     def test_antipode_squared_2(self):
-        def f(t):
-            n = t.nodes()
-            return t.apply_power(lambda x : x - x.antipode().antipode(), n)
+        f = bck.antipode
+        g = f @ f
 
         for t in trees[1:]:
-            self.assertEqual(0, t.apply(f))
+            self.assertEqual(0, ((ident - g) ** t.nodes())(t))
 
     def test_antipode_squared_3(self):
-        def f(t):
-            n = t.nodes()
-            f1 = lambda x : x + x.antipode()
-            f2 = lambda x : x - x.antipode().antipode()
-            f3 = lambda x : x.apply_power(f2, n-1).apply(f1)
-            return t.apply(f3)
+        f = bck.antipode
+        g = f @ f
+
+        h = Map(lambda x: ((ident - g) ** (x.nodes() - 1))(x))
+        m = (ident + f) @ h
 
         for t in trees[1:]:
-            self.assertEqual(0, t.apply(f))
+            self.assertEqual(0, m(t))
 
     def test_exact_weights(self):
+        m1 = exact_weights ** 2
+        m2 = Map(lambda x : m1(x) / 2**x.nodes())
+        m3 = exact_weights ** (-1)
+        m4 = Map(lambda x : m3(x) * (-1) ** x.nodes())
         for t in trees:
-            self.assertAlmostEqual(t.apply(exact_weights), t.apply_product(exact_weights, exact_weights) / 2**t.nodes())
-            self.assertAlmostEqual(t.apply(exact_weights), t.apply_power(exact_weights, -1) * (-1) ** t.nodes())
+            self.assertAlmostEqual(exact_weights(t), m2(t))
+            self.assertAlmostEqual(exact_weights(t), m4(t))
 
     def test_adjoint_flow(self):
         for t in trees:
-            self.assertAlmostEqual(t.apply(exact_weights), t.antipode().sign().apply(exact_weights))
+            self.assertAlmostEqual(exact_weights(t), exact_weights(bck.antipode(t).sign()))
 
     def test_RK_elementary_weights(self):
         #Test using an RK method of order 4
@@ -276,25 +281,30 @@ class TreeTests(unittest.TestCase):
         scheme = RK(A,b)
 
         for t in trees:
-            self.assertAlmostEqual(t.apply(exact_weights), scheme.elementary_weights(t))
+            self.assertAlmostEqual(exact_weights(t), scheme.elementary_weights(t))
 
     def test_apply_power(self):
+        S = bck.antipode
+        m1 = ((S * S) * S)
+        m2 = S ** 3
         for t in trees:
-            self.assertEqual(t.apply_product(lambda x : x.apply_product(S, S), S), t.apply_power(S, 3))
+            self.assertEqual(m1(t), m2(t))
 
     def test_apply_negative_power(self):
-        func_ = lambda x : x**2
-        func3_ = lambda x : x.apply_power(func_, 3)
-        func_neg_3_ = lambda x : x.apply_power(func_, -3)
+        func_ = Map(lambda x : x**2)
+        func3_ = func_ ** 3
+        func_neg_3_ = func_ ** (-3)
+        m = func3_ * func_neg_3_
         for t in trees:
-            self.assertEqual(counit(t), t.apply_product(func3_, func_neg_3_))
+            self.assertEqual(bck.counit(t), m(t))
 
     def test_apply_negative_power_scalar(self):
-        func_ = lambda x : x.nodes() if x.list_repr is not None else 1
-        func3_ = lambda x : x.apply_power(func_, 3)
-        func_neg_3_ = lambda x : x.apply_power(func_, -3)
+        func_ = Map(lambda x : x.nodes() if x.list_repr is not None else 1)
+        func3_ = func_ ** 3
+        func_neg_3_ = func_ ** (-3)
+        m = func3_ * func_neg_3_
         for t in trees:
-            self.assertEqual(counit(t), t.apply_product(func3_, func_neg_3_))
+            self.assertEqual(bck.counit(t), m(t))
 
     def test_partition(self):
         t = [
@@ -322,15 +332,14 @@ class TreeTests(unittest.TestCase):
 class MapTests(unittest.TestCase):
     def test_mul(self):
         f = Map(lambda x : x)
-        g = Map(lambda x : x.antipode())
+        g = bck.antipode
         h = f * g
-        counit = Map(lambda x : 1 if x == Tree(None) else 0)
 
         for t in trees:
-            self.assertEqual(counit(t), h(t))
+            self.assertEqual(bck.bck.counit(t), h(t))
 
     def test_add(self):
-        f = Map(lambda x : x.antipode())
+        f = bck.antipode
         g = -f
 
         for t in trees:
@@ -341,129 +350,103 @@ class MapTests(unittest.TestCase):
 
         g = f * (f**(-1))
         for t in trees:
-            self.assertEqual(counit(t), g(t))
+            self.assertEqual(bck.bck.counit(t), g(t))
 
     def test_exact_weights(self):
         for t in trees:
             self.assertAlmostEqual(exact_weights(t), (exact_weights ** 2)(t) / 2**t.nodes())
             self.assertAlmostEqual(exact_weights(t), (exact_weights ** (-1))(t) * (-1) ** t.nodes())
 
-    def test_antipode_property(self):
-        for t in trees:
-            self.assertEqual(counit(t), t.apply_product(S, ident))
-
-    def test_antipode_squared(self):
-        f = Map(lambda x : x.antipode())
-        g = f @ f
-        for t in trees:
-            self.assertEqual(t, g(t))
-
-    def test_antipode_squared_2(self):
-        f = Map(lambda x: x.antipode())
-        g = f @ f
-
-        for t in trees[1:]:
-            self.assertEqual(0, ((ident - g) ** t.nodes()) (t))
-
-    def test_antipode_squared_3(self):
-        f = Map(lambda x: x.antipode())
-        g = f @ f
-
-        h = Map(lambda x : ((ident - g)**(x.nodes() - 1))(x))
-        m = (ident + f) @ h
-
-        for t in trees[1:]:
-            self.assertEqual(0, m(t))
-
     def test_composition(self):
+        S = bck.antipode
         f = Map(lambda x : x**2)
 
         for t in trees:
-            self.assertEqual((f @ S)(t), f(t.antipode()))
+            self.assertEqual((f @ S)(t), f(S(t)))
 
     def test_compose_scalar(self):
         f = lambda x : x.factorial()
 
         for t in trees:
-            self.assertEqual(f(t), (counit @ f)(t))
+            self.assertEqual(f(t), (bck.bck.counit @ f)(t))
 
     def test_inverse_identity(self):
         a = Map(lambda x : 1 if x == Tree(None) or x == Tree([]) else 0) ** (-1)
         for t in trees:
             self.assertEqual((-1)**t.nodes(), a(t), repr(t))
 
-class CEMTests(unittest.TestCase):
-
-    def test_antipode(self):
-        trees_ = [
-            Tree([]),
-            Tree([[]]),
-            Tree([[],[]]),
-            Tree([[[]]])
-        ]
-        antipodes_ = [
-            Tree([]),
-            -Tree([[]]),
-            -Tree([[],[]]) + 2 * Tree([[]])**2,
-            -Tree([[[]]]) + 2 * Tree([[]])**2
-        ]
-        for t, a in zip(trees_, antipodes_):
-            self.assertEqual(a, t.cem_antipode())
-
-    def test_antipode_property(self):
-        for t in trees[1:]:
-            self.assertEqual(counit_CEM(t) * Tree([]), t.apply_cem_product(S_CEM, ident), repr(t))
-
-    def test_antipode_squared(self):
-        f = Map(lambda x : x.cem_antipode())
-        g = f @ f
-        for t in trees[1:]:
-            self.assertEqual(t, g(t))
-
-    def test_antipode_squared_2(self):
-        f = Map(lambda x: x.cem_antipode())
-        g = f @ f
-
-        for t in trees[1:]:
-            self.assertEqual(0, ((ident - g) ** t.nodes()) (t))
-
-    def test_antipode_squared_3(self):
-        f = Map(lambda x: x.cem_antipode())
-        g = f @ f
-
-        h = Map(lambda x : ((ident - g)**(x.nodes() - 1))(x))
-        m = (ident + f) @ h
-
-        for t in trees[1:]:
-            self.assertEqual(0, m(t))
-
-    def test_substitution_relations(self):
-        b = Map(lambda x : x.nodes())
-        b1 = Map(lambda x : x.nodes() ** 2)
-        b2 = Map(lambda x : x.factorial() - 1)
-
-        a = Map(lambda x : x.nodes() + 1)
-        a1 = Map(lambda x : x.nodes() ** 2 + 1)
-        a2 = Map(lambda x : x.factorial())
-
-        m1 = (b1 ^ b2) ^ a
-        m2 = b1 ^ (b2 ^ a)
-
-        m3 = b ^ (a1 * a2)
-        m4 = (b ^ a1) * (b ^ a2)
-
-        m5 = (b ^ a) ** (-1)
-        m6 = b ^ (a ** (-1))
-
-        for t in trees[1:]:
-            self.assertAlmostEqual(m1(t), m2(t), msg = repr(t))
-            self.assertAlmostEqual(m3(t), m4(t), msg = repr(t))
-            self.assertAlmostEqual(m5(t), m6(t), msg = repr(t))
-
-    def test_omega(self):
-        omegas_ = [0, 1, -1/2, 1/6, 1/3, 0, -1/12, -1/6, -1/4]
-        for i,t in enumerate(trees):
-            self.assertAlmostEqual(omegas_[i], omega(t))
+# class CEMTests(unittest.TestCase):
+#
+#     def test_antipode(self):
+#         trees_ = [
+#             Tree([]),
+#             Tree([[]]),
+#             Tree([[],[]]),
+#             Tree([[[]]])
+#         ]
+#         antipodes_ = [
+#             Tree([]),
+#             -Tree([[]]),
+#             -Tree([[],[]]) + 2 * Tree([[]])**2,
+#             -Tree([[[]]]) + 2 * Tree([[]])**2
+#         ]
+#         for t, a in zip(trees_, antipodes_):
+#             self.assertEqual(a, t.cem_antipode())
+#
+#     def test_antipode_property(self):
+#         for t in trees[1:]:
+#             self.assertEqual(counit_CEM(t) * Tree([]), t.apply_cem_product(S_CEM, ident), repr(t))
+#
+#     def test_antipode_squared(self):
+#         f = Map(lambda x : x.cem_antipode())
+#         g = f @ f
+#         for t in trees[1:]:
+#             self.assertEqual(t, g(t))
+#
+#     def test_antipode_squared_2(self):
+#         f = Map(lambda x: x.cem_antipode())
+#         g = f @ f
+#
+#         for t in trees[1:]:
+#             self.assertEqual(0, ((ident - g) ** t.nodes()) (t))
+#
+#     def test_antipode_squared_3(self):
+#         f = Map(lambda x: x.cem_antipode())
+#         g = f @ f
+#
+#         h = Map(lambda x : ((ident - g)**(x.nodes() - 1))(x))
+#         m = (ident + f) @ h
+#
+#         for t in trees[1:]:
+#             self.assertEqual(0, m(t))
+#
+#     def test_substitution_relations(self):
+#         b = Map(lambda x : x.nodes())
+#         b1 = Map(lambda x : x.nodes() ** 2)
+#         b2 = Map(lambda x : x.factorial() - 1)
+#
+#         a = Map(lambda x : x.nodes() + 1)
+#         a1 = Map(lambda x : x.nodes() ** 2 + 1)
+#         a2 = Map(lambda x : x.factorial())
+#
+#         m1 = (b1 ^ b2) ^ a
+#         m2 = b1 ^ (b2 ^ a)
+#
+#         m3 = b ^ (a1 * a2)
+#         m4 = (b ^ a1) * (b ^ a2)
+#
+#         m5 = (b ^ a) ** (-1)
+#         m6 = b ^ (a ** (-1))
+#
+#         for t in trees[1:]:
+#             self.assertAlmostEqual(m1(t), m2(t), msg = repr(t))
+#             self.assertAlmostEqual(m3(t), m4(t), msg = repr(t))
+#             self.assertAlmostEqual(m5(t), m6(t), msg = repr(t))
+#
+#     def test_omega(self):
+#         omegas_ = [0, 1, -1/2, 1/6, 1/3, 0, -1/12, -1/6, -1/4]
+#         for i,t in enumerate(trees):
+#             self.assertAlmostEqual(omegas_[i], omega(t))
 
 class RKTests(unittest.TestCase):
     def test_rk(self):

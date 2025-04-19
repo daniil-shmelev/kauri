@@ -500,7 +500,7 @@ class RK:
         :param t: Tree, Forest or ForestSum
         :rtype: float
         """
-        return t.apply(lambda x : self._elementary_weights(x.list_repr))
+        return self._elementary_weights(t.list_repr)
 
     def modified_equation_weights(self, t):
         #TODO

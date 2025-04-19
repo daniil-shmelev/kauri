@@ -1,6 +1,8 @@
 from .trees import Tree, Forest, ForestSum
 from .gentrees import trees_of_order
 import copy
+from .generic_algebra import _apply, _func_power, _func_product
+from .bck_impl import _coproduct, _antipode, _counit
 
 class Map:
     """
@@ -14,7 +16,7 @@ class Map:
         self.func = func
 
     def __call__(self, t):
-        return t.apply(self.func)
+        return _apply(t, self.func)
 
     def __pow__(self, n):
         """
@@ -44,14 +46,14 @@ class Map:
         if not isinstance(n, int):
             raise ValueError("Map.__pow__ received invalid exponent")
 
-        return Map(lambda x : x.apply_power(self.func, n))
+        return Map(lambda x : _func_power(x, self.func, n, _coproduct, _counit, _antipode))
 
     def __imul__(self, other):
         func_ = self.func
         if isinstance(other, int) or isinstance(other, float):
             self.func = lambda x : other * func_(x)
         elif isinstance(other, Map):
-            self.func = lambda x: x.apply_product(func_, other.func)
+            self.func = lambda x : _func_product(x, func_, other.func, _coproduct)
         else:
             raise
         return self
@@ -150,7 +152,7 @@ class Map:
             consider defining the composition manually as ``Map(lambda x : self(x).apply(other, apply_reduction = False))``
             and calling ``.reduce()`` on the final result of the computation.
         """
-        return Map(lambda x : (other(x) * Tree(None)).apply(self))
+        return Map(lambda x : self(other(x) * Tree(None)))
 
     def modified_equation(self):
         """
@@ -214,9 +216,7 @@ class Map:
 
 # Some common examples provided for convenience
 ident = Map(lambda x : x)
-counit = Map(lambda x : 1 if x == Tree(None) else 0)
 counit_CEM = Map(lambda x : 1 if x == Tree([]) else 0)
-S = Map(lambda x : x.antipode())
 S_CEM = Map(lambda x : x.cem_antipode())
 exact_weights = Map(lambda x : 1. / x.factorial())
 
