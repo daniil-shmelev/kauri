@@ -1,5 +1,6 @@
 from .gentrees import trees_of_order
 from .trees import Tree
+from .generic_algebra import _apply
 import numpy as np
 import sympy as sp
 from scipy.optimize import root, fsolve
@@ -103,7 +104,7 @@ def RK_symbolic_weight(t, s, explicit = False, A_mask = None, b_mask = None, mat
     if isinstance(t, int) or isinstance(t, float):
         t_ = t * Tree(None).as_forest_sum()
 
-    out = t_.apply(lambda x : _RK_symbolic_weight(x, s, explicit, A_mask, b_mask), apply_reduction = False)
+    out = _apply(t_, lambda x : _RK_symbolic_weight(x, s, explicit, A_mask, b_mask))
 
     if rationalise:
         out = sp.nsimplify(out, tolerance=1e-10, rational = True)
@@ -500,7 +501,8 @@ class RK:
         :param t: Tree, Forest or ForestSum
         :rtype: float
         """
-        return self._elementary_weights(t.list_repr)
+        f_ = lambda x : self._elementary_weights(x.list_repr)
+        return _apply(t, f_)
 
     def modified_equation_weights(self, t):
         #TODO

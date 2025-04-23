@@ -1,12 +1,19 @@
-from .trees import Tree, Forest, ForestSum
-from .gentrees import trees_of_order
+from .trees import Tree, _is_reducible
 import copy
+from functools import cache
 from .generic_algebra import _apply, _func_power, _func_product
-from .bck_impl import _coproduct, _antipode, _counit
+
+from .bck_impl import _coproduct as bck_coproduct
+from .bck_impl import _antipode as bck_antipode
+from .bck_impl import _counit as bck_counit
+
+from .cem_impl import _coproduct as cem_coproduct
+from .cem_impl import _antipode as cem_antipode
+from .cem_impl import _counit as cem_counit
 
 class Map:
     """
-    A multiplicative linear map over the Hopf algebra of planar rooted trees. This class is callable, allowing it to be
+    A multiplicative linear map over the Hopf algebra of non-planar rooted trees. This class is callable, allowing it to be
     used in conjunction with the ``.apply()``, ``.apply_product()`` and ``.apply_power()`` methods of the classes ``Tree``,
     ``Forest`` and ``ForestSum``.
 
@@ -15,6 +22,7 @@ class Map:
     def __init__(self, func):
         self.func = func
 
+    @cache
     def __call__(self, t):
         return _apply(t, self.func)
 
@@ -46,22 +54,29 @@ class Map:
         if not isinstance(n, int):
             raise ValueError("Map.__pow__ received invalid exponent")
 
-        return Map(lambda x : _func_power(x, self.func, n, _coproduct, _counit, _antipode))
+        return Map(lambda x : _func_power(x, self.func, n, bck_coproduct, bck_counit, bck_antipode))
 
     def __imul__(self, other):
         func_ = self.func
         if isinstance(other, int) or isinstance(other, float):
             self.func = lambda x : other * func_(x)
         elif isinstance(other, Map):
-            self.func = lambda x : _func_product(x, func_, other.func, _coproduct)
+            self.func = lambda x : _func_product(x, func_, other.func, bck_coproduct)
         else:
             raise
         return self
 
     def __ixor__(self, other):
         func_ = self.func
-        if isinstance(other, Map):
-            self.func = lambda x: x.apply_cem_product(func_, other.func)
+        if isinstance(other, int) or isinstance(other, float):
+            self.func = lambda x: other * func_(x)
+        elif isinstance(other, Map):
+            def f_(x):
+                out = _func_product(x, func_, other.func, cem_coproduct)
+                if _is_reducible(out):
+                    out = out.singleton_reduced()
+                return out
+            self.func = f_
         else:
             raise
         return self
@@ -180,7 +195,7 @@ class Map:
 
     def preprocessed_integrator(self, apply_reduction = True):
         #TODO
-        return exact_weights ^ (self @ S_CEM)
+        return exact_weights ^ (self @ Map(cem_antipode))
 
     def exponential(self):
         """
@@ -211,13 +226,12 @@ class Map:
         :return: Exponential map
         :rtype: Map
         """
-        return self ^ (exact_weights @ S_CEM)
+        return self ^ (exact_weights @ Map(cem_antipode))
 
 
 # Some common examples provided for convenience
 ident = Map(lambda x : x)
-counit_CEM = Map(lambda x : 1 if x == Tree([]) else 0)
-S_CEM = Map(lambda x : x.cem_antipode())
+sign = Map(lambda x : x.sign())
 exact_weights = Map(lambda x : 1. / x.factorial())
 
 omega = Map(lambda x : 1 if x == Tree(None) or x == Tree([]) else 0).logarithm()

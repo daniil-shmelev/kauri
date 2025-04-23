@@ -1,11 +1,11 @@
-from .trees import Tree, Forest, ForestSum
+from .trees import Tree, Forest, ForestSum, _is_reducible
 
 def _forest_apply(f, func):
     out = 1
     for t in f.tree_list:
         out = out * func(t)
 
-    if not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
+    if _is_reducible(out):
         out = out.reduce()
     return out
 
@@ -17,7 +17,7 @@ def _forest_sum_apply(fs, func):
             term = term * func(t)
         out += c * term
 
-    if not (isinstance(out, int) or isinstance(out, float) or isinstance(out, Tree)):
+    if _is_reducible(out):
         out = out.reduce()
     return out
 
@@ -38,7 +38,7 @@ def _func_product(t, func1, func2, coproduct):
     for subtree, branches in cp[1:]:
         out += _forest_apply(branches, func1) * func2(subtree)
 
-    if not (isinstance(out, int) or isinstance(out, float)):
+    if _is_reducible(out):
         out = out.reduce()
 
     return out
@@ -55,6 +55,6 @@ def _func_power(t, func, exponent, coproduct, counit, antipode):
     else:
         res = _func_product(t, func, lambda x : _func_power(x, func, exponent - 1, coproduct, counit, antipode), coproduct)
 
-    if not (isinstance(res, int) or isinstance(res, float)):
+    if _is_reducible(res):
         res = res.reduce()
     return res

@@ -1,4 +1,4 @@
-from kauri.bck_impl import _counit, _coproduct, _antipode
+from ..bck_impl import _counit, _coproduct, _antipode
 from ..maps import Map
 
 counit = Map(_counit)

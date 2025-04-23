@@ -2,7 +2,7 @@
 <img src="docs/_static/logo.png" width="350">
 </p>
 
-An implementation of the Butcher-Connes-Kreimer Hopf algebra of planar rooted trees [[Connes & Kreimer, 1999](#reference)], 
+An implementation of the Butcher-Connes-Kreimer Hopf algebra of non-planar rooted trees [[Connes & Kreimer, 1999](#reference)], 
 commonly used for the analysis of B-series and Runge-Kutta schemes. The Hopf algebra is given by
 $(\mathcal{H}, \Delta,\mu,\varepsilon, \emptyset, S)$, where<br>
 - $\mathcal{H}$ is the set of all linear combinations of forests of trees
@@ -108,7 +108,7 @@ trees_up_to_order(n) #A generator function generating all trees of order <= n
 
 ```bibtex
 @misc{shmelev2025kauri,
-  title={Kauri: Algebraic manipulation of planar rooted trees in Python},
+  title={Kauri: Algebraic manipulation of non-planar rooted trees in Python},
   author={Shmelev, Daniil},
   year={2025},
   howpublished={\url{https://github.com/daniil-shmelev/kauri}}

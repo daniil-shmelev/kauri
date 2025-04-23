@@ -16,7 +16,7 @@ def _counit(t):
 @dataclass(frozen=True)
 class Tree():
     """
-    A single planar rooted tree.
+    A single non-planar rooted tree.
 
     :param list_repr: The nested list representation of the tree
 
@@ -167,94 +167,6 @@ class Tree():
         """
         return math.factorial(self.nodes()) / self.sigma()
 
-    def cem_coproduct(self):
-        """
-        Computes the Calaque, Ebrahimi-Fard and Manchon :cite:`calaque2011two` coproduct on trees, given by
-
-        .. math::
-
-            \\Delta_{CEM}(t) = \\sum (t \\setminus p) \\otimes p_t,
-
-        where, for a tree :math:`t` with edge set :math:`E`, the sum is over all sets of edges :math:`p \\subset E`, and
-
-        - :math:`t \\setminus p` is the forest formed by removing all edges in :math:`p` from the tree :math:`t`,
-        - :math:`p_t` is the tree formed by contracting each tree of :math:`t \\setminus p` to a single vertex and re-establishing the edges in :math:`p`. :cite:`chartier2010algebraic`
-
-        :return: Values of :math:`p_t`
-        :rtype: list
-        :return: Values of :math:`t \\setminus p`
-        :rtype: list
-
-        Example usage::
-
-            t = Tree([[[]],[]])
-            t.partition()
-        """
-        if self.list_repr is None:
-            raise
-        if self.list_repr == tuple():
-            return [SINGLETON_TREE], [SINGLETON_FOREST]
-
-        tree_list = []
-        forest_list = []
-        for rep in self.list_repr:
-            t = Tree(rep)
-            s, b = t.cem_coproduct()
-            tree_list.append(s)
-            forest_list.append(b)
-
-        new_tree_list = []
-        new_forest_list = []
-
-        num_branches = len(tree_list)
-
-        for edges in itertools.product([0, 1], repeat=num_branches):
-
-            for p in itertools.product(*tree_list):
-                rep = []
-                for i,t in enumerate(p):
-                    if t.list_repr is None:
-                        continue
-                    if edges[i]:
-                        rep += t.list_repr
-                    else:
-                        rep += [t.list_repr]
-                new_tree_list.append(Tree(rep))
-
-            for p in itertools.product(*forest_list):
-                #Must ensure that the first tree in the forest is connected to the root
-                #If no such tree, add an empty tree to the forest to signify this
-                #Forest constructor does not call Forest.reduce(), meaning this empty tree will survive
-                t = []
-                root_tree_repr = []
-                for i,f in enumerate(p):
-                    if edges[i]:
-                        root_tree_repr += [f.tree_list[0].list_repr]
-                        t += f.tree_list[1:]
-                    else:
-                        t += f.tree_list
-                t = [Tree(root_tree_repr)] + t
-                new_forest_list.append(Forest(t))
-
-        return new_tree_list, new_forest_list
-
-    @cache
-    def cem_antipode(self):
-        # TODO
-        if self.list_repr is None:
-            return ZERO_FOREST_SUM
-        elif self.list_repr == tuple():
-            return SINGLETON_FOREST_SUM
-
-        subtrees, branches = self.cem_coproduct()
-        out = -self.as_forest_sum()
-        for i in range(len(subtrees)):
-            if branches[i]._equals(self.as_forest()) or subtrees[i]._equals(self):
-                continue
-            out = out - subtrees[i].cem_antipode() * branches[i]
-
-        return out.singleton_reduced().reduce()
-
     def sign(self):
         """
         Returns the tree signed by the number of nodes, :math:`(-1)^{|t|} t`.
@@ -268,24 +180,6 @@ class Tree():
             t.sign()
         """
         return self if self.nodes() % 2 == 0 else -self
-
-    def signed_antipode(self):
-        """
-        Returns the antipode of the signed tree, :math:`S((-1)^{|t|} t)`.
-
-        :return: Antipode of the signed tree, :math:`S((-1)^{|t|} t)`
-        :rtype: ForestSum
-
-        .. note::
-            Since the antipode and sign functions commute, this function is equivalent to both ``self.sign().antipode()`` and
-            ``self.antipode().sign()``.
-
-        Example usage::
-
-            t = Tree([[[]],[]])
-            t.signed_antipode() #Same as t.sign().antipode() and t.antipode().sign()
-        """
-        return self.sign().antipode()
 
     def __mul__(self, other):
         """
@@ -769,6 +663,9 @@ class Forest():
         else:
             raise ValueError("Cannot check equality of Forest and " + str(type(other)))
 
+    def as_forest(self):
+        return self
+
     def as_forest_sum(self):
         """
         Returns the forest f as a forest sum. Equivalent to ``ForestSum([f])``.
@@ -1109,6 +1006,9 @@ class ForestSum():
             s1.singleton_reduced() #Returns Tree([[],[]]) + Tree([])
         """
         return ForestSum(tuple((c, f.singleton_reduced()) for c, f in self.term_list))
+
+    def as_forest_sum(self):
+        return self
 
 ##############################################
 ##############################################
