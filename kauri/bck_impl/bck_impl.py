@@ -1,8 +1,7 @@
 from functools import cache
 import itertools
-from ..trees import Tree, Forest, EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM, SINGLETON_TREE, SINGLETON_FOREST, SINGLETON_FOREST_SUM
+from ..trees import Tree, Forest, TensorProductSum, EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM, SINGLETON_TREE, SINGLETON_FOREST, SINGLETON_FOREST_SUM
 from ..generic_algebra import _forest_apply
-from ..tensor_product import TensorSum
 
 def _counit(t):
     return 1 if t.list_repr is None else 0
@@ -16,10 +15,11 @@ def _antipode(t):
 
     cp = _coproduct(t)
     out = -t.as_forest_sum()
-    for subtree, branches in cp:
+    for c, subtree_, branches in cp:
+        subtree = subtree_[0]
         if subtree._equals(t) or subtree._equals(EMPTY_TREE):
             continue
-        out = out - _forest_apply(branches, _antipode) * subtree
+        out = out - c * _forest_apply(branches, _antipode) * subtree
 
     return out.reduce()
 
@@ -49,4 +49,5 @@ def _coproduct_helper(t):
     return new_term_list
 
 def _coproduct(t):
-    return TensorSum(_coproduct_helper(t))
+    cp = _coproduct_helper(t)
+    return TensorProductSum(tuple((1, x[0], x[1]) for x in cp))

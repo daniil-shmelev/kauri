@@ -25,7 +25,7 @@ class Tree():
             t = Tree([[[]],[]])
     """
 ######################################
-    list_repr: Union[tuple, list, None]
+    list_repr: Union[tuple, list, None] = None
 
     def __post_init__(self):
         tuple_repr = _to_tuple(self.list_repr)
@@ -398,6 +398,18 @@ class Tree():
         next = _next_layout(layout)
         return Tree(_level_sequence_to_list_repr(next))
 
+    def __matmul__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            return TensorProductSum(( (other, self.as_forest(), EMPTY_FOREST), ))
+        elif isinstance(other, Tree) or isinstance(other, Forest):
+            return TensorProductSum(( (1, self.as_forest(), other.as_forest()), ))
+        elif isinstance(other, ForestSum):
+            term_list = []
+            for c, f in other:
+                term_list.append((c, self, f))
+            return TensorProductSum(term_list)
+        else:
+            raise ValueError("Cannot take tensor product of Tree and " + str(type(other)))
 
 ######################################
 @dataclass(frozen=True)
@@ -416,7 +428,7 @@ class Forest():
             f = Forest([t1,t2,t3])
     """
 ######################################
-    tree_list : Union[tuple, list]
+    tree_list : Union[tuple, list] = tuple()
 
     def __post_init__(self):
         tuple_repr = tuple(self.tree_list)
@@ -703,6 +715,22 @@ class Forest():
             out = Forest(new_tree_list)
         return out
 
+    def __matmul__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            return TensorProductSum(( (other, self, EMPTY_FOREST), ))
+        elif isinstance(other, Tree) or isinstance(other, Forest):
+            return TensorProductSum(( (1, self, other.as_forest()), ))
+        elif isinstance(other, ForestSum):
+            term_list = []
+            for c, f in other:
+                term_list.append((c, self, f))
+            return TensorProductSum(term_list)
+        else:
+            raise ValueError("Cannot take tensor product of Forest and " + str(type(other)))
+
+    def __getitem__(self, i):
+        return self.tree_list[i]
+
 
 ######################################
 @dataclass(frozen=True)
@@ -723,7 +751,7 @@ class ForestSum():
             s == t1 - 2 * t1 * t2 + t2 * t3 #True
     """
 ######################################
-    term_list : Union[tuple, list]
+    term_list : Union[tuple, list] = tuple()
 
     def __post_init__(self):
         new_term_list = []
@@ -1010,8 +1038,38 @@ class ForestSum():
     def as_forest_sum(self):
         return self
 
+    def __matmul__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            term_list = []
+            for c, f in self:
+                term_list.append((other * c, f, EMPTY_FOREST))
+            return TensorProductSum(term_list)
+        elif isinstance(other, Tree) or isinstance(other, Forest):
+            other_ = other.as_forest()
+            term_list = []
+            for c, f in self:
+                term_list.append((c, f, other_))
+            return TensorProductSum(term_list)
+        elif isinstance(other, ForestSum):
+            term_list = []
+            for c1, f1 in self:
+                for c2, f2 in other:
+                    term_list.append((c1 * c2, f1, f2))
+            return TensorProductSum(term_list)
+        else:
+            raise ValueError("Cannot take tensor product of ForestSum and " + str(type(other)))
+
+    def __getitem__(self, i):
+        return self.term_list[i]
+
 ##############################################
 ##############################################
+
+def _is_scalar(obj):
+    return isinstance(obj, int) or isinstance(obj, float)
+
+def _is_tree_or_forest(obj):
+    return isinstance(obj, Tree) or isinstance(obj, Forest)
 
 def _is_reducible(obj):
     return isinstance(obj, Forest) or isinstance(obj, ForestSum)
@@ -1027,3 +1085,95 @@ ZERO_FOREST_SUM = ForestSum( ( (0, EMPTY_FOREST), ) )
 SINGLETON_TREE = Tree(tuple())
 SINGLETON_FOREST = Forest((SINGLETON_TREE,))
 SINGLETON_FOREST_SUM = ForestSum( ( (1, SINGLETON_FOREST), ) )
+
+##############################################
+##############################################
+
+@dataclass(frozen=True)
+class TensorProductSum():
+    term_list: Union[tuple, list, None] #(c, f1, f2)
+
+    def __post_init__(self):
+        tuple_list = []
+        for x in self.term_list:
+            if not (_is_scalar(x[0]) and _is_tree_or_forest(x[1]) and _is_tree_or_forest(x[2])):
+                raise ValueError("Terms must be tuples of type (int | float, Tree | Forest, Tree | Forest)")
+            tuple_list.append((x[0], x[1].as_forest(), x[2].as_forest()))
+        tuple_list = tuple(tuple_list)
+        object.__setattr__(self, 'term_list', tuple_list)
+
+    def __copy__(self):
+        return self
+
+    def __deepcopy__(self, memodict={}):
+        memodict[id(self)] = self
+        return self
+
+    def __repr__(self):
+        if self.term_list is None or self.term_list == tuple():
+            return "0"
+        r = ""
+        for x in self.term_list[:-1]:
+            r += repr(x[0]) + " " + repr(x[1]) + " \u2297 " + repr(x[2])
+            r += "+"
+        r += repr(self.term_list[-1][0]) + " " + repr(self.term_list[-1][1]) + " \u2297 " + repr(self.term_list[-1][2])
+        return r
+
+    def reduce(self):
+        #TODO docstring
+        new_term_list = []
+
+        for c, f1, f2 in self.term_list:
+            f1_reduced = f1.reduce()
+            f2_reduced = f2.reduce()
+
+            for i, (c_, f1_, f2_) in enumerate(new_term_list):
+                if f1_reduced._equals(f1_) and f2_reduced._equals(f2_):
+                    old_term_ = new_term_list[i]
+                    new_term_list[i] = (old_term_[0] + c, old_term_[1], old_term_[2])
+                    break
+            else:
+                new_term_list.append((c, f1_reduced, f2_reduced))
+
+        result = tuple(term for term in new_term_list if term[0] != 0)
+        return TensorProductSum(result)
+
+    def __eq__(self, other):
+        #TODO docstring
+        if not isinstance(other, TensorProductSum):
+            raise ValueError("Cannot check equality of TensorSum and " + str(type(other)))
+        self_reduced = self.reduce()
+        other_reduced = other.reduce()
+        return Counter(self_reduced.term_list) == Counter(other_reduced.term_list)
+
+    def __hash__(self):
+        return hash(frozenset(Counter(self.term_list).items()))
+
+    def __add__(self, other):
+        if not isinstance(other, TensorProductSum):
+            raise ValueError("Cannot add TensorSum and " + str(type(other)))
+        return TensorProductSum(self.term_list + other.term_list)
+
+    def __neg__(self):
+        return TensorProductSum(tuple((-x[0], x[1], x[2]) for x in self.term_list))
+
+    def __sub__(self, other):
+        if not isinstance(other, TensorProductSum):
+            raise ValueError("Cannot subtract " + str(type(other)) + " from TensorSum")
+        return self + (-other)
+
+    def __mul__(self, other):
+        if isinstance(other, int) or isinstance(other, float):
+            return TensorProductSum(tuple((other * x[0], x[1], x[2]) for x in self.term_list))
+        else:
+            raise ValueError("Cannot multiply TensorSum by " + str(type(other)))
+
+    def __iter__(self):
+        for c, f1, f2 in self.term_list:
+            yield c, f1, f2
+
+    def __len__(self):
+        return len(self.term_list)
+
+    def __getitem__(self, i):
+        return self.term_list[i]

@@ -1,23 +1,24 @@
 import unittest
 from kauri import *
+from kauri import Tree as T
 
-trees = [Tree(None),
-         Tree([]),
-         Tree([[]]),
-         Tree([[],[]]),
-         Tree([[[]]]),
-         Tree([[],[],[]]),
-         Tree([[],[[]]]),
-         Tree([[[],[]]]),
-         Tree([[[[]]]])]
+trees = [T(None),
+         T([]),
+         T([[]]),
+         T([[],[]]),
+         T([[[]]]),
+         T([[],[],[]]),
+         T([[],[[]]]),
+         T([[[],[]]]),
+         T([[[[]]]])]
 
 class TreeTests(unittest.TestCase):
 
     def test_repr(self):
-        self.assertEqual(repr(Tree([[[]], []])), '[[[]], []]')
-        self.assertEqual(repr(Tree([[[]], []]).as_forest()), '[[[]], []]')
-        self.assertEqual(repr(Tree([[[]], []]).as_forest_sum()), '1*[[[]], []]')
-        self.assertEqual(repr(Tree(None)), "∅")
+        self.assertEqual(repr(T([[[]], []])), '[[[]], []]')
+        self.assertEqual(repr(T([[[]], []]).as_forest()), '[[[]], []]')
+        self.assertEqual(repr(T([[[]], []]).as_forest_sum()), '1*[[[]], []]')
+        self.assertEqual(repr(T(None)), "∅")
         self.assertEqual(repr(Forest([])), "∅")
         self.assertEqual(repr(ForestSum([])), "0")
 
@@ -27,67 +28,67 @@ class TreeTests(unittest.TestCase):
             self.assertEqual("1*" + repr(t), repr(t.as_forest_sum()), repr(t) + " " + repr(t.as_forest_sum()))
 
     def test_add(self):
-        t1 = Tree([]) + Tree([[],[]])
+        t1 = T([]) + T([[],[]])
         t2 = ForestSum((
-            (1, Forest([Tree([])])),
-            (1, Forest([Tree([[],[]])]))
+            (1, Forest([T([])])),
+            (1, Forest([T([[],[]])]))
         ))
         self.assertEqual(t2, t1)
 
-        t1 = Tree([]) - 2 * Tree([[], []])
+        t1 = T([]) - 2 * T([[], []])
         t2 = ForestSum((
-            (1, Forest([Tree([])])),
-            (-2, Forest([Tree([[], []])]))
+            (1, Forest([T([])])),
+            (-2, Forest([T([[], []])]))
         ))
         self.assertEqual(t2, t1)
 
-        t1 = 1 + Tree([[], []])
+        t1 = 1 + T([[], []])
         t2 = ForestSum((
-            (1, Forest([Tree(None)])),
-            (1, Forest([Tree([[], []])]))
+            (1, Forest([T(None)])),
+            (1, Forest([T([[], []])]))
         ))
         self.assertEqual(t2, t1)
 
-        t1 = Tree([[], []]) + 2
+        t1 = T([[], []]) + 2
         t2 = ForestSum((
-            (1, Forest([Tree([[], []])])),
-            (2, Forest([Tree(None)]))
+            (1, Forest([T([[], []])])),
+            (2, Forest([T(None)]))
         ))
         self.assertEqual(t2, t1)
 
-        t1 = Tree([[], []]) + Forest([Tree([]), Tree([[]])])
+        t1 = T([[], []]) + Forest([T([]), T([[]])])
         t2 = ForestSum((
-            (1, Forest([Tree([[], []])])),
-            (1, Forest([Tree([]), Tree([[]])]))
+            (1, Forest([T([[], []])])),
+            (1, Forest([T([]), T([[]])]))
         ))
         self.assertEqual(t2, t1)
 
     def test_mul(self):
-        t1 = Tree([]) * Tree([[], []])
-        t2 = Forest([Tree([]), Tree([[],[]])])
+        t1 = T([]) * T([[], []])
+        t2 = Forest([T([]), T([[],[]])])
         self.assertEqual(t2, t1)
 
-        t1 = Tree([]) * Tree(None) * Tree(None)
-        t2 = Tree([])
+        t1 = T([]) * T(None) * T(None)
+        t2 = T([])
         self.assertEqual(t1, t2)
 
-        t1 = Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
-        t2 = Forest([Tree([[]]), Tree([]), Tree([[],[]])])
+        t1 = T([[]]) * Forest([T([]), T([[],[]])])
+        t2 = Forest([T([[]]), T([]), T([[],[]])])
         self.assertEqual(t1, t2)
 
-        t1 = (Tree([]) - Tree([[]])) * Tree([])
-        t2 = Tree([]) * Tree([]) - Tree([[]]) * Tree([])
+        t1 = (T([]) - T([[]])) * T([])
+        t2 = T([]) * T([]) - T([[]]) * T([])
         self.assertEqual(t1,t2)
 
     def test_pow_tree(self):
-        t1 = Tree([]) ** 3
-        t2 = Tree([]) * Tree([]) * Tree([])
+        t1 = T([]) ** 3
+        t2 = T([]) * T([]) * T([])
         self.assertEqual(t1, t2)
 
-        t1 = Tree(None) ** 3
+        t1 = T(None) ** 3
         self.assertEqual(1, t1)
 
-        t1 = Tree([]) ** 0
+        t1 = T([]) ** 0
         self.assertEqual(1, t1)
 
         with self.assertRaises(ValueError):
@@ -96,14 +97,14 @@ class TreeTests(unittest.TestCase):
             t1 ** 1.5
 
     def test_pow_forest(self):
-        t1 = Forest([Tree([]), Tree(None)]) ** 3
-        t2 = Tree([]) * Tree([]) * Tree([])
+        t1 = Forest([T([]), T(None)]) ** 3
+        t2 = T([]) * T([]) * T([])
         self.assertEqual(t1, t2)
 
-        t1 = Tree(None).as_forest() ** 3
+        t1 = T(None).as_forest() ** 3
         self.assertEqual(1, t1)
 
-        t1 = Tree([]).as_forest() ** 0
+        t1 = T([]).as_forest() ** 0
         self.assertEqual(1, t1)
 
         with self.assertRaises(ValueError):
@@ -112,11 +113,11 @@ class TreeTests(unittest.TestCase):
             t1 ** 1.5
 
     def test_pow_forest_sum(self):
-        t1 = (Tree([]) - 2 * Tree([[]])) ** 2
-        t2 = Tree([]) * Tree([]) - 4 * Tree([]) * Tree([[]]) + 4 * Tree([[]]) * Tree([[]])
+        t1 = (T([]) - 2 * T([[]])) ** 2
+        t2 = T([]) * T([]) - 4 * T([]) * T([[]]) + 4 * T([[]]) * T([[]])
         self.assertEqual(t1, t2)
 
-        t1 = Tree([]).as_forest_sum() ** 0
+        t1 = T([]).as_forest_sum() ** 0
         self.assertEqual(1, t1)
 
         with self.assertRaises(ValueError):
@@ -125,40 +126,40 @@ class TreeTests(unittest.TestCase):
             t1 ** 1.5
 
     def test_equality(self):
-        self.assertEqual(Tree([[],[[]]]), Tree([[[]],[]]))
-        self.assertEqual(Tree([[], [[]]]).as_forest(), Tree([[[]], []]))
-        self.assertEqual(Tree([[],[[],[]]]), Tree([[[],[]], []]))
-        self.assertEqual(Tree([[[]],[],[]]), Tree([[],[[]],[]]))
-        self.assertEqual(Tree([[[]], [], []]), Tree([[], [], [[]]]))
-        self.assertEqual(Forest([Tree([[]]), Tree([]), Tree([[],[]])]), Forest([Tree([]), Tree([[],[]]), Tree([[]])]))
-        self.assertEqual(Tree([]) - Tree([[]]), -Tree([[]]) + Tree([]))
-        self.assertEqual(ForestSum([(1, Tree([[]]).as_forest()), (1, Tree([]).as_forest()), (-1, Tree([]).as_forest())]), Tree([[]]).as_forest_sum())
+        self.assertEqual(T([[],[[]]]), T([[[]],[]]))
+        self.assertEqual(T([[], [[]]]).as_forest(), T([[[]], []]))
+        self.assertEqual(T([[],[[],[]]]), T([[[],[]], []]))
+        self.assertEqual(T([[[]],[],[]]), T([[],[[]],[]]))
+        self.assertEqual(T([[[]], [], []]), T([[], [], [[]]]))
+        self.assertEqual(Forest([T([[]]), T([]), T([[],[]])]), Forest([T([]), T([[],[]]), T([[]])]))
+        self.assertEqual(T([]) - T([[]]), -T([[]]) + T([]))
+        self.assertEqual(ForestSum([(1, T([[]]).as_forest()), (1, T([]).as_forest()), (-1, T([]).as_forest())]), T([[]]).as_forest_sum())
 
     def test_equality_2(self):
         self.assertEqual(
-            2*Tree([[]]) * Tree([]),
-            2*Tree([]) * Tree([[]])
+            2*T([[]]) * T([]),
+            2*T([]) * T([[]])
         )
 
         self.assertEqual(
-            -Tree([]) * Tree([]) * Tree([]) + 2 * Tree([[]]) * Tree([]) - Tree([[], []]),
-            - Tree([[], []]) + 2 * Tree([]) * Tree([[]]) -Tree([]) * Tree([]) * Tree([])
+            -T([]) * T([]) * T([]) + 2 * T([[]]) * T([]) - T([[], []]),
+            - T([[], []]) + 2 * T([]) * T([[]]) -T([]) * T([]) * T([])
         )
 
     def test_hash(self):
-        self.assertEqual(hash(Tree([[],[[]]])), hash(Tree([[[]],[]])))
-        self.assertEqual(hash(Tree([[],[[],[]]])), hash(Tree([[[],[]], []])))
-        self.assertEqual(hash(Tree([[[]],[],[]])), hash(Tree([[],[[]],[]])))
-        self.assertEqual(hash(Tree([[[]], [], []])), hash(Tree([[], [], [[]]])))
-        self.assertEqual(hash(Forest([Tree([[]]), Tree([]), Tree([[],[]])])), hash(Forest([Tree([]), Tree([[],[]]), Tree([[]])])))
-        self.assertEqual(hash(Tree([]) - Tree([[]])), hash(-Tree([[]]) + Tree([])))
-        self.assertEqual(hash(Tree([[]]) + Tree([]) - Tree([])), hash(Tree([[]]).as_forest_sum()))
+        self.assertEqual(hash(T([[],[[]]])), hash(T([[[]],[]])))
+        self.assertEqual(hash(T([[],[[],[]]])), hash(T([[[],[]], []])))
+        self.assertEqual(hash(T([[[]],[],[]])), hash(T([[],[[]],[]])))
+        self.assertEqual(hash(T([[[]], [], []])), hash(T([[], [], [[]]])))
+        self.assertEqual(hash(Forest([T([[]]), T([]), T([[],[]])])), hash(Forest([T([]), T([[],[]]), T([[]])])))
+        self.assertEqual(hash(T([]) - T([[]])), hash(-T([[]]) + T([])))
+        self.assertEqual(hash(T([[]]) + T([]) - T([])), hash(T([[]]).as_forest_sum()))
 
     def test_mixed_arithmetic(self):
-        t0 = Tree(None)
-        t1 = Tree([])
-        t2 = Tree([[]])
-        t3 = Tree([[], []])
+        t0 = T(None)
+        t1 = T([])
+        t2 = T([[]])
+        t3 = T([[], []])
 
         f1 = Forest([t1, t2])
         f2 = Forest([t3])
@@ -174,7 +175,7 @@ class TreeTests(unittest.TestCase):
     def test_nodes(self):
         nums = [0,1,2,3,3,4,4,4,4]
         for t, n in zip(trees, nums):
-            self.assertEqual(n, t.nodes(), repr(t) + " Tree")
+            self.assertEqual(n, t.nodes(), repr(t) + " T")
             self.assertEqual(n, t.as_forest().nodes(), repr(t) + " Forest")
             self.assertEqual(n, t.as_forest_sum().nodes(), repr(t) + " Forest")
 
@@ -209,23 +210,41 @@ class TreeTests(unittest.TestCase):
     def test_factorial(self):
         factorials = [1,1,2,3,6,4,8,12,24]
         for t, f in zip(trees, factorials):
-            self.assertEqual(f, t.factorial(), repr(t) + " Tree")
+            self.assertEqual(f, t.factorial(), repr(t) + " T")
             self.assertEqual(f, t.as_forest().factorial(), repr(t) + " Forest")
             self.assertEqual(f, t.as_forest_sum().factorial(), repr(t) + " ForestSum")
 
+class BCKTests(unittest.TestCase):
+
+    def test_coproduct(self):
+        trees_ = [
+            T([]),
+            T([[]]),
+            T([[],[]]),
+            T([[[]]])
+        ]
+        true_coproducts_ = [
+            T([]) @ T() + T() @ T([]),
+            T([[]]) @ T() + T() @ T([[]]) + T([]) @ T([]),
+            T([[],[]]) @ T() + T() @ T([[],[]]) + 2 * T([]) @ T([[]]) + T([]) * T([]) @ T([]),
+            T([[[]]]) @ T() + T() @ T([[[]]]) + T([[]]) @ T([]) + T([]) @ T([[]])
+        ]
+        for t, c in zip(trees_, true_coproducts_):
+            self.assertEqual(c, bck.coproduct(t).reduce())
+
     def test_antipode(self):
         antipodes = [
-            1*Tree(None),
-            -Tree([]),
-            Tree([]) * Tree([]) - Tree([[]]),
-            -Tree([]) * Tree([]) * Tree([]) + 2 * Tree([[]]) * Tree([]) - Tree([[],[]]),
-            -Tree([]) * Tree([]) * Tree([]) + 2 * Tree([[]]) * Tree([]) - Tree([[[]]]),
-            Tree([]) * Tree([]) * Tree([]) * Tree([]) - 3 * Tree([[]]) * Tree([]) * Tree([]) + 3 * Tree([[],[]]) * Tree([]) - Tree([[],[],[]]),
-            Tree([]) * Tree([]) * Tree([]) * Tree([]) - 3 * Tree([[]]) * Tree([]) * Tree([]) + Tree([[],[]]) * Tree([]) + Tree([[]]) * Tree([[]]) + Tree([[[]]]) * Tree([]) - Tree([[],[[]]])
+            1*T(None),
+            -T([]),
+            T([]) * T([]) - T([[]]),
+            -T([]) * T([]) * T([]) + 2 * T([[]]) * T([]) - T([[],[]]),
+            -T([]) * T([]) * T([]) + 2 * T([[]]) * T([]) - T([[[]]]),
+            T([]) * T([]) * T([]) * T([]) - 3 * T([[]]) * T([]) * T([]) + 3 * T([[],[]]) * T([]) - T([[],[],[]]),
+            T([]) * T([]) * T([]) * T([]) - 3 * T([[]]) * T([]) * T([]) + T([[],[]]) * T([]) + T([[]]) * T([[]]) + T([[[]]]) * T([]) - T([[],[[]]])
         ]
 
         for t, s in zip(trees[:7], antipodes):
-            self.assertEqual(s, bck.antipode(t), repr(t) + " Tree")
+            self.assertEqual(s, bck.antipode(t), repr(t) + " T")
             self.assertEqual(s, bck.antipode(t.as_forest()), repr(t) + " Forest")
             self.assertEqual(s, bck.antipode(t.as_forest_sum()), repr(t) + " ForestSum")
 
@@ -348,28 +367,44 @@ class MapTests(unittest.TestCase):
             self.assertEqual(f(t), (kauri.bck.bck.counit @ f)(t))
 
     def test_inverse_identity(self):
-        a = Map(lambda x : 1 if x == Tree(None) or x == Tree([]) else 0) ** (-1)
+        a = Map(lambda x : 1 if x == T(None) or x == T([]) else 0) ** (-1)
         for t in trees:
             self.assertEqual((-1)**t.nodes(), a(t), repr(t))
 
 class CEMTests(unittest.TestCase):
 
     def test_coproduct(self):
-        #TODO
-        pass
+        trees_ = [
+            T([]),
+            T([[]]),
+            T([[[]]]),
+            T([[[[]]]]),
+            T([[[[[]]]]]),
+            T([[],[],[]])
+        ]
+        true_coproducts_ = [
+            T([]) @ T([]),
+            T([[]]) @ T([]) + T([]) @ T([[]]),
+            T([[[]]]) @ T([]) + T([]) @ T([[[]]]) + 2 * T([[]]) @ T([[]]),
+            T([[[[]]]]) @ T([]) + T([]) @ T([[[[]]]]) + 2 * T([[[]]]) @ T([[]]) + 3 * T([[]]) @ T([[[]]]) + T([[]]) * T([[]]) @ T([[]]),
+            T([[[[[]]]]]) @ T([]) + T([]) @ T([[[[[]]]]]) + 2 * T([[[[]]]]) @ T([[]]) + 3 * T([[[]]]) @ T([[[]]]) + 4 * T([[]]) @ T([[[[]]]]) + 3 * T([[]]) * T([[]]) @ T([[[]]]) + 2 * T([[[]]]) * T([[]]) @ T([[]]),
+            T([[],[],[]]) @ T([]) + T([]) @ T([[],[],[]]) + 3*T([[],[]]) @ T([[]]) + 3 * T([[]]) @ T([[],[]])
+        ]
+        for t, c in zip(trees_, true_coproducts_):
+            self.assertEqual(c, cem.coproduct(t).reduce(), msg = repr(t))
 
     def test_antipode(self):
         trees_ = [
-            Tree([]),
-            Tree([[]]),
-            Tree([[],[]]),
-            Tree([[[]]])
+            T([]),
+            T([[]]),
+            T([[],[]]),
+            T([[[]]])
         ]
         antipodes_ = [
-            Tree([]),
-            -Tree([[]]),
-            -Tree([[],[]]) + 2 * Tree([[]])**2,
-            -Tree([[[]]]) + 2 * Tree([[]])**2
+            T([]),
+            -T([[]]),
+            -T([[],[]]) + 2 * T([[]])**2,
+            -T([[[]]]) + 2 * T([[]])**2
         ]
         for t, a in zip(trees_, antipodes_):
             self.assertEqual(a, cem.antipode(t))
@@ -377,7 +412,7 @@ class CEMTests(unittest.TestCase):
     def test_antipode_property(self):
         m = cem.antipode ^ ident
         for t in trees[1:]:
-            self.assertEqual((cem.counit(t) * Tree([])), m(t), repr(t))
+            self.assertEqual((cem.counit(t) * T([])), m(t), repr(t))
 
     def test_antipode_squared(self):
         f = cem.antipode
@@ -399,7 +434,7 @@ class CEMTests(unittest.TestCase):
         h = Map(lambda x : cem.map_power(ident - g, x.nodes() - 1)(x))
         m = (ident + f) @ h
 
-        for t in trees[2:]: #Exclude the unit (and empty tree)
+        for t in trees[2:]: #Exclude the unit (and empty T)
             self.assertEqual(0, m(t))
 
     def test_substitution_relations(self):
@@ -430,9 +465,21 @@ class CEMTests(unittest.TestCase):
         for i,t in enumerate(trees[1:]):
             self.assertAlmostEqual(omegas_[i], omega(t))
 
+    def test_log_exp(self):
+        m1 = Map(lambda x : x.factorial())
+        m2 = m1.exp().log()
+        m3 = m1.log().exp()
+        for t in trees:
+            self.assertAlmostEqual(m1(t), m2(t))
+            self.assertAlmostEqual(m1(t), m3(t))
+
 class RKTests(unittest.TestCase):
     def test_rk(self):
-        pass
+        pass #TODO
+
+class TensorProductSumTests(unittest.TestCase):
+    def test_tensor(self):
+        pass #TODO
 
 if __name__ == '__main__':
     unittest.main()

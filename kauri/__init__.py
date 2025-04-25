@@ -1,5 +1,4 @@
 from .trees import Tree, Forest, ForestSum
-from .tensor_product import TensorSum
 from .maps import *
 from .display import display
 from .gentrees import trees_of_order, trees_up_to_order

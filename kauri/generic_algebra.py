@@ -34,9 +34,10 @@ def _func_product(t, func1, func2, coproduct):
     # a(branches) * b(subtrees)
     if len(cp) == 0:
         return 0
-    out = _forest_apply(cp[0][1], func1) * func2(cp[0][0])
-    for subtree, branches in cp[1:]:
-        out += _forest_apply(branches, func1) * func2(subtree)
+    out = cp[0][0] * _forest_apply(cp[0][2], func1) * func2(cp[0][1][0])
+    for c, subtree_, branches in cp[1:]:
+        subtree = subtree_[0]
+        out += c * _forest_apply(branches, func1) * func2(subtree)
 
     if _is_reducible(out):
         out = out.reduce()

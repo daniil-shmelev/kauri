@@ -191,13 +191,13 @@ class Map:
             Should be set to False if being used as part of a larger computation, to avoid time-consuming premature simplifications.
         :return: Elementary weights map of the modified vector field
         """
-        return self.logarithm()
+        return self.log()
 
     def preprocessed_integrator(self, apply_reduction = True):
         #TODO
         return exact_weights ^ (self @ Map(cem_antipode))
 
-    def exponential(self):
+    def exp(self):
         """
         Returns the exponential of the map, defined as
 
@@ -212,7 +212,7 @@ class Map:
         """
         return self ^ exact_weights
 
-    def logarithm(self):
+    def log(self):
         """
         Returns the logarithm of the map, defined as
 
@@ -234,4 +234,4 @@ ident = Map(lambda x : x)
 sign = Map(lambda x : x.sign())
 exact_weights = Map(lambda x : 1. / x.factorial())
 
-omega = Map(lambda x : 1 if x == Tree(None) or x == Tree([]) else 0).logarithm()
+omega = Map(lambda x : 1 if (x == Tree(None) or x == Tree([])) else 0).log()
