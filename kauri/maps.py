@@ -1,4 +1,4 @@
-from .trees import Tree, _is_reducible
+from .trees import Tree, _is_reducible, EMPTY_TREE
 import copy
 from functools import cache
 from .generic_algebra import _apply, _func_power, _func_product
@@ -72,7 +72,10 @@ class Map:
             self.func = lambda x: other * func_(x)
         elif isinstance(other, Map):
             def f_(x):
-                out = _func_product(x, func_, other.func, cem_coproduct)
+                if x.list_repr is None:
+                    out = other.func(EMPTY_TREE)
+                else:
+                    out = _func_product(x, func_, other.func, cem_coproduct)
                 if _is_reducible(out):
                     out = out.singleton_reduced()
                 return out

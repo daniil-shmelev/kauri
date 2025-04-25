@@ -230,7 +230,7 @@ class BCKTests(unittest.TestCase):
             T([[[]]]) @ T() + T() @ T([[[]]]) + T([[]]) @ T([]) + T([]) @ T([[]])
         ]
         for t, c in zip(trees_, true_coproducts_):
-            self.assertEqual(c, bck.coproduct(t).reduce())
+            self.assertEqual(c, bck.coproduct(t))
 
     def test_antipode(self):
         antipodes = [
@@ -391,7 +391,7 @@ class CEMTests(unittest.TestCase):
             T([[],[],[]]) @ T([]) + T([]) @ T([[],[],[]]) + 3*T([[],[]]) @ T([[]]) + 3 * T([[]]) @ T([[],[]])
         ]
         for t, c in zip(trees_, true_coproducts_):
-            self.assertEqual(c, cem.coproduct(t).reduce(), msg = repr(t))
+            self.assertEqual(c, cem.coproduct(t), msg = repr(t))
 
     def test_antipode(self):
         trees_ = [
@@ -440,7 +440,7 @@ class CEMTests(unittest.TestCase):
     def test_substitution_relations(self):
         b = Map(lambda x : x.nodes())
         b1 = Map(lambda x : x.nodes() ** 2)
-        b2 = Map(lambda x : x.factorial() - 1)
+        b2 = Map(lambda x : x.factorial() - 1 if x != Tree([]) else 1)
 
         a = Map(lambda x : x.nodes() + 1)
         a1 = Map(lambda x : x.nodes() ** 2 + 1)

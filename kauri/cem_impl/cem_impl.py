@@ -3,6 +3,9 @@ import itertools
 from ..trees import Tree, Forest, TensorProductSum, EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM, SINGLETON_TREE, SINGLETON_FOREST, SINGLETON_FOREST_SUM, ZERO_FOREST_SUM
 from ..generic_algebra import _forest_apply
 
+#We adopt the singleton-reduced coproduct, which defines a Hopf algebra on planar trees quotiented by ([] - 1).
+# As such, characters on the resulting Hopf algebra must satisfy \phi([]) = 1
+
 def _counit(t):
     return 1 if t.list_repr == tuple() else 0
 
@@ -23,7 +26,9 @@ def _antipode(t):
 
 @cache
 def _coproduct_helper(t):
-    if t.list_repr is None or t.list_repr == tuple():
+    if t.list_repr is None:
+        raise
+    if t.list_repr == tuple():
         return [SINGLETON_TREE], [SINGLETON_FOREST]
 
     tree_list = []
@@ -43,13 +48,13 @@ def _coproduct_helper(t):
 
         for p in itertools.product(*tree_list):
             rep = []
-            for i, t in enumerate(p):
-                if t.list_repr is None:
+            for i, t_ in enumerate(p):
+                if t_.list_repr is None:
                     continue
                 if edges[i]:
-                    rep += t.list_repr
+                    rep += t_.list_repr
                 else:
-                    rep += [t.list_repr]
+                    rep += [t_.list_repr]
             new_tree_list.append(Tree(rep))
 
         for p in itertools.product(*forest_list):
@@ -65,11 +70,11 @@ def _coproduct_helper(t):
                 else:
                     t_list_ += f.tree_list
             t_list_ = [Tree(root_tree_repr)] + t_list_
-            new_forest_list.append(Forest(t_list_).singleton_reduced())
+            new_forest_list.append(Forest(t_list_))
 
     return new_tree_list, new_forest_list
 
 def _coproduct(t):
     s, f = _coproduct_helper(t)
-    cp = zip(s, [x.reduce() for x in f])
-    return TensorProductSum(tuple((1, x[0], x[1]) for x in cp))
+    cp = zip(s, [x.reduce().singleton_reduced() for x in f])
+    return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).reduce()

@@ -50,4 +50,4 @@ def _coproduct_helper(t):
 
 def _coproduct(t):
     cp = _coproduct_helper(t)
-    return TensorProductSum(tuple((1, x[0], x[1]) for x in cp))
+    return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).reduce()
