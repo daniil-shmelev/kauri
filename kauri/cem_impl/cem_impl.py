@@ -16,7 +16,7 @@ def _antipode(t):
 
     cp = _coproduct(t)
     out = -t.as_forest_sum()
-    for c, subtree_, branches in cp:
+    for c, branches, subtree_ in cp:
         subtree = subtree_[0]
         if branches._equals(t.as_forest()) or subtree._equals(t):
             continue
@@ -29,13 +29,13 @@ def _coproduct_helper(t):
     if t.list_repr is None:
         raise
     if t.list_repr == tuple():
-        return [SINGLETON_TREE], [SINGLETON_FOREST]
+        return [SINGLETON_FOREST], [SINGLETON_TREE]
 
     tree_list = []
     forest_list = []
     for rep in t.list_repr:
         subtree = Tree(rep)
-        s, b = _coproduct_helper(subtree)
+        b, s = _coproduct_helper(subtree)
         tree_list.append(s)
         forest_list.append(b)
 
@@ -72,9 +72,9 @@ def _coproduct_helper(t):
             t_list_ = [Tree(root_tree_repr)] + t_list_
             new_forest_list.append(Forest(t_list_))
 
-    return new_tree_list, new_forest_list
+    return new_forest_list, new_tree_list
 
 def _coproduct(t):
-    s, f = _coproduct_helper(t)
-    cp = zip(s, [x.reduce().singleton_reduced() for x in f])
+    f, s = _coproduct_helper(t)
+    cp = zip([x.reduce().singleton_reduced() for x in f], s)
     return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).reduce()
