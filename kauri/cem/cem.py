@@ -50,17 +50,13 @@ Example usage::
     cem.coproduct(Tree([[]])) # Returns 1 [] ⊗ [[]]+1 [[]] ⊗ []
 """
 
-def map_product(f, g):
+def map_product(f : Map, g : Map) -> Map:
     """
     Returns the product of maps in the CEM Hopf algebra, defined by
 
     .. math::
 
         (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta_{CEM} (t)
-
-    :type f: Map
-    :type g: Map
-    :rtype: Map
 
     .. note::
         `cem.map_product(f,g)` is equivalent to the Map operator `f ^ g`
@@ -75,7 +71,7 @@ def map_product(f, g):
     """
     return  f ^ g
 
-def map_power(f, exponent):
+def map_power(f : Map, exponent : int) -> Map:
     """
     Returns the power of a map in the CEM Hopf algebra, where the product of functions is defined by
 
@@ -85,11 +81,6 @@ def map_power(f, exponent):
 
     and negative powers are defined as :math:`f^{-n} = f^n \\circ S_{CEM}`,
     where :math:`S_{CEM}` is the CEM antipode.
-
-    :type f: Map
-    :param exponent: Exponent
-    :type exponent: int
-    :rtype: Map
 
     Example usage::
 

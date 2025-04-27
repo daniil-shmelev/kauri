@@ -3,6 +3,7 @@ Linear multiplicative maps on trees
 """
 import copy
 from functools import lru_cache
+from typing import Union
 
 from .trees import Tree, _is_reducible, EMPTY_TREE
 from .generic_algebra import _apply, _func_power, _func_product
@@ -29,7 +30,7 @@ class Map:
     def __call__(self, t):
         return _apply(t, self.func)
 
-    def __pow__(self, n):
+    def __pow__(self, n : int) -> 'Map':
         """
         Returns the power of the map in the BCK Hopf algebra, where the product
         of functions is defined by
@@ -86,7 +87,7 @@ class Map:
             raise ValueError("Error in CEM product: Cannot multiply Map by object of type " + str(type(other)))
         return self
 
-    def __mul__(self, other):
+    def __mul__(self, other : Union['Map', int, float]) -> 'Map':
         """
         Returns the product of maps in the BCK Hopf algebra, defined by
 
@@ -112,7 +113,7 @@ class Map:
         temp *= other
         return temp
 
-    def __xor__(self, other):
+    def __xor__(self, other : Union['Map', int, float]) -> 'Map':
         """
         Returns the product of maps in the CEM Hopf algebra, defined by
 
@@ -146,7 +147,7 @@ class Map:
             raise ValueError("Cannot add Map and object of type " + str(type(other))) #TODO: TypeError?
         return self
 
-    def __add__(self, other):
+    def __add__(self, other : 'Map') -> 'Map':
         """
         Returns the pointwise sum of two maps, given by
 
@@ -185,7 +186,7 @@ class Map:
     __radd__ = __add__
     __rsub__ = __sub__
 
-    def __matmul__(self, other): #TODO: change to &
+    def __matmul__(self, other : 'Map') -> 'Map': #TODO: change to &
         """
         Returns the composition of two maps, given by
 
@@ -208,7 +209,7 @@ class Map:
         """
         return Map(lambda x : self(other(x) * Tree(None)))
 
-    def modified_equation(self):
+    def modified_equation(self) -> 'Map':
         """
         Assuming the given map :math:`\\phi` corresponds to the elementary weights
         function of a B-series method, returns the map corresponding to the elementary
@@ -233,11 +234,11 @@ class Map:
         """
         return self.log()
 
-    def preprocessed_integrator(self):
+    def preprocessed_integrator(self) -> 'Map':
         #TODO
         return exact_weights ^ (self @ Map(cem_antipode))
 
-    def exp(self):
+    def exp(self) -> 'Map':
         """
         Returns the exponential of the map, defined as
 
@@ -253,7 +254,7 @@ class Map:
         """
         return self ^ exact_weights
 
-    def log(self):
+    def log(self) -> 'Map':
         """
         Returns the logarithm of the map, defined as
 

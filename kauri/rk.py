@@ -2,14 +2,15 @@
 Runge-Kutta Schemes
 """
 import copy
+from typing import Union, Callable, Tuple
 
 import numpy as np
-import sympy as sp
+import sympy
 from scipy.optimize import root
 import matplotlib.pyplot as plt
 
 from .gentrees import trees_of_order
-from .trees import Tree
+from .trees import Tree, Forest, ForestSum
 from .generic_algebra import _apply
 
 def _internal_symbolic(i, t_rep, a, b, s):
@@ -32,16 +33,16 @@ def _elementary_symbolic(t_rep, a, b, s):
 
 def _rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None):
     if a_mask is None:
-        a_mask = [[1 for j in range(s)] for i in range(s)]
+        a_mask = [[1 for _ in range(s)] for _ in range(s)]
     if b_mask is None:
-        b_mask = [1 for i in range(s)]
+        b_mask = [1 for _ in range(s)]
     if explicit:
         for i in range(s):
             for j in range(i, s):
                 a_mask[i][j] = 0
 
-    a = sp.Matrix(s, s, lambda i, j: sp.symbols(f'a{i}{j}'))
-    b = sp.Matrix(1, s, lambda i, j: sp.symbols(f'b{j}'))
+    a = sympy.Matrix(s, s, lambda i, j: sympy.symbols(f'a{i}{j}'))
+    b = sympy.Matrix(1, s, lambda i, j: sympy.symbols(f'b{j}'))
 
     for i in range(s):
         for j in range(s):
@@ -54,7 +55,15 @@ def _rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None):
 
     return _elementary_symbolic(t.list_repr, a, b, s)
 
-def rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None, mathematica_code = False, rationalise = True):
+def rk_symbolic_weight(
+        t : Union[Tree, Forest, ForestSum],
+        s : int,
+        explicit : bool = False,
+        a_mask : list = None,
+        b_mask : list = None,
+        mathematica_code : bool = False,
+        rationalise : bool = True
+) -> Union[sympy.core.add.Add, str]:
     """
     Returns the elementary weight of a Tree, Forest or ForestSum :math:`t` as a SymPy symbolic expression.
 
@@ -112,14 +121,22 @@ def rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None, mat
     out = _apply(t_, lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
 
     if rationalise:
-        out = sp.nsimplify(out, tolerance=1e-10, rational = True)
+        out = sympy.nsimplify(out, tolerance=1e-10, rational = True)
 
     if mathematica_code:
-        out = sp.mathematica_code(out)
+        out = sympy.mathematica_code(out)
     return out
 
 
-def rk_order_cond(t, s, explicit=False, a_mask=None, b_mask=None, mathematica_code = False, rationalise = True):
+def rk_order_cond(
+        t : Union[Tree, Forest, ForestSum],
+        s : int,
+        explicit : bool = False,
+        a_mask : list = None,
+        b_mask : list = None,
+        mathematica_code : bool = False,
+        rationalise : bool = True
+) -> Union[sympy.core.add.Add, str]:
     """
     Returns the Runge--Kutta order condition associated with tree :math:`t` as a SymPy symbolic expression.
 
@@ -220,7 +237,7 @@ class RK:
         a_inv = [[self.a[i][j] - self.b[j] for j in range(self.s)] for i in range(self.s)]
         return RK(a_inv, b_inv)
 
-    def reverse(self):
+    def reverse(self) -> 'RK':
         """
         Returns the RK scheme given by reversing the step size h to -h, with Butcher tableau:
 
@@ -236,7 +253,7 @@ class RK:
         """
         return RK([[-self.a[i][j] for j in range(self.s)] for i in range(self.s)], [-self.b[i] for i in range(self.s)])
 
-    def adjoint(self):
+    def adjoint(self) -> 'RK':
         """
         Returns the adjoint Runge--Kutta method, given by the Butcher tableau:
 
@@ -295,7 +312,14 @@ class RK:
         y_next = y0 + h * sum(self.b[i] * K[i] for i in range(self.s))
         return y_next
 
-    def step(self, y0, t0, f, h, tol = 1e-10, max_iter = 100):
+    def step(self,
+             y0 : Union[list, np.array],
+             t0 : float,
+             f : Callable[[float, float], Union[list, np.array]],
+             h : float,
+             tol : float = 1e-10,
+             max_iter : int = 100
+             ) -> Union[list, np.array]:
         """
         Runs one step of the Runge--Kutta method.
 
@@ -323,7 +347,18 @@ class RK:
 
         return self._implicit_step(y0_, t0, f_, h, tol, max_iter)
 
-    def run(self, y0, t0, t_end, f, n, tol = 1e-10, max_iter = 100, plot = False, plot_dims = None, plot_kwargs=None):
+    def run(self,
+            y0 : Union[list, np.array],
+            t0 : float,
+            t_end : float,
+            f : Callable[[float, float], Union[list, np.array]],
+            n : int,
+            tol : float = 1e-10,
+            max_iter : int = 100,
+            plot : bool = False,
+            plot_dims : bool = None,
+            plot_kwargs : dict = None
+            ) -> Tuple[list, list]:
         """
         Runs the Runge--Kutta method.
 
@@ -380,7 +415,7 @@ class RK:
 
         return t_vals, y_vals
 
-    def __add__(self, other):
+    def __add__(self, other : 'RK') -> 'RK':
         """
         Returns the sum of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
 
@@ -415,7 +450,7 @@ class RK:
     def __sub__(self, other):
         return self + other.__neg__()
 
-    def __mul__(self, other):
+    def __mul__(self, other : 'RK') -> 'RK':
         """
         Returns the composition of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
 
@@ -446,7 +481,7 @@ class RK:
 
         return RK(a,b)
 
-    def __pow__(self, n):
+    def __pow__(self, n : int) -> 'RK':
         """
         Returns the compositional power of the Runge--Kutta scheme. In particular, ``self ** (-1)`` returns the scheme
         with Butcher tableau:
@@ -471,7 +506,6 @@ class RK:
         if n == 0:
             return RK([[0]], [0])
 
-        out = None
         n_ = n
         if n < 0:
             out = self._inverse()
@@ -501,7 +535,7 @@ class RK:
             return 1
         return sum(self.b[i] * self._derivative_weights(i, t_rep) for i in range(self.s))
 
-    def elementary_weights(self, t):
+    def elementary_weights(self, t : Union[Tree, Forest, ForestSum]) -> float:
         """
         Returns the elementary weight function of the Runge-Kutta method applied to a Tree, Forest or ForestSum :math:`t`.
 
@@ -516,7 +550,7 @@ class RK:
         #TODO
         return t.modified_equation_term().apply(self.elementary_weights)
 
-    def order(self, tol = 1e-15):
+    def order(self, tol : float = 1e-15) -> int:
         """
         Returns the order of the RK scheme.
 

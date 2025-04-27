@@ -10,7 +10,4 @@ CEM Hopf Algebra
 .. autofunction:: kauri.cem.map_product
 .. autofunction:: kauri.cem.map_power
 
-References
-========================
-
-.. bibliography::
+.. include:: ../refs.rst

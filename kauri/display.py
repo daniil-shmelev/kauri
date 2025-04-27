@@ -243,12 +243,12 @@ def _display_plt(forest_sum,
 #Display
 ###############################################################
 
-def display(forest_sum, *,
-            scale = None,
-            fig_size = None,
-            file_name = None,
-            use_plt = True,
-            rationalise = False):
+def display(forest_sum : ForestSum, *, #TODO: change to Tree, Forest, ForestSum or TensorProductSum
+            scale : float = None,
+            fig_size : tuple = None,
+            file_name : str = None,
+            use_plt : bool = True,
+            rationalise : bool = False) -> None:
     """ #TODO
     Plots a forest sum.
 

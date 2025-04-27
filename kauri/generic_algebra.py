@@ -47,7 +47,6 @@ def _func_product(t, func1, func2, coproduct):
     return out
 
 def _func_power(t, func, exponent, coproduct, counit, antipode):
-    res = None
     if exponent == 0:
         res = counit(t)
     elif exponent == 1:

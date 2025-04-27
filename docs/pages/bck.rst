@@ -9,3 +9,5 @@ BCK Hopf Algebra
 
 .. autofunction:: kauri.bck.map_product
 .. autofunction:: kauri.bck.map_power
+
+.. include:: ../refs.rst

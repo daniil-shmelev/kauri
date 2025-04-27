@@ -3,3 +3,5 @@ Tree
 .. autoclass:: kauri.trees.Tree
    :members:
    :special-members: __mul__, __pow__, __add__, __eq__, __next__
+
+.. include:: ../../refs.rst
