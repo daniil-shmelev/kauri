@@ -1,3 +1,6 @@
+"""
+Back-end utility functions
+"""
 import math
 from functools import cache
 import sympy as sp
@@ -16,19 +19,17 @@ def _to_list(obj):
 def _nodes(rep):
     if rep is None:
         return 0
-    elif rep == tuple():
+    if rep == tuple():
         return 1
-    else:
-        return 1 + sum(_nodes(r) for r in rep)
+    return 1 + sum(_nodes(r) for r in rep)
 
 @cache
 def _height(rep):
     if rep is None:
         return 0
-    elif rep == tuple():
+    if rep == tuple():
         return 1
-    else:
-        return 1 + max(_height(r) for r in rep)
+    return 1 + max(_height(r) for r in rep)
 
 @cache
 def _factorial(rep):
@@ -36,15 +37,15 @@ def _factorial(rep):
         return 1, 0
     if rep == tuple():
         return 1, 1
-    else:
-        f = 1
-        n = 1
-        for r in rep:
-            res = _factorial(r)
-            f *= res[0]
-            n += res[1]
-        f *= n
-        return f, n
+
+    f = 1
+    n = 1
+    for r in rep:
+        res = _factorial(r)
+        f *= res[0]
+        n += res[1]
+    f *= n
+    return f, n
 
 @cache
 def _sigma(rep):
@@ -53,7 +54,7 @@ def _sigma(rep):
     rep_dict = {}
     unique_rep = []
     for r in rep:
-        if r in rep_dict.keys():
+        if r in rep_dict:
             rep_dict[r] += 1
         else:
             rep_dict[r] = 1
@@ -69,10 +70,9 @@ def _sigma(rep):
 def _sorted_list_repr(rep):
     if rep is None:
         return None
-    elif rep == tuple():
+    if rep == tuple():
         return tuple()
-    else:
-        return tuple(sorted(map(_sorted_list_repr, rep), reverse=True))
+    return tuple(sorted(map(_sorted_list_repr, rep), reverse=True))
 
 @cache
 def _list_repr_to_level_sequence(rep):
@@ -85,16 +85,16 @@ def _list_repr_to_level_sequence(rep):
         layout += [i+1 for i in lay]
     return layout
 
-def _level_sequence_to_list_repr(levelSeq):
-    if len(levelSeq) == 0:
+def _level_sequence_to_list_repr(level_seq):
+    if len(level_seq) == 0:
         return None
-    branch_layouts = _branch_level_sequences(levelSeq)
+    branch_layouts = _branch_level_sequences(level_seq)
     rep = tuple(_level_sequence_to_list_repr(lay) for lay in branch_layouts)
     return rep
 
-def _branch_level_sequences(levelSeq):
+def _branch_level_sequences(level_seq):
     branch_layouts = []
-    for i in levelSeq[1:]:
+    for i in level_seq[1:]:
         if i == 1:
             branch_layouts.append([0])
         else:
@@ -118,49 +118,10 @@ def _next_layout(layout):
         result[i] = result[i - p + q]
     return result
 
-def _contract_single_edge(rep, edge):
-    # An edge is given by a list or tuple
-    # E.g., for the tree [[[]],[]] the edge connecting the heighest leaf is denoted (0,0). The right-most edge is (1)
-    pass
-
 def _rationalise(c, tol = 1e-10):
     return str(sp.nsimplify(c, tolerance=tol, rational = True))
 
 def _str(c, rationalise = False, tol = 1e-10):
     if rationalise:
         return _rationalise(c, tol)
-    else:
-        return str(c)
-
-# ##############################################
-# ##############################################
-#
-# def _is_tree_like(obj):
-#     return isinstance(obj, Tree) or isinstance(obj, Forest) or
-#
-# def _mul(obj1, obj2, applyReduction = True):
-#     if not (isinstance):
-#         if isinstance(obj2, int) or isinstance(obj2, float):
-#             return obj1 * obj2
-#         else:
-#             return obj2.__mul__(obj1, applyReduction)
-#     else:
-#         return obj1.__mul__(obj2, applyReduction)
-#
-# def _add(obj1, obj2, applyReduction = True):
-#     if isinstance(obj1, int) or isinstance(obj1, float):
-#         if isinstance(obj2, int) or isinstance(obj2, float):
-#             return obj1 + obj2
-#         else:
-#             return obj2.__add__(obj1, applyReduction)
-#     else:
-#         return obj1.__add__(obj2, applyReduction)
-#
-# def _sub(obj1, obj2, applyReduction = True):
-#     if isinstance(obj1, int) or isinstance(obj1, float):
-#         if isinstance(obj2, int) or isinstance(obj2, float):
-#             return obj1 - obj2
-#         else:
-#             return obj2.__sub__(obj1, applyReduction)
-#     else:
-#         return obj1.__sub__(obj2, applyReduction)
+    return str(c)

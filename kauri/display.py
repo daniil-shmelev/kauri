@@ -1,13 +1,18 @@
+"""
+Functions for plotting Tree, Forest and ForestSum objects.
+"""
+#TODO add plotting of TensorSum to display
+#TODO: simplify
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
-from .trees import *
+from .trees import Tree, ForestSum
 from .utils import _branch_level_sequences, _str
 
 def _get_node_coords(layout, x=0, y=0, scale=0.2):
     branch_gap = scale / 2
     if layout == []:
         return [], 0
-    elif layout == [0]:
+    if layout == [0]:
         return [(x, y)], branch_gap
 
     coords = [(x, y)]
@@ -58,7 +63,7 @@ def _get_tree_traces(layout, coords, scale=0.2):
             x=[xroot, c[0][0]],
             y=[yroot, c[0][1]],
             mode='lines',
-            line=dict(color='black'),
+            line={"color" : 'black'},
             showlegend=False,
             hoverinfo='skip'
         ))
@@ -67,10 +72,12 @@ def _get_tree_traces(layout, coords, scale=0.2):
     return traces
 
 
-def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None, rationalise = True):
-    tree_gap = scale / 2
-    coeff_gap = scale / 2
-
+def _display_plotly(forest_sum,
+                    scale=0.7,
+                    fig_size=(1500, 50),
+                    file_name=None,
+                    rationalise = True):
+    gap = scale / 2
     traces = []
 
     if not isinstance(forest_sum, ForestSum):
@@ -92,7 +99,7 @@ def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None, r
             showlegend=False
         ))
 
-        x += (len(_str(c, rationalise)) + 1) * coeff_gap
+        x += (len(_str(c, rationalise)) + 1) * gap
 
         for t in f.tree_list:
             level_seq = t.level_sequence()
@@ -104,7 +111,7 @@ def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None, r
                 x=[p[0] for p in c_],
                 y=[p[1] for p in c_],
                 mode='markers',
-                marker=dict(color='black', size=6),
+                marker={"color" : 'black', "size" : 6},
                 showlegend=False,
                 hoverinfo='skip'
             ))
@@ -112,11 +119,11 @@ def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None, r
             # Edges
             traces.extend(_get_tree_traces(level_seq, c_, scale))
 
-            x += w + tree_gap
+            x += w + gap
             if len(c_) > 0:
                 h_ = max(cy for _, cy in c_)
                 h = max(h, h_)
-        x += coeff_gap / 2
+        x += gap / 2
 
         if i < len(forest_sum.term_list) - 1:
             op = "+" if forest_sum.term_list[i + 1][0] > 0 else "-"
@@ -124,7 +131,7 @@ def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None, r
                 x=[x], y=[y], text=[op], mode='text',
                 showlegend=False
             ))
-            x += coeff_gap * 2
+            x += gap * 2
 
     fig = go.Figure(traces)
     extra_padding = 1 if h == 1 else 0
@@ -132,9 +139,15 @@ def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None, r
     fig.update_layout(
         width=fig_size[0],
         height=fig_size[1],
-        xaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-10, 100]),
-        yaxis=dict(showgrid=False, zeroline=False, visible=False, range=[-0.5, h + extra_padding + 0.5]),
-        margin=dict(l=0, r=0, t=0, b=0)
+        xaxis={"showgrid" : False,
+               "zeroline" : False,
+               "visible" : False,
+               "range" : [-10, 100]},
+        yaxis={"showgrid" : False,
+               "zeroline" : False,
+               "visible" : False,
+               "range" : [-0.5, h + extra_padding + 0.5]},
+        margin={"l": 0, "r": 0, "t": 0, "b": 0}
     )
 
     if file_name:
@@ -151,8 +164,7 @@ def display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None, r
 #Matplotlib
 ###############################################################
 
-def _display_tree(layout, coords, scale = 0.2, rationalise = True):
-    branch_gap = scale / 2
+def _display_tree(layout, coords, scale = 0.2):
 
     if layout == []:
         return
@@ -175,13 +187,17 @@ def _display_tree(layout, coords, scale = 0.2, rationalise = True):
         plt.plot([xroot, c[0][0]], [yroot, c[0][1]], color = "black")
         _display_tree(lay, c, scale)
 
-def display_plt(forest_sum, scale = 0.2, fig_size = (15, 1), file_name = None, rationalise = True):
+def _display_plt(forest_sum,
+                 scale = 0.2,
+                 fig_size = (15, 1),
+                 file_name = None,
+                 rationalise = True):
     tree_gap = scale / 4
     coeff_gap = scale / 2
 
     plt.figure(figsize = fig_size)
     if not isinstance(forest_sum, ForestSum):
-        if isinstance(forest_sum, int) or isinstance(forest_sum, float):
+        if isinstance(forest_sum, (int, float)):
             forest_sum = Tree(None) * forest_sum
         else:
             forest_sum = forest_sum.as_forest_sum()
@@ -227,7 +243,12 @@ def display_plt(forest_sum, scale = 0.2, fig_size = (15, 1), file_name = None, r
 #Display
 ###############################################################
 
-def display(forest_sum, scale = None, fig_size = None, file_name = None, use_plt = True, rationalise = False):
+def display(forest_sum, *,
+            scale = None,
+            fig_size = None,
+            file_name = None,
+            use_plt = True,
+            rationalise = False):
     """ #TODO
     Plots a forest sum.
 
@@ -237,10 +258,11 @@ def display(forest_sum, scale = None, fig_size = None, file_name = None, use_plt
     :type scale: float
     :param fig_size: figure size (default = (15,1) if use_plt is True otherwise (1500,50))
     :type fig_size: tuple
-    :param file_name: If file_name is not None, will save the plot as a png file with the name file_name (default = None).
+    :param file_name: If file_name is not None, will save the plot as a png file with the
+        name file_name (default = None).
     :type file_name: string
-    :param use_plt: If True uses matplotlib (default), otherwise uses Plotly. Plotly is quicker, but results in larger
-        file sizes when used in notebooks.
+    :param use_plt: If True uses matplotlib (default), otherwise uses Plotly.
+        Plotly is quicker, but results in larger file sizes when used in notebooks.
     :type use_plt: bool
     """
     if use_plt:
@@ -248,10 +270,10 @@ def display(forest_sum, scale = None, fig_size = None, file_name = None, use_plt
             scale = 0.2
         if fig_size is None:
             fig_size = (15,1)
-        display_plt(forest_sum, scale, fig_size, file_name, rationalise)
+        _display_plt(forest_sum, scale, fig_size, file_name, rationalise)
     else:
         if scale is None:
             scale = 0.7
         if fig_size is None:
             fig_size = (1500, 50)
-        display_plotly(forest_sum, scale, fig_size, file_name, rationalise)
+        _display_plotly(forest_sum, scale, fig_size, file_name, rationalise)

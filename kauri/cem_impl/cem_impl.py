@@ -1,17 +1,22 @@
+"""
+Back-end for the CEM module
+"""
 from functools import cache
 import itertools
-from ..trees import Tree, Forest, TensorProductSum, EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM, SINGLETON_TREE, SINGLETON_FOREST, SINGLETON_FOREST_SUM, ZERO_FOREST_SUM
-from ..generic_algebra import _forest_apply
+from ..trees import (Tree, Forest, TensorProductSum,
+                     SINGLETON_TREE, SINGLETON_FOREST, SINGLETON_FOREST_SUM)
 
-#We adopt the singleton-reduced coproduct, which defines a Hopf algebra on planar trees quotiented by ([] - 1).
-# As such, characters on the resulting Hopf algebra must satisfy \phi([]) = 1
+#We adopt the singleton-reduced coproduct, which defines a Hopf algebra
+# on planar trees quotiented by ([] - 1). As such, characters on the
+# resulting Hopf algebra must satisfy \phi([]) = 1
 
 def _counit(t):
     return 1 if t.list_repr == tuple() else 0
 
 @cache
 def _antipode(t):
-    if t.list_repr is None or t.list_repr == tuple(): #Consider the empty tree and the single node tree to be equal, since the latter is the unit
+    if t.list_repr is None or t.list_repr == tuple():
+        #Consider the empty tree and the single node tree to be equal, since the latter is the unit
         return SINGLETON_FOREST_SUM
 
     cp = _coproduct(t)
@@ -27,34 +32,28 @@ def _antipode(t):
 @cache
 def _coproduct_helper(t):
     if t.list_repr is None:
-        raise
+        raise ValueError("CEM coproduct is undefined for the empty tree")
     if t.list_repr == tuple():
         return [SINGLETON_FOREST], [SINGLETON_TREE]
 
     tree_list = []
     forest_list = []
     for rep in t.list_repr:
-        subtree = Tree(rep)
-        b, s = _coproduct_helper(subtree)
+        b, s = _coproduct_helper(Tree(rep))
         tree_list.append(s)
         forest_list.append(b)
 
     new_tree_list = []
     new_forest_list = []
 
-    num_branches = len(tree_list)
-
-    for edges in itertools.product([0, 1], repeat=num_branches):
+    for edges in itertools.product([0, 1], repeat=len(tree_list)):
 
         for p in itertools.product(*tree_list):
             rep = []
-            for i, t_ in enumerate(p):
+            for edge, t_ in zip(edges, p):
                 if t_.list_repr is None:
                     continue
-                if edges[i]:
-                    rep += t_.list_repr
-                else:
-                    rep += [t_.list_repr]
+                rep += t_.list_repr if edge else [t_.list_repr]
             new_tree_list.append(Tree(rep))
 
         for p in itertools.product(*forest_list):
@@ -63,8 +62,8 @@ def _coproduct_helper(t):
             # Forest constructor does not call Forest.reduce(), meaning this empty tree will survive
             t_list_ = []
             root_tree_repr = []
-            for i, f in enumerate(p):
-                if edges[i]:
+            for edge, f in zip(edges, p):
+                if edge:
                     root_tree_repr += [f.tree_list[0].list_repr]
                     t_list_ += f.tree_list[1:]
                 else:

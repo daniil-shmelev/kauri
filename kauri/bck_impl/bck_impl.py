@@ -1,6 +1,11 @@
+"""
+Back-end for the BCK module
+"""
 from functools import cache
 import itertools
-from ..trees import Tree, Forest, TensorProductSum, EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM, SINGLETON_TREE, SINGLETON_FOREST, SINGLETON_FOREST_SUM
+from ..trees import (Tree, Forest, TensorProductSum,
+                     EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM,
+                     SINGLETON_TREE, SINGLETON_FOREST, SINGLETON_FOREST_SUM)
 from ..generic_algebra import _forest_apply
 
 def _counit(t):
@@ -10,7 +15,7 @@ def _counit(t):
 def _antipode(t):
     if t.list_repr is None:
         return EMPTY_FOREST_SUM
-    elif t.list_repr == tuple():
+    if t.list_repr == tuple():
         return -SINGLETON_FOREST_SUM
 
     cp = _coproduct(t)

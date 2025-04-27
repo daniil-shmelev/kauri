@@ -1,4 +1,7 @@
-from .trees import Tree, Forest, ForestSum, _is_reducible
+"""
+Utility functions for dealing with generic Hopf algebras
+"""
+from .trees import Forest, ForestSum, _is_reducible
 
 def _forest_apply(f, func):
     out = 1
@@ -26,8 +29,7 @@ def _apply(t, func):
         return _forest_apply(t, func)
     if isinstance(t, ForestSum):
         return _forest_sum_apply(t, func)
-    else:
-        return func(t)
+    return func(t)
 
 def _func_product(t, func1, func2, coproduct):
     cp = coproduct(t)
@@ -51,10 +53,13 @@ def _func_power(t, func, exponent, coproduct, counit, antipode):
     elif exponent == 1:
         res = func(t)
     elif exponent < 0:
-        m = lambda x : _func_power(x, func, -exponent, coproduct, counit, antipode)
+        def m(x):
+            return _func_power(x, func, -exponent, coproduct, counit, antipode)
         res = _forest_sum_apply(antipode(t), m)
     else:
-        res = _func_product(t, func, lambda x : _func_power(x, func, exponent - 1, coproduct, counit, antipode), coproduct)
+        def m(x):
+            return _func_power(x, func, exponent - 1, coproduct, counit, antipode)
+        res = _func_product(t, func, m, coproduct)
 
     if _is_reducible(res):
         res = res.reduce()

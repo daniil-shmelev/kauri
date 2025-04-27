@@ -1,55 +1,60 @@
+"""
+Runge-Kutta Schemes
+"""
+import copy
+
+import numpy as np
+import sympy as sp
+from scipy.optimize import root
+import matplotlib.pyplot as plt
+
 from .gentrees import trees_of_order
 from .trees import Tree
 from .generic_algebra import _apply
-import numpy as np
-import sympy as sp
-from scipy.optimize import root, fsolve
-import copy
-import matplotlib.pyplot as plt
 
-def _internal_symbolic(i, t_rep, A, b, s):
-    return sum(A[i,j] * _derivative_symbolic(j, t_rep, A, b, s) for j in range(s))
+def _internal_symbolic(i, t_rep, a, b, s):
+    return sum(a[i,j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
 
-def _derivative_symbolic(i, t_rep, A, b, s):
-    if t_rep == None or t_rep == []:
+def _derivative_symbolic(i, t_rep, a, b, s):
+    if t_rep in (None, []):
         return 1
     out = 1
     for subtree in t_rep:
-        out *= _internal_symbolic(i, subtree, A, b, s)
+        out *= _internal_symbolic(i, subtree, a, b, s)
     return out
 
-def _elementary_symbolic(t_rep, A, b, s):
+def _elementary_symbolic(t_rep, a, b, s):
     if t_rep is None:
         return 1
     if t_rep == []:
         return sum(b)
-    return sum(b[i] * _derivative_symbolic(i, t_rep, A, b, s) for i in range(s))
+    return sum(b[i] * _derivative_symbolic(i, t_rep, a, b, s) for i in range(s))
 
-def _RK_symbolic_weight(t, s, explicit = False, A_mask = None, b_mask = None):
-    if A_mask is None:
-        A_mask = [[1 for j in range(s)] for i in range(s)]
+def _rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None):
+    if a_mask is None:
+        a_mask = [[1 for j in range(s)] for i in range(s)]
     if b_mask is None:
         b_mask = [1 for i in range(s)]
     if explicit:
         for i in range(s):
             for j in range(i, s):
-                A_mask[i][j] = 0
+                a_mask[i][j] = 0
 
-    A = sp.Matrix(s, s, lambda i, j: sp.symbols(f'a{i}{j}'))
+    a = sp.Matrix(s, s, lambda i, j: sp.symbols(f'a{i}{j}'))
     b = sp.Matrix(1, s, lambda i, j: sp.symbols(f'b{j}'))
 
     for i in range(s):
         for j in range(s):
-            if not A_mask[i][j]:
-                A[i,j] = 0
+            if not a_mask[i][j]:
+                a[i,j] = 0
 
     for i in range(s):
         if not b_mask[i]:
             b[i] = 0
 
-    return _elementary_symbolic(t.list_repr, A, b, s)
+    return _elementary_symbolic(t.list_repr, a, b, s)
 
-def RK_symbolic_weight(t, s, explicit = False, A_mask = None, b_mask = None, mathematica_code = False, rationalise = True):
+def rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None, mathematica_code = False, rationalise = True):
     """
     Returns the elementary weight of a Tree, Forest or ForestSum :math:`t` as a SymPy symbolic expression.
 
@@ -58,7 +63,7 @@ def RK_symbolic_weight(t, s, explicit = False, A_mask = None, b_mask = None, mat
     :type s: int
     :param explicit: If true, assumes the Runge--Kutta scheme is explicit, i.e. :math:`a_{ij} = 0` for :math:`i \\leq j`.
     :type explicit: bool
-    :param A_mask: A two-dimensional array specifying which coefficients of the Runge--Kutta parameter matrix :math:`A`
+    :param a_mask: A two-dimensional array specifying which coefficients of the Runge--Kutta parameter matrix :math:`A`
         are non-zero. If not None, sets :math:`a_{ij} = 0` for all :math:`i,j` such that ``A_mask[i][j] = 0``.
     :param b_mask: A one-dimensional array or list specifying which coefficients of the Runge--Kutta parameter vector :math:`b`
         are non-zero. If not None, sets :math:`b_i = 0` for all :math:`i` such that ``b_mask[i] = 0``.
@@ -101,10 +106,10 @@ def RK_symbolic_weight(t, s, explicit = False, A_mask = None, b_mask = None, mat
 
     """
     t_ = t
-    if isinstance(t, int) or isinstance(t, float):
+    if isinstance(t, (int, float)):
         t_ = t * Tree(None).as_forest_sum()
 
-    out = _apply(t_, lambda x : _RK_symbolic_weight(x, s, explicit, A_mask, b_mask))
+    out = _apply(t_, lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
 
     if rationalise:
         out = sp.nsimplify(out, tolerance=1e-10, rational = True)
@@ -114,7 +119,7 @@ def RK_symbolic_weight(t, s, explicit = False, A_mask = None, b_mask = None, mat
     return out
 
 
-def RK_order_cond(t, s, explicit=False, A_mask=None, b_mask=None, mathematica_code = False, rationalise = True):
+def rk_order_cond(t, s, explicit=False, a_mask=None, b_mask=None, mathematica_code = False, rationalise = True):
     """
     Returns the Runge--Kutta order condition associated with tree :math:`t` as a SymPy symbolic expression.
 
@@ -123,7 +128,7 @@ def RK_order_cond(t, s, explicit=False, A_mask=None, b_mask=None, mathematica_co
     :type s: int
     :param explicit: If true, assumes the Runge--Kutta scheme is explicit, i.e. :math:`a_{ij} = 0` for :math:`i \\leq j`.
     :type explicit: bool
-    :param A_mask: A two-dimensional array specifying which coefficients of the Runge--Kutta parameter matrix :math:`A`
+    :param a_mask: A two-dimensional array specifying which coefficients of the Runge--Kutta parameter matrix :math:`A`
         are non-zero. If not None, sets :math:`a_{ij} = 0` for all :math:`i,j` such that ``A_mask[i][j] = 0``.
     :param b_mask: A one-dimensional array or list specifying which coefficients of the Runge--Kutta parameter vector :math:`b`
         are non-zero. If not None, sets :math:`b_i = 0` for all :math:`i` such that ``b_mask[i] = 0``.
@@ -161,7 +166,7 @@ def RK_order_cond(t, s, explicit=False, A_mask=None, b_mask=None, mathematica_co
                 text_file.write(s)
 
     """
-    return RK_symbolic_weight(t - 1. / t.factorial(), s, explicit, A_mask, b_mask, mathematica_code, rationalise)
+    return rk_symbolic_weight(t - 1. / t.factorial(), s, explicit, a_mask, b_mask, mathematica_code, rationalise)
 
 class RK:
     """
@@ -177,17 +182,17 @@ class RK:
 
     where :math:`c_i = \\sum_{j=1}^s a_{ij}`.
 
-    :param A: The Runge--Kutta parameter matrix :math:`A`.
+    :param a: The Runge--Kutta parameter matrix :math:`A`.
     :param b: The Runge--Kutta parameter vector :math:`b`.
     """
-    def __init__(self, A, b):
+    def __init__(self, a, b):
         self.s = len(b)
-        if len(A) != self.s or len(A[0]) != self.s:
+        if len(a) != self.s or len(a[0]) != self.s:
             raise ValueError("A must be a square s x s matrix and b a vector of length s")
 
-        self.A = A
+        self.a = a
         self.b = b
-        self.c = [sum(A[i][j] for j in range(self.s)) for i in range(self.s)]
+        self.c = [sum(a[i][j] for j in range(self.s)) for i in range(self.s)]
 
         self.explicit = self._check_explicit()
         self.deriv_dict = {}  # {repr(None) : 1, repr([]) : 1}
@@ -198,22 +203,22 @@ class RK:
     def __repr__(self):
         out = "["
         for i in range(self.s - 1):
-            out += repr(self.A[i]) + ",\n"
-        out += repr(self.A[-1]) + "]\n"
+            out += repr(self.a[i]) + ",\n"
+        out += repr(self.a[-1]) + "]\n"
         out += repr(self.b)
         return out
 
     def _check_explicit(self):
         for i in range(self.s):
             for j in range(i, self.s):
-                if self.A[i][j]:
+                if self.a[i][j]:
                     return False
         return True
 
     def _inverse(self):
         b_inv = [-self.b[i] for i in range(self.s)]
-        A_inv = [[self.A[i][j] - self.b[j] for j in range(self.s)] for i in range(self.s)]
-        return RK(A_inv, b_inv)
+        a_inv = [[self.a[i][j] - self.b[j] for j in range(self.s)] for i in range(self.s)]
+        return RK(a_inv, b_inv)
 
     def reverse(self):
         """
@@ -229,7 +234,7 @@ class RK:
 
         :rtype: RK
         """
-        return RK([[-self.A[i][j] for j in range(self.s)] for i in range(self.s)], [-self.b[i] for i in range(self.s)])
+        return RK([[-self.a[i][j] for j in range(self.s)] for i in range(self.s)], [-self.b[i] for i in range(self.s)])
 
     def adjoint(self):
         """
@@ -249,14 +254,14 @@ class RK:
         :rtype: RK
         """
         b_adj = [self.b[self.s - 1 - j] for j in range(self.s)]
-        A_adj = [[self.b[self.s - 1 - j] - self.A[self.s - 1 - i][self.s - j - 1] for j in range(self.s)] for i in range(self.s)]
-        return RK(A_adj, b_adj)
+        a_adj = [[self.b[self.s - 1 - j] - self.a[self.s - 1 - i][self.s - j - 1] for j in range(self.s)] for i in range(self.s)]
+        return RK(a_adj, b_adj)
 
     def _explicit_step(self, y0, t0, f, h):
         k = [None] * self.s
 
         for i in range(self.s):
-            y_stage = y0 + h * sum(self.A[i][j] * k[j] for j in range(i))
+            y_stage = y0 + h * sum(self.a[i][j] * k[j] for j in range(i))
             k[i] = f(t0 + self.c[i] * h, y_stage)
 
         y_next = y0 + h * sum(self.b[i] * k[i] for i in range(self.s))
@@ -274,7 +279,7 @@ class RK:
             G_vec = []
 
             for i in range(self.s):
-                y_stage = y0 + h * sum(self.A[i][j] * K[j] for j in range(self.s))
+                y_stage = y0 + h * sum(self.a[i][j] * K[j] for j in range(self.s))
                 t_stage = t0 + self.c[i] * h
                 G_i = K[i] - f(t_stage, y_stage)
                 G_vec.append(G_i)
@@ -309,13 +314,14 @@ class RK:
         :return: Next point, y1
         :rtype: list | array
         """
-        f_ = lambda t_,y_ : np.array(f(t_,y_))
+        def f_(t_, y_):
+            return np.array(f(t_,y_))
         y0_ = np.array(y0).copy()
 
         if self.explicit:
             return self._explicit_step(y0_, t0, f_, h)
-        else:
-            return self._implicit_step(y0_, t0, f_, h, tol, max_iter)
+
+        return self._implicit_step(y0_, t0, f_, h, tol, max_iter)
 
     def run(self, y0, t0, t_end, f, n, tol = 1e-10, max_iter = 100, plot = False, plot_dims = None, plot_kwargs=None):
         """
@@ -348,9 +354,10 @@ class RK:
         if plot_kwargs is None:
             plot_kwargs = {}
         if plot_dims is None:
-            plot_dims = [i for i in range(len(y0))]
+            plot_dims = list(range(len(y0)))
 
-        f_ = lambda t_, y_: np.array(f(t_, y_))
+        def f_(t_, y_):
+            return np.array(f(t_, y_))
         y0_ = np.array(y0).copy()
 
         t_vals = [t0]
@@ -362,7 +369,7 @@ class RK:
 
         step_func = (lambda y_, t_ : self._explicit_step(y_, t_, f_, h)) if self.explicit else (lambda y_, t_ : self._implicit_step(y_, t_, f_, h, tol, max_iter))
 
-        for i in range(n):
+        for _ in range(n):
             y = step_func(y, t)
             t += h
             t_vals.append(t)
@@ -389,21 +396,21 @@ class RK:
         :rtype: RK
         """
         s1 = other.s
-        A1 = other.A
+        a1 = other.a
         b1 = other.b
 
         s2 = self.s
-        A2 = self.A
+        a2 = self.a
         b2 = self.b
 
-        A = [[A1[i][j] for j in range(s1)] + [0 for j in range(s2)] for i in range(s1)]
-        A += [[0 for j in range(s1)] + [A2[i][j] for j in range(s2)] for i in range(s2)]
+        a = [[a1[i][j] for j in range(s1)] + [0 for j in range(s2)] for i in range(s1)]
+        a += [[0 for j in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
         b = b1 + b2
 
-        return RK(A, b)
+        return RK(a, b)
 
     def __neg__(self):
-        return RK(self.A, [-self.b[i] for i in range(self.s)])
+        return RK(self.a, [-self.b[i] for i in range(self.s)])
 
     def __sub__(self, other):
         return self + other.__neg__()
@@ -426,18 +433,18 @@ class RK:
         :rtype: RK
         """
         s1 = other.s
-        A1 = other.A
+        a1 = other.a
         b1 = other.b
 
         s2 = self.s
-        A2 = self.A
+        a2 = self.a
         b2 = self.b
 
-        A = [[A1[i][j] for j in range(s1)] + [0 for j in range(s2)] for i in range(s1)]
-        A += [[b1[j] for j in range(s1)] + [A2[i][j] for j in range(s2)] for i in range(s2)]
+        a = [[a1[i][j] for j in range(s1)] + [0 for j in range(s2)] for i in range(s1)]
+        a += [[b1[j] for j in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
         b = b1 + b2
 
-        return RK(A,b)
+        return RK(a,b)
 
     def __pow__(self, n):
         """
@@ -472,22 +479,22 @@ class RK:
         else:
             out = copy.deepcopy(self)
 
-        for i in range(n_-1):
+        for _ in range(n_-1):
             out = out * self
         return out
 
     def _internal_weights(self, i, t_rep):
-        return sum(self.A[i][j] * self._derivative_weights(j, t_rep) for j in range(self.s))
+        return sum(self.a[i][j] * self._derivative_weights(j, t_rep) for j in range(self.s))
 
     def _derivative_weights(self, i, t_rep):
-        if (i, repr(t_rep)) in self.deriv_dict.keys():
+        if (i, repr(t_rep)) in self.deriv_dict:
             return self.deriv_dict[(i, repr(t_rep))]
-        else:
-            out = 1
-            for subtree in t_rep:
-                out *= self._internal_weights(i, subtree)
-            self.deriv_dict[(i, repr(t_rep))] = out
-            return out
+
+        out = 1
+        for subtree in t_rep:
+            out *= self._internal_weights(i, subtree)
+        self.deriv_dict[(i, repr(t_rep))] = out
+        return out
 
     def _elementary_weights(self, t_rep):
         if t_rep is None:
@@ -501,12 +508,13 @@ class RK:
         :param t: Tree, Forest or ForestSum
         :rtype: float
         """
-        f_ = lambda x : self._elementary_weights(x.list_repr)
+        def f_(x):
+            return self._elementary_weights(x.list_repr)
         return _apply(t, f_)
 
     def modified_equation_weights(self, t):
         #TODO
-        return t.modified_equation_term().apply(self.elementary_weights())
+        return t.modified_equation_term().apply(self.elementary_weights)
 
     def order(self, tol = 1e-15):
         """

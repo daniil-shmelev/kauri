@@ -1,19 +1,20 @@
-.. kauri documentation master file, created by
-   sphinx-quickstart on Thu Apr  3 21:04:13 2025.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
+.. image:: _static/logo.png
+  :width: 400
+  :align: center
 
-Kauri documentation
-=========================
+Docs
+===============
 
-Add your content using ``reStructuredText`` syntax. See the
-`reStructuredText <https://www.sphinx-doc.org/en/master/usage/restructuredtext/index.html>`_
-documentation for details.
-
+.. automodule:: kauri
 
 .. toctree::
+   :titlesonly:
    :maxdepth: 2
-   :caption: Contents:
-
-   modules
+   
+   /pages/tree_objects
+   /pages/maps
+   /pages/tree_generation
+   /pages/rk
+   /pages/bck
+   /pages/cem
 

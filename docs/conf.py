@@ -38,3 +38,5 @@ html_static_path = ['_static']
 html_logo = "_static/logo.png"
 
 add_module_names = False
+
+html_title = "Kauri"

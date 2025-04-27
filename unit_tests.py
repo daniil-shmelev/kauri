@@ -249,9 +249,11 @@ class BCKTests(unittest.TestCase):
             self.assertEqual(s, bck.antipode(t.as_forest_sum()), repr(t) + " ForestSum")
 
     def test_antipode_property(self):
-        m = bck.map_product(bck.antipode, ident)
+        m1 = bck.antipode * ident
+        m2 = ident * bck.antipode
         for t in trees:
-            self.assertEqual(bck.counit(t), m(t))
+            self.assertEqual(bck.counit(t), m1(t))
+            self.assertEqual(bck.counit(t), m2(t))
 
     def test_antipode_squared(self):
         f = bck.antipode
@@ -304,7 +306,7 @@ class BCKTests(unittest.TestCase):
 
     def test_apply_power(self):
         S = bck.antipode
-        m1 = ((S * S) * S)
+        m1 = (S * S) * S
         m2 = S ** 3
         for t in trees:
             self.assertEqual(m1(t), m2(t))
@@ -366,6 +368,17 @@ class MapTests(unittest.TestCase):
         for t in trees:
             self.assertEqual(f(t), (kauri.bck.bck.counit @ f)(t))
 
+    def test_product_scalar(self):
+        m1 = ident ^ 2
+        m2 = 2 ^ ident
+        m3 = ident * 2
+        m4 = 2 * ident
+        for t in trees:
+            self.assertEqual(m1(t), 2 * t)
+            self.assertEqual(m2(t), 2 * t)
+            self.assertEqual(m3(t), 2 * t)
+            self.assertEqual(m4(t), 2 * t)
+
     def test_inverse_identity(self):
         a = Map(lambda x : 1 if x == T(None) or x == T([]) else 0) ** (-1)
         for t in trees:
@@ -410,9 +423,11 @@ class CEMTests(unittest.TestCase):
             self.assertEqual(a, cem.antipode(t))
 
     def test_antipode_property(self):
-        m = cem.antipode ^ ident
+        m1 = cem.antipode ^ ident
+        m2 = ident ^ cem.antipode
         for t in trees[1:]:
-            self.assertEqual((cem.counit(t) * T([])), m(t), repr(t))
+            self.assertEqual((cem.counit(t) * T([])), m1(t), repr(t))
+            self.assertEqual((cem.counit(t) * T([])), m2(t), repr(t))
 
     def test_antipode_squared(self):
         f = cem.antipode
