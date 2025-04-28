@@ -22,7 +22,7 @@ def _antipode(t):
     out = -t.as_forest_sum()
     for c, branches, subtree_ in cp:
         subtree = subtree_[0]
-        if subtree._equals(t) or subtree._equals(EMPTY_TREE):
+        if subtree.equals(t) or subtree.equals(EMPTY_TREE):
             continue
         out = out - c * _forest_apply(branches, _antipode) * subtree
 

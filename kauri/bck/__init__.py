@@ -1,5 +1,5 @@
 """
-This sub-package implements the Butcher-Connes-Kreimer (BCK) :cite:`connes1999hopf` Hopf algebra
+The ``kauri.bck`` sub-package implements the Butcher-Connes-Kreimer (BCK) :cite:`connes1999hopf` Hopf algebra
 :math:`(H, \\Delta_{BCK}, \\mu, \\varepsilon_{BCK}, \\emptyset, S_{BCK})`, defined as follows.
 
 - :math:`H` is the set of all non-planar rooted trees.

@@ -1,6 +1,8 @@
 Runge--Kutta Schemes
 ========================
 
+.. automodule:: kauri.rk
+
 .. autofunction:: kauri.rk.rk_symbolic_weight
 .. autofunction:: kauri.rk.rk_order_cond
 .. autoclass:: kauri.rk.RK

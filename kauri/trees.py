@@ -1,5 +1,11 @@
 """
-Tree, Forest, ForestSum and TensorProductSum classes
+Tree, Forest, ForestSum and TensorProductSum classes.
+
+The classes `Tree`, `Forest` and `ForestSum` are immutable and hashable.
+The hash is generated in such a way that two elements of the same class which are equivalent
+(e.g. two different orderings of the same tree) will have the same hash.
+However, this is not the case across classes. For example, for a Tree t, `hash(t)`, `hash(t.as_forest())`
+and `hash(t.as_forest_sum())` are different.
 """
 import math
 from dataclasses import dataclass
@@ -76,7 +82,7 @@ class Tree:
     def height(self) -> int:
         """
         Returns the height of a tree, given by the number of nodes
-         in the longest walk from the root to a leaf.
+        in the longest walk from the root to a leaf.
 
         :return: Height
         :rtype: int
@@ -285,7 +291,7 @@ class Tree:
         if isinstance(other, (int, float)):
             return self.as_forest_sum() == other * EMPTY_TREE
         if isinstance(other, Tree):
-            return self._equals(other)
+            return self.equals(other)
         if isinstance(other, Forest):
             return self.as_forest() == other
         if isinstance(other, ForestSum):
@@ -337,7 +343,7 @@ class Tree:
         """
         return Tree(self.sorted_list_repr())
 
-    def _equals(self, other_tree):
+    def equals(self, other_tree):
         return self.sorted_list_repr() == other_tree.sorted_list_repr()
 
     def as_forest(self) -> 'Forest':
@@ -387,7 +393,19 @@ class Tree:
         next_ = _next_layout(layout)
         return Tree(_level_sequence_to_list_repr(next_))
 
-    def __matmul__(self, other): #TODO: doc
+    def __matmul__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'TensorProductSum':
+        """
+        Returns the tensor product of a Tree and a scalar, Tree, Forest or ForestSum.
+
+        :param other: Other
+        :type other: int | float | Tree | Forest | ForestSum
+        :return: Tensor product
+        :rtype: TensorProductSum
+
+        Example usage::
+
+            Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
+        """
         if isinstance(other, (int, float)):
             return TensorProductSum(( (other, self.as_forest(), EMPTY_FOREST), ))
         if isinstance(other, (Tree, Forest)):
@@ -630,7 +648,7 @@ class Forest:
     def __neg__(self):
         return self * (-1)
 
-    def _equals(self, other_forest):
+    def equals(self, other_forest):
         return Counter(self.reduce().tree_list) == Counter(other_forest.reduce().tree_list)
 
     def __eq__(self, other : Union['Forest', 'ForestSum']) -> bool:
@@ -656,9 +674,9 @@ class Forest:
         if isinstance(other, (int, float)):
             return self.as_forest_sum() == other * EMPTY_TREE
         if isinstance(other, Tree):
-            return self._equals(other.as_forest())
+            return self.equals(other.as_forest())
         if isinstance(other, Forest):
-            return self._equals(other)
+            return self.equals(other)
         if isinstance(other, ForestSum):
             return self.as_forest_sum() == other
         raise ValueError("Cannot check equality of Forest and " + str(type(other)))
@@ -704,7 +722,19 @@ class Forest:
             out = Forest(new_tree_list)
         return out
 
-    def __matmul__(self, other): #TODO: doc
+    def __matmul__(self, other: Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'TensorProductSum':
+        """
+        Returns the tensor product of a Forest and a scalar, Tree, Forest or ForestSum.
+
+        :param other: Other
+        :type other: int | float | Tree | Forest | ForestSum
+        :return: Tensor product
+        :rtype: TensorProductSum
+
+        Example usage::
+
+            Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
+        """
         if isinstance(other, (int, float)):
             return TensorProductSum(( (other, self, EMPTY_FOREST), ))
         if isinstance(other, (Tree, Forest)):
@@ -778,7 +808,7 @@ class ForestSum:
 
         r = ""
         for c, f in self.term_list[:-1]:
-            r += repr(c) + "*" + repr(f) + " + "
+            r += repr(c) + "*" + repr(f) + "+"
         r += repr(self.term_list[-1][0]) + "*" + repr(self.term_list[-1][1])
         return r
 
@@ -835,10 +865,10 @@ class ForestSum:
 
     def reduce(self) -> 'ForestSum':
         """
-        Simplify the forest sum in-place by removing redundant empty trees
+        Simplify the forest sum by removing redundant empty trees
         and cancelling terms where applicable.
 
-        :return: self
+        :return: Reduced forest sum
         :rtype: ForestSum
 
         Example usage::
@@ -853,7 +883,7 @@ class ForestSum:
             f_reduced = f.reduce()
 
             for i, f2 in enumerate(new_forest_list):
-                if f_reduced._equals(f2):
+                if f_reduced.equals(f2):
                     new_coeff_list[i] += c
                     break
             else:
@@ -979,7 +1009,7 @@ class ForestSum:
     def __neg__(self):
         return self * (-1)
 
-    def _equals(self, other):
+    def equals(self, other):
         self_reduced = self.reduce()
         other_reduced = other.reduce()
         return Counter(self_reduced.term_list) == Counter(other_reduced.term_list)
@@ -1005,13 +1035,13 @@ class ForestSum:
             t1 * t2 + t3 == t1 * t2 + t4 # True
         """
         if isinstance(other, (int, float)):
-            return self._equals(other * EMPTY_TREE)
+            return self.equals(other * EMPTY_TREE)
         if isinstance(other, Tree):
-            return self._equals(other.as_forest_sum())
+            return self.equals(other.as_forest_sum())
         if isinstance(other, Forest):
-            return self._equals(other.as_forest_sum())
+            return self.equals(other.as_forest_sum())
         if isinstance(other, ForestSum):
-            return self._equals(other)
+            return self.equals(other)
         raise ValueError("Cannot check equality of ForestSum and " + str(type(other)))
 
     def singleton_reduced(self) -> 'ForestSum':
@@ -1034,7 +1064,19 @@ class ForestSum:
     def as_forest_sum(self):
         return self
 
-    def __matmul__(self, other):
+    def __matmul__(self, other: Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'TensorProductSum':
+        """
+        Returns the tensor product of a ForestSum and a scalar, Tree, Forest or ForestSum.
+
+        :param other: Other
+        :type other: int | float | Tree | Forest | ForestSum
+        :return: Tensor product
+        :rtype: TensorProductSum
+
+        Example usage::
+
+            Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
+        """
         if isinstance(other, (int, float)):
             term_list = []
             for c, f in self:
@@ -1059,9 +1101,6 @@ class ForestSum:
 
 ##############################################
 ##############################################
-
-Scalar = Union[int, float]
-TreeLike = Union[Tree, Forest, ForestSum]
 
 def _is_scalar(obj):
     return isinstance(obj, (int, float))
@@ -1095,7 +1134,7 @@ class TensorProductSum:
     :param term_list: A list of tuples representing terms in the sum.
         Tuples must be of the form `(c, f1, f2)`, where `c` is an `int`
         or `float` and `f1, f2` are Forests, representing the term
-        :math:`c * f1 \\otimes f2`.
+        :math:`c \\cdot (f1 \\otimes f2)`.
 
     Example usage::
 
@@ -1133,8 +1172,19 @@ class TensorProductSum:
               + " \u2297 " + repr(self.term_list[-1][2]))
         return r
 
-    def reduce(self):
-        #TODO docstring
+    def reduce(self) -> 'TensorProductSum':
+        """
+        Simplify the tensor product sum by removing redundant empty trees
+        and cancelling terms where applicable.
+
+        :return: Reduces tensor product sum
+        :rtype: TensorProductSum
+
+        Example usage::
+
+            tp = Tree([[],[[]]]) @ (Tree([]) * Tree(None)) + Tree([]) @ Tree([[]]) - Tree([]) @ Tree([[]])
+            tp.reduce() #Returns 1 [[], [[]]] ⊗ []
+        """
         new_term_list = []
 
         for c, f1, f2 in self.term_list:
@@ -1142,7 +1192,7 @@ class TensorProductSum:
             f2_reduced = f2.reduce()
 
             for i, (_, f1_, f2_) in enumerate(new_term_list):
-                if f1_reduced._equals(f1_) and f2_reduced._equals(f2_):
+                if f1_reduced.equals(f1_) and f2_reduced.equals(f2_):
                     old_term_ = new_term_list[i]
                     new_term_list[i] = (old_term_[0] + c, old_term_[1], old_term_[2])
                     break
@@ -1152,8 +1202,26 @@ class TensorProductSum:
         result = tuple(term for term in new_term_list if term[0] != 0)
         return TensorProductSum(result)
 
-    def __eq__(self, other):
-        #TODO docstring
+    def __eq__(self, other : 'TensorProductSum') -> bool:
+        """
+        Compares the tensor product sum with another tensor product sum and returns true if
+        they represent the same sum, regardless of possible reorderings of trees within forests
+        or reorderings of terms.
+
+        :param other: TensorProductSum
+        :rtype: bool
+
+        Example usage::
+
+            t1 = Tree([])
+            t2 = Tree([[]])
+            t3 = Tree([[[]],[]])
+            t4 = Tree([[],[[]]])
+
+            t1 @ t2 + t2 @ t3 == t2 @ t3 + t1 @ t2 # True
+            t1 @ (t2 * t3) == t1 @ (t3 * t2) # True
+            t1 @ t3 == t1 @ t4 # True
+        """
         if not isinstance(other, TensorProductSum):
             raise ValueError("Cannot check equality of TensorSum and " + str(type(other)))
         self_reduced = self.reduce()
@@ -1163,7 +1231,13 @@ class TensorProductSum:
     def __hash__(self):
         return hash(frozenset(Counter(self.term_list).items()))
 
-    def __add__(self, other):
+    def __add__(self, other : 'TensorProductSum') -> 'TensorProductSum':
+        """
+        Adds two tensor product sums.
+
+        :param other: Other tensor product sum
+        :type other: TensorProductSum
+        """
         if not isinstance(other, TensorProductSum):
             raise ValueError("Cannot add TensorSum and " + str(type(other)))
         return TensorProductSum(self.term_list + other.term_list)
@@ -1176,7 +1250,13 @@ class TensorProductSum:
             raise ValueError("Cannot subtract " + str(type(other)) + " from TensorSum")
         return self + (-other)
 
-    def __mul__(self, other):
+    def __mul__(self, other : Union[int, float]) -> 'TensorProductSum':
+        """
+        Multiplies a tensor product sum by a scalar.
+
+        :param other: Scalar
+        :type other: int | float
+        """
         if isinstance(other, (int, float)):
             return TensorProductSum(tuple((other * x[0], x[1], x[2]) for x in self.term_list))
         raise ValueError("Cannot multiply TensorSum by " + str(type(other)))

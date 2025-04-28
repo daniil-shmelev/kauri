@@ -1,5 +1,5 @@
 """
-This sub-package implements the Calaque, Ebrahimi-Fard and Manchon (CEM) :cite:`calaque2011two` Hopf algebra
+The ``kauri.cem`` sub-package implements the Calaque, Ebrahimi-Fard and Manchon (CEM) :cite:`calaque2011two` Hopf algebra
 :math:`(\\widetilde{H}, \\Delta_{CEM}, \\mu, \\varepsilon_{CEM}, \\bullet, S_{CEM})`, defined as follows.
 
 - :math:`\\widetilde{H}` is the space of non-empty trees, defined as

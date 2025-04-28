@@ -1,5 +1,7 @@
 """
-Linear multiplicative maps on trees
+This module provides the :class:`Map` class, which implements linear multiplicative maps on trees
+and allows for their manipulation with respect to different Hopf algebras. In particular, this covers
+characters on the Hopf algebra, as well as more complicated maps.
 """
 import copy
 from functools import lru_cache
@@ -22,6 +24,7 @@ class Map:
 
     :param func: A function taking as input a single tree and returning a scalar,
         Tree, Forest or ForestSum.
+    :type func: Callable[[Tree], int | float | Tree | Forest | ForestSum]
     """ #TODO: make sure this works with functions returning TensorSums
     def __init__(self, func):
         self.func = func

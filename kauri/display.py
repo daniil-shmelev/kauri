@@ -1,5 +1,5 @@
 """
-Functions for plotting Tree, Forest and ForestSum objects.
+Functions for plotting Tree, Forest, ForestSum and TensorProductSum objects.
 """
 #TODO add plotting of TensorSum to display
 #TODO: simplify
@@ -9,11 +9,11 @@ from .trees import Tree, ForestSum
 from .utils import _branch_level_sequences, _str
 
 def _get_node_coords(layout, x=0, y=0, scale=0.2):
-    branch_gap = scale / 2
+    gap = scale / 2
     if layout == []:
         return [], 0
     if layout == [0]:
-        return [(x, y)], branch_gap
+        return [(x, y)], gap
 
     coords = [(x, y)]
     branch_layouts = _branch_level_sequences(layout)
@@ -25,11 +25,11 @@ def _get_node_coords(layout, x=0, y=0, scale=0.2):
         branch_coords.append(c)
         branch_widths.append(w)
 
-    width = sum(branch_widths) + (len(branch_widths) - 1) * branch_gap
+    width = sum(branch_widths) + (len(branch_widths) - 1) * gap
     pos = - width / 2
     for i in range(len(branch_coords)):
         branch_coords[i] = [(c[0] + pos + branch_widths[i] / 2, c[1]) for c in branch_coords[i]]
-        pos += branch_widths[i] + branch_gap
+        pos += branch_widths[i] + gap
 
     for c in branch_coords:
         coords += c
