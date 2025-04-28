@@ -17,7 +17,7 @@ class TreeTests(unittest.TestCase):
     def test_repr(self):
         self.assertEqual(repr(T([[[]], []])), '[[[]], []]')
         self.assertEqual(repr(T([[[]], []]).as_forest()), '[[[]], []]')
-        self.assertEqual(repr(T([[[]], []]).as_forest_sum()), '1*[[[]], []]')
+        self.assertEqual(repr(T([[[]], []]).as_forest_sum()), ' 1 * [[[]], []]')
         self.assertEqual(repr(T(None)), "∅")
         self.assertEqual(repr(Forest([])), "∅")
         self.assertEqual(repr(ForestSum([])), "0")
@@ -25,7 +25,7 @@ class TreeTests(unittest.TestCase):
     def test_conversion(self):
         for t in trees:
             self.assertEqual(repr(t), repr(t.as_forest()), repr(t) + " " + repr(t.as_forest()))
-            self.assertEqual("1*" + repr(t), repr(t.as_forest_sum()), repr(t) + " " + repr(t.as_forest_sum()))
+            self.assertEqual(" 1 * " + repr(t), repr(t.as_forest_sum()), repr(t) + " " + repr(t.as_forest_sum()))
 
     def test_add(self):
         t1 = T([]) + T([[],[]])
@@ -93,7 +93,7 @@ class TreeTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             t1 ** -1
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             t1 ** 1.5
 
     def test_pow_forest(self):
@@ -109,7 +109,7 @@ class TreeTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             t1 ** -1
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             t1 ** 1.5
 
     def test_pow_forest_sum(self):
@@ -122,7 +122,7 @@ class TreeTests(unittest.TestCase):
 
         with self.assertRaises(ValueError):
             t1 ** -1
-        with self.assertRaises(ValueError):
+        with self.assertRaises(TypeError):
             t1 ** 1.5
 
     def test_equality(self):
@@ -291,19 +291,6 @@ class BCKTests(unittest.TestCase):
         for t in trees:
             self.assertAlmostEqual(exact_weights(t), exact_weights(bck.antipode(t).sign()))
 
-    def test_RK_elementary_weights(self):
-        #Test using an RK method of order 4
-        A = [[0,0,0,0],
-             [1./2,0,0,0],
-             [0,1./2,0,0],
-             [0,0,1,0]]
-        b = [1./6,1./3,1./3,1./6]
-
-        scheme = RK(A,b)
-
-        for t in trees:
-            self.assertAlmostEqual(exact_weights(t), scheme.elementary_weights(t))
-
     def test_apply_power(self):
         S = bck.antipode
         m1 = (S * S) * S
@@ -383,6 +370,10 @@ class MapTests(unittest.TestCase):
         a = Map(lambda x : 1 if x == T(None) or x == T([]) else 0) ** (-1)
         for t in trees:
             self.assertEqual((-1)**t.nodes(), a(t), repr(t))
+
+    def test_tensor_product_map(self):
+        m = bck.coproduct
+
 
 class CEMTests(unittest.TestCase):
 
@@ -489,8 +480,19 @@ class CEMTests(unittest.TestCase):
             self.assertAlmostEqual(m1(t), m3(t))
 
 class RKTests(unittest.TestCase):
-    def test_rk(self):
-        pass #TODO
+    def test_RK_elementary_weights(self):
+        # Test using an RK method of order 4
+        A = [[0, 0, 0, 0],
+             [1. / 2, 0, 0, 0],
+             [0, 1. / 2, 0, 0],
+             [0, 0, 1, 0]]
+        b = [1. / 6, 1. / 3, 1. / 3, 1. / 6]
+
+        scheme = RK(A, b)
+        rk_weights = scheme.elementary_weights_map()
+
+        for t in trees:
+            self.assertAlmostEqual(exact_weights(t), rk_weights(t))
 
 class TensorProductSumTests(unittest.TestCase):
     def test_tensor(self):

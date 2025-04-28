@@ -11,6 +11,7 @@ import matplotlib.pyplot as plt
 
 from .gentrees import trees_of_order
 from .trees import Tree, Forest, ForestSum
+from .maps import Map
 from .generic_algebra import _apply
 
 def _internal_symbolic(i, t_rep, a, b, s):
@@ -205,7 +206,7 @@ class RK:
     def __init__(self, a, b):
         self.s = len(b)
         if len(a) != self.s or len(a[0]) != self.s:
-            raise ValueError("A must be a square s x s matrix and b a vector of length s")
+            raise ValueError("Parameter 'a' must be a square s x s matrix and b a vector of length s")
 
         self.a = a
         self.b = b
@@ -481,7 +482,7 @@ class RK:
 
         return RK(a,b)
 
-    def __pow__(self, n : int) -> 'RK':
+    def __pow__(self, exponent : int) -> 'RK':
         """
         Returns the compositional power of the Runge--Kutta scheme. In particular, ``self ** (-1)`` returns the scheme
         with Butcher tableau:
@@ -496,24 +497,24 @@ class RK:
 
         where :math:`e` is the vector of 1s.
 
-        :param n: Exponent
-        :type n: int
+        :param exponent: Exponent
+        :type exponent: int
         :rtype: RK
         """
-        if not isinstance(n, int):
-            raise ValueError("RK.__pow__ received invalid exponent")
+        if not isinstance(exponent, int):
+            raise TypeError("Exponent in RK power must be int, got " + str(type(exponent)) + " instead.")
 
-        if n == 0:
+        if exponent == 0:
             return RK([[0]], [0])
 
-        n_ = n
-        if n < 0:
+        expn_ = exponent
+        if exponent < 0:
             out = self._inverse()
-            n_ = -n
+            expn_ = -exponent
         else:
             out = copy.deepcopy(self)
 
-        for _ in range(n_-1):
+        for _ in range(expn_-1):
             out = out * self
         return out
 
@@ -535,20 +536,37 @@ class RK:
             return 1
         return sum(self.b[i] * self._derivative_weights(i, t_rep) for i in range(self.s))
 
-    def elementary_weights(self, t : Union[Tree, Forest, ForestSum]) -> float:
+    def elementary_weights_map(self) -> Map:
         """
-        Returns the elementary weight function of the Runge-Kutta method applied to a Tree, Forest or ForestSum :math:`t`.
+        Returns the elementary weight function of the Runge-Kutta method as an instance of the Map class.
 
-        :param t: Tree, Forest or ForestSum
-        :rtype: float
+        :rtype: Map
         """
         def f_(x):
             return self._elementary_weights(x.list_repr)
-        return _apply(t, f_)
+        return Map(f_)
 
-    def modified_equation_weights(self, t):
-        #TODO
-        return t.modified_equation_term().apply(self.elementary_weights)
+    def modified_equation_map(self) -> Map:
+        """
+        Returns the map corresponding to the elementary weights function of the
+        modified (B-series) vector field, :math:`\\widetilde{\\phi}`, defined by
+
+        .. math::
+
+            (\\widetilde{\\phi} \\star e)(t) = \\phi(t)
+
+        where :math:`\\phi` is the elementary weights function of the Runge-Kutta
+        scheme and :math:`e(t) = 1 / t!` is the elementary weights function of
+        the exact solution. Equivalently,
+
+        .. math::
+
+            \\widetilde{\\phi}(t) = (\\phi \\star e^{\\star (-1)})(t).
+
+        :return: Elementary weights map of the modified vector field
+        :rtype: Map
+        """
+        return self.elementary_weights_map().modified_equation()
 
     def order(self, tol : float = 1e-15) -> int:
         """

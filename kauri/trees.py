@@ -11,6 +11,9 @@ import math
 from dataclasses import dataclass
 from collections import Counter
 from typing import Union
+
+from numba.core.ir import TryRaise
+
 from .utils import (_nodes, _height, _factorial, _sigma,
                     _sorted_list_repr, _list_repr_to_level_sequence,
                     _to_tuple, _to_list, _next_layout, _level_sequence_to_list_repr)
@@ -214,7 +217,7 @@ class Tree:
         elif isinstance(other, ForestSum):
             out = ForestSum(tuple((c, self * f) for c,f in other.term_list))
         else:
-            raise ValueError("Cannot multiply Tree by object of type " + str(type(other)))
+            raise TypeError("Cannot multiply Tree by object of type " + str(type(other)))
 
         return out.reduce()
 
@@ -232,7 +235,7 @@ class Tree:
             t = Tree([[]]) ** 3
         """
         if not isinstance(n, int):
-            raise ValueError("Exponent in Tree.__pow__ must be an int, not " + str(type(n)))
+            raise TypeError("Exponent in Tree.__pow__ must be an int, not " + str(type(n)))
         if n < 0:
             raise ValueError("Cannot raise Tree to a negative power")
         if n == 0:
@@ -259,7 +262,7 @@ class Tree:
         elif isinstance(other, ForestSum):
             out = ForestSum( ((1, self),) + other.term_list )
         else:
-            raise ValueError("Cannot add Tree and " + str(type(other)))
+            raise TypeError("Cannot add Tree and " + str(type(other)))
 
         return out.reduce()
 
@@ -296,7 +299,7 @@ class Tree:
             return self.as_forest() == other
         if isinstance(other, ForestSum):
             return self.as_forest_sum() == other
-        raise ValueError("Cannot check equality of Tree and " + str(type(other)))
+        raise TypeError("Cannot check equality of Tree and " + str(type(other)))
 
     def sorted_list_repr(self) -> list:
         """
@@ -415,7 +418,7 @@ class Tree:
             for c, f in other:
                 term_list.append((c, self, f))
             return TensorProductSum(term_list)
-        raise ValueError("Cannot take tensor product of Tree and " + str(type(other)))
+        raise TypeError("Cannot take tensor product of Tree and " + str(type(other)))
 
 ######################################
 @dataclass(frozen=True)
@@ -591,7 +594,7 @@ class Forest:
         elif isinstance(other, ForestSum):
             out = ForestSum(tuple( (c, self * f) for c, f in other.term_list ))
         else:
-            raise ValueError("Cannot multiply Forest and " + str(type(other)))
+            raise TypeError("Cannot multiply Forest and " + str(type(other)))
 
         return out.reduce()
 
@@ -609,7 +612,7 @@ class Forest:
             t = ( Tree([]) * Tree([[]]) ) ** 3
         """
         if not isinstance(n, int):
-            raise ValueError("Exponent in Forest.__pow__ must be an int, not " + str(type(n)))
+            raise TypeError("Exponent in Forest.__pow__ must be an int, not " + str(type(n)))
         if n < 0:
             raise ValueError("Cannot raise Forest to a negative power")
         if n == 0:
@@ -635,7 +638,7 @@ class Forest:
         elif isinstance(other, ForestSum):
             out = ForestSum( ((1, self),) + other.term_list )
         else:
-            raise ValueError("Cannot add Forest and " + str(type(other)))
+            raise TypeError("Cannot add Forest and " + str(type(other)))
 
         return out.reduce()
 
@@ -679,7 +682,7 @@ class Forest:
             return self.equals(other)
         if isinstance(other, ForestSum):
             return self.as_forest_sum() == other
-        raise ValueError("Cannot check equality of Forest and " + str(type(other)))
+        raise TypeError("Cannot check equality of Forest and " + str(type(other)))
 
     def as_forest(self):
         return self
@@ -744,7 +747,7 @@ class Forest:
             for c, f in other:
                 term_list.append((c, self, f))
             return TensorProductSum(term_list)
-        raise ValueError("Cannot take tensor product of Forest and " + str(type(other)))
+        raise TypeError("Cannot take tensor product of Forest and " + str(type(other)))
 
     def __getitem__(self, i):
         return self.tree_list[i]
@@ -781,10 +784,10 @@ class ForestSum:
             elif isinstance(term[1], Tree):
                 new_term_list.append((term[0], term[1].as_forest()))
             else:
-                raise ValueError("Terms must be tuples of type (int | float, Tree | Forest)")
+                raise TypeError("Terms must be tuples of type (int | float, Tree | Forest)")
 
             if not isinstance(term[0], (int, float)):
-                raise ValueError("Terms must be tuples of type (int | float, Tree | Forest)")
+                raise TypeError("Terms must be tuples of type (int | float, Tree | Forest)")
 
         new_term_list = tuple(new_term_list)
         object.__setattr__(self, 'term_list', new_term_list)
@@ -807,9 +810,12 @@ class ForestSum:
             return "0"
 
         r = ""
-        for c, f in self.term_list[:-1]:
-            r += repr(c) + "*" + repr(f) + "+"
-        r += repr(self.term_list[-1][0]) + "*" + repr(self.term_list[-1][1])
+        for c, f in self.term_list:
+            term_str = str(c) + " * " + repr(f)
+            if c >= 0 and r:
+                r += " + " + term_str
+            else:
+                r += " " + term_str
         return r
 
     def __iter__(self):
@@ -945,7 +951,7 @@ class ForestSum:
         elif isinstance(other, ForestSum):
             new_term_list = tuple( (c1 * c2, f1 * f2) for c1, f1 in self.term_list for c2, f2 in other.term_list)
         else:
-            raise ValueError("Cannot multiply ForestSum and " + str(type(object)))
+            raise TypeError("Cannot multiply ForestSum and " + str(type(object)))
 
         out = ForestSum(new_term_list)
         return out.reduce()
@@ -965,7 +971,7 @@ class ForestSum:
             t = ( Tree([]) * Tree([[]]) + Tree([[],[]]) ) ** 3
         """
         if not isinstance(n, int):
-            raise ValueError("Exponent in ForestSum.__pow__ must be an int, not " + str(type(n)))
+            raise TypeError("Exponent in ForestSum.__pow__ must be an int, not " + str(type(n)))
         if n < 0:
             raise ValueError("Cannot raise ForestSum to a negative power")
         if n == 0:
@@ -995,7 +1001,7 @@ class ForestSum:
         elif isinstance(other, ForestSum):
             new_term_list = self.term_list + other.term_list
         else:
-            raise ValueError("Cannot add ForestSum and " + str(type(other)))
+            raise TypeError("Cannot add ForestSum and " + str(type(other)))
 
         out = ForestSum(new_term_list)
         return out.reduce()
@@ -1042,7 +1048,7 @@ class ForestSum:
             return self.equals(other.as_forest_sum())
         if isinstance(other, ForestSum):
             return self.equals(other)
-        raise ValueError("Cannot check equality of ForestSum and " + str(type(other)))
+        raise TypeError("Cannot check equality of ForestSum and " + str(type(other)))
 
     def singleton_reduced(self) -> 'ForestSum':
         """
@@ -1094,7 +1100,7 @@ class ForestSum:
                 for c2, f2 in other:
                     term_list.append((c1 * c2, f1, f2))
             return TensorProductSum(term_list)
-        raise ValueError("Cannot take tensor product of ForestSum and " + str(type(other)))
+        raise TypeError("Cannot take tensor product of ForestSum and " + str(type(other)))
 
     def __getitem__(self, i):
         return self.term_list[i]
@@ -1146,7 +1152,7 @@ class TensorProductSum:
         tuple_list = []
         for x in self.term_list:
             if not (_is_scalar(x[0]) and _is_tree_or_forest(x[1]) and _is_tree_or_forest(x[2])):
-                raise ValueError("Terms must be tuples of type (int | float, Tree | Forest, Tree | Forest)")
+                raise TypeError("Terms must be tuples of type (int | float, Tree | Forest, Tree | Forest)")
             tuple_list.append((x[0], x[1].as_forest(), x[2].as_forest()))
         tuple_list = tuple(tuple_list)
         object.__setattr__(self, 'term_list', tuple_list)
@@ -1160,16 +1166,17 @@ class TensorProductSum:
         memodict[id(self)] = self
         return self
 
-    def __repr__(self): #TODO: fix x + -2 y printing
+    def __repr__(self):
         if self.term_list is None or self.term_list == tuple():
             return "0"
+
         r = ""
-        for x in self.term_list[:-1]:
-            r += repr(x[0]) + " " + repr(x[1]) + " \u2297 " + repr(x[2])
-            r += "+"
-        r += (repr(self.term_list[-1][0])
-              + " " + repr(self.term_list[-1][1])
-              + " \u2297 " + repr(self.term_list[-1][2]))
+        for c, f1, f2 in self.term_list:
+            term_str = str(c) + " * " + repr(f1) + " \u2297 " + repr(f2)
+            if c >= 0 and r:
+                r += " + " + term_str
+            else:
+                r += " " + term_str
         return r
 
     def reduce(self) -> 'TensorProductSum':
@@ -1223,7 +1230,7 @@ class TensorProductSum:
             t1 @ t3 == t1 @ t4 # True
         """
         if not isinstance(other, TensorProductSum):
-            raise ValueError("Cannot check equality of TensorSum and " + str(type(other)))
+            raise TypeError("Cannot check equality of TensorSum and " + str(type(other)))
         self_reduced = self.reduce()
         other_reduced = other.reduce()
         return Counter(self_reduced.term_list) == Counter(other_reduced.term_list)
@@ -1239,7 +1246,7 @@ class TensorProductSum:
         :type other: TensorProductSum
         """
         if not isinstance(other, TensorProductSum):
-            raise ValueError("Cannot add TensorSum and " + str(type(other)))
+            raise TypeError("Cannot add TensorSum and " + str(type(other)))
         return TensorProductSum(self.term_list + other.term_list)
 
     def __neg__(self):
@@ -1247,7 +1254,7 @@ class TensorProductSum:
 
     def __sub__(self, other):
         if not isinstance(other, TensorProductSum):
-            raise ValueError("Cannot subtract " + str(type(other)) + " from TensorSum")
+            raise TypeError("Cannot subtract " + str(type(other)) + " from TensorSum")
         return self + (-other)
 
     def __mul__(self, other : Union[int, float]) -> 'TensorProductSum':
@@ -1259,7 +1266,7 @@ class TensorProductSum:
         """
         if isinstance(other, (int, float)):
             return TensorProductSum(tuple((other * x[0], x[1], x[2]) for x in self.term_list))
-        raise ValueError("Cannot multiply TensorSum by " + str(type(other)))
+        raise TypeError("Cannot multiply TensorSum by " + str(type(other)))
 
     def __iter__(self):
         for c, f1, f2 in self.term_list:

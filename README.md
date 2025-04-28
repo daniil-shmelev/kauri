@@ -2,6 +2,7 @@
 <img src="docs/_static/logo.png" width="350">
 </p>
 
+[//]: # (TODO: rewrite)
 An implementation of the Butcher-Connes-Kreimer Hopf algebra of non-planar rooted trees [[Connes & Kreimer, 1999](#reference)], 
 commonly used for the analysis of B-series and Runge-Kutta schemes. The Hopf algebra is given by
 $(\mathcal{H}, \Delta,\mu,\varepsilon, \emptyset, S)$, where<br>
@@ -54,7 +55,7 @@ will plot the trees. For example, `print(s2)` will output
 2*[] [[]] + -1*[[], []] + 5*∅
 ```
 whilst `display(s2)` plots:<br><br>
-<img src="example_plots/example.png" width="150">
+<img src="docs/_static/example.png" width="150">
 
 ## Functions
 

@@ -25,7 +25,7 @@ class Map:
     :param func: A function taking as input a single tree and returning a scalar,
         Tree, Forest or ForestSum.
     :type func: Callable[[Tree], int | float | Tree | Forest | ForestSum]
-    """ #TODO: make sure this works with functions returning TensorSums
+    """
     def __init__(self, func):
         self.func = func
 
@@ -58,7 +58,7 @@ class Map:
             ident_sq = ident ** 2 # identity squared
         """
         if not isinstance(n, int):
-            raise ValueError("Error in BCK power: exponent must be an integer, got " + str(type(n)) + " instead")
+            raise TypeError("Error in BCK power: exponent must be an integer, got " + str(type(n)) + " instead")
 
         return Map(lambda x : _func_power(x, self.func, n, bck_coproduct, bck_counit, bck_antipode))
 
@@ -69,7 +69,7 @@ class Map:
         elif isinstance(other, Map):
             self.func = lambda x : _func_product(x, func_, other.func, bck_coproduct)
         else:
-            raise ValueError("Error in BCK product: Cannot multiply Map by object of type " + str(type(other)))
+            raise TypeError("Error in BCK product: Cannot multiply Map by object of type " + str(type(other)))
         return self
 
     def __ixor__(self, other):
@@ -87,7 +87,7 @@ class Map:
                 return out
             self.func = f_
         else:
-            raise ValueError("Error in CEM product: Cannot multiply Map by object of type " + str(type(other)))
+            raise TypeError("Error in CEM product: Cannot multiply Map by object of type " + str(type(other)))
         return self
 
     def __mul__(self, other : Union['Map', int, float]) -> 'Map':
@@ -147,7 +147,7 @@ class Map:
         if isinstance(other, Map):
             self.func = lambda x: func_(x) + other.func(x)
         else:
-            raise ValueError("Cannot add Map and object of type " + str(type(other))) #TODO: TypeError?
+            raise TypeError("Cannot add Map and object of type " + str(type(other)))
         return self
 
     def __add__(self, other : 'Map') -> 'Map':

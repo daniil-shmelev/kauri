@@ -4,9 +4,9 @@ CEM Hopf Algebra
 .. automodule:: kauri.cem
 
 .. autodata:: counit
-.. autodata:: coproduct
 .. autodata:: antipode
 
+.. autofunction:: coproduct
 .. autofunction:: kauri.cem.map_product
 .. autofunction:: kauri.cem.map_power
 

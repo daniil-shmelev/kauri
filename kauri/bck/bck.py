@@ -3,6 +3,7 @@ Front-end for the BCK module
 """
 from ..bck_impl import _counit, _coproduct, _antipode
 from ..maps import Map
+from ..trees import Tree, TensorProductSum
 
 counit = Map(_counit)
 counit.__doc__ = """
@@ -34,20 +35,23 @@ Example usage::
     bck.antipode(t)
 """
 
-coproduct = Map(_coproduct)
-coproduct.__doc__ = """
-The coproduct :math:`\\Delta_{BCK}` of the BCK Hopf algebra.
+def coproduct(t : Tree) -> TensorProductSum:
+    """
+    The coproduct :math:`\\Delta_{BCK}` of the BCK Hopf algebra.
 
-:type: Map
+    :param t: tree
+    :type t: Tree
+    :rtype: TensorProductSum
 
-Example usage::
+    Example usage::
 
-    import kauri as kr
-    import kauri.bck as bck
+        import kauri as kr
+        import kauri.bck as bck
 
-    bck.coproduct(kr.Tree([])) # Returns 1 ∅ ⊗ []+1 [] ⊗ ∅
-    bck.coproduct(kr.Tree([[]])) # Returns 1 [[]] ⊗ ∅+1 ∅ ⊗ [[]]+1 [] ⊗ []
-"""
+        bck.coproduct(kr.Tree([])) # Returns 1 ∅ ⊗ []+1 [] ⊗ ∅
+        bck.coproduct(kr.Tree([[]])) # Returns 1 [[]] ⊗ ∅+1 ∅ ⊗ [[]]+1 [] ⊗ []
+    """
+    return _coproduct(t)
 
 def map_product(f : Map, g : Map) -> Map:
     """

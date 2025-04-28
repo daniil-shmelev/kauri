@@ -3,6 +3,7 @@ Front-end for the CEM module
 """
 from ..cem_impl import _counit, _coproduct, _antipode
 from ..maps import Map
+from ..trees import Tree, TensorProductSum
 from ..generic_algebra import _func_power
 
 counit = Map(_counit)
@@ -35,20 +36,23 @@ Example usage::
     cem.antipode(t)
 """
 
-coproduct = Map(_coproduct)
-coproduct.__doc__ = """
-The coproduct :math:`\\Delta_{CEM}` of the CEM Hopf algebra.
+def coproduct(t : Tree) -> TensorProductSum:
+    """
+    The coproduct :math:`\\Delta_{CEM}` of the CEM Hopf algebra.
 
-:type: Map
+    :param t: tree
+    :type t: Tree
+    :rtype: TensorProductSum
 
-Example usage::
+    Example usage::
 
-    from kauri import Tree
-    import kauri.cem as cem
+        from kauri import Tree
+        import kauri.cem as cem
 
-    cem.coproduct(Tree([])) # Returns 1 [] ⊗ []
-    cem.coproduct(Tree([[]])) # Returns 1 [] ⊗ [[]]+1 [[]] ⊗ []
-"""
+        cem.coproduct(Tree([])) # Returns 1 [] ⊗ []
+        cem.coproduct(Tree([[]])) # Returns 1 [] ⊗ [[]]+1 [[]] ⊗ []
+    """
+    return _coproduct(t)
 
 def map_product(f : Map, g : Map) -> Map:
     """
@@ -93,6 +97,6 @@ def map_power(f : Map, exponent : int) -> Map:
     """
 
     if not isinstance(exponent, int):
-        raise ValueError("Map.__pow__ received invalid exponent")
+        raise TypeError("Exponent in Map power must be int, got " + str(type(exponent)) + " instead.")
 
     return Map(lambda x: _func_power(x, f.func, exponent, _coproduct, _counit, _antipode))
