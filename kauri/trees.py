@@ -1209,6 +1209,23 @@ class TensorProductSum:
         result = tuple(term for term in new_term_list if term[0] != 0)
         return TensorProductSum(result)
 
+    def singleton_reduced(self) -> 'TensorProductSum':
+        """
+        Removes redundant occurrences of the single-node tree in each forest of the
+        tensor product sum. If the forest contains a tree with more than one node, removes
+        all occurences of the single-node tree. Otherwise, replaces it with the
+        single-node tree.
+
+        :return: Singleton-reduced tensor product sum
+        :rtype: TensorProductSum
+
+        Example usage::
+
+            s1 = (Tree([]) * Tree([[],[]])) @ (Tree([]) * Tree([]) * Tree([]))
+            s1.singleton_reduced() #Returns Tree([[],[]]) @ Tree([])
+        """
+        return TensorProductSum(tuple((c, f1.singleton_reduced(), f2.singleton_reduced()) for c, f1, f2 in self.term_list))
+
     def __eq__(self, other : 'TensorProductSum') -> bool:
         """
         Compares the tensor product sum with another tensor product sum and returns true if
