@@ -15,6 +15,42 @@ def _to_list(obj):
         return list(_to_list(el) for el in obj)
     return obj
 
+def _check_valid(obj):
+    if obj == tuple() or obj == []:
+        return True
+    for el in obj[:-1]:
+        if not isinstance(el, (tuple, list)) or not _check_valid(el):
+            return False
+
+    if not isinstance(obj[-1], (int, tuple, list)):
+        return False
+
+    if isinstance(obj[-1], int) and obj[-1] < 0:
+        return False
+    return True
+
+def _to_labelled_tuple(obj):
+    if obj == tuple() or obj == []:
+        return (0,)
+    out = tuple(_to_labelled_tuple(el) for el in obj[:-1])
+    if isinstance(obj[-1], int):
+        out += (obj[-1],)
+    else:
+        out += (_to_labelled_tuple(obj[-1]), 0)
+    return out
+
+def _to_unlabelled_tuple(obj):
+    return tuple(_to_unlabelled_tuple(el) for el in obj[:-1])
+
+def _get_max_color(obj):
+    if obj is None:
+        return 0
+    out = 0
+    for el in obj[:-1]:
+        out = max(out, _get_max_color(el))
+    out = max(out, obj[-1])
+    return out
+
 @cache
 def _nodes(rep):
     if rep is None:
@@ -66,13 +102,26 @@ def _sigma(rep):
         out *= math.factorial(k) * (_sigma(r) ** k)
     return out
 
+class LabelledReprComparison:
+    def __init__(self, rep):
+        self.rep = rep
+        self.unlabelled_rep = _to_unlabelled_tuple(rep)
+
+    def __lt__(self, other):
+        if self.unlabelled_rep == other.unlabelled_rep:
+            return self.rep < other.rep
+        return self.unlabelled_rep < other.unlabelled_rep
+
 @cache
 def _sorted_list_repr(rep):
     if rep is None:
         return None
-    if rep == tuple():
-        return tuple()
-    return tuple(sorted(map(_sorted_list_repr, rep), reverse=True))
+    if len(rep) == 1:
+        return rep
+
+    *children, label = rep
+    sorted_children = tuple(sorted((_sorted_list_repr(child) for child in children), key = LabelledReprComparison, reverse=True))
+    return sorted_children + (label,)
 
 @cache
 def _list_repr_to_level_sequence(rep):

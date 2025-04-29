@@ -526,7 +526,7 @@ class RK:
             return self.deriv_dict[(i, repr(t_rep))]
 
         out = 1
-        for subtree in t_rep:
+        for subtree in t_rep[:-1]:
             out *= self._internal_weights(i, subtree)
         self.deriv_dict[(i, repr(t_rep))] = out
         return out

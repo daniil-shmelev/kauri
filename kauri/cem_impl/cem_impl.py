@@ -3,21 +3,22 @@ Back-end for the CEM module
 """
 from functools import cache
 import itertools
-from ..trees import (Tree, Forest, TensorProductSum,
-                     SINGLETON_TREE, SINGLETON_FOREST, SINGLETON_FOREST_SUM)
+from ..trees import (Tree, Forest, TensorProductSum)
 
 #We adopt the singleton-reduced coproduct, which defines a Hopf algebra
 # on planar trees quotiented by ([] - 1). As such, characters on the
 # resulting Hopf algebra must satisfy \phi([]) = 1
 
 def _counit(t):
-    return 1 if t.list_repr == tuple() else 0
+    return 1 if len(t.list_repr) == 1 else 0
 
 @cache
 def _antipode(t):
-    if t.list_repr is None or t.list_repr == tuple():
+    if t.list_repr is None:
+        return Tree([]).as_forest_sum()
+    if len(t.list_repr) == 1:
         #Consider the empty tree and the single node tree to be equal, since the latter is the unit
-        return SINGLETON_FOREST_SUM
+        return t.as_forest_sum()
 
     cp = _coproduct(t)
     out = -t.as_forest_sum()
@@ -32,13 +33,13 @@ def _antipode(t):
 @cache
 def _coproduct_helper(t):
     if t.list_repr is None:
-        raise ValueError("CEM coproduct is undefined for the empty tree")
-    if t.list_repr == tuple():
-        return [SINGLETON_FOREST], [SINGLETON_TREE]
+        return [Tree([]).as_forest()], [Tree([])]
+    if len(t.list_repr) == 1:
+        return [t.as_forest()], [t]
 
     tree_list = []
     forest_list = []
-    for rep in t.list_repr:
+    for rep in t.list_repr[:-1]:
         b, s = _coproduct_helper(Tree(rep))
         tree_list.append(s)
         forest_list.append(b)
@@ -53,7 +54,7 @@ def _coproduct_helper(t):
             for edge, t_ in zip(edges, p):
                 if t_.list_repr is None:
                     continue
-                rep += t_.list_repr if edge else [t_.list_repr]
+                rep += t_.list_repr[:-1] if edge else [t_.list_repr]
             new_tree_list.append(Tree(rep))
 
         for p in itertools.product(*forest_list):

@@ -21,7 +21,12 @@ Example usage::
     cem.counit(Tree([[]])) # Returns 0
 """
 
-antipode = Map(_antipode)
+def _safe_antipode(t):
+    if t.max_color() > 0:
+        raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
+    return _antipode(t)
+
+antipode = Map(_safe_antipode)
 antipode.__doc__ = """
 The antipode :math:`S_{CEM}` of the CEM Hopf algebra.
 
@@ -52,6 +57,8 @@ def coproduct(t : Tree) -> TensorProductSum:
         cem.coproduct(Tree([])) # Returns 1 [] ⊗ []
         cem.coproduct(Tree([[]])) # Returns 1 [] ⊗ [[]]+1 [[]] ⊗ []
     """
+    if t.max_color() > 0:
+        raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
     return _coproduct(t)
 
 def map_product(f : Map, g : Map) -> Map:

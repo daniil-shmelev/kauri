@@ -11,14 +11,15 @@ import math
 from dataclasses import dataclass
 from collections import Counter
 from typing import Union
-
-from numba.core.ir import TryRaise
+import warnings
 
 from .utils import (_nodes, _height, _factorial, _sigma,
                     _sorted_list_repr, _list_repr_to_level_sequence,
-                    _to_tuple, _to_list, _next_layout, _level_sequence_to_list_repr)
+                    _to_tuple, _to_list, _next_layout, _level_sequence_to_list_repr,
+                    _check_valid, _to_labelled_tuple, _get_max_color, _to_unlabelled_tuple)
 
 ######################################
+#TODO: Make totally ordered?
 @dataclass(frozen=True)
 class Tree:
     """
@@ -32,10 +33,18 @@ class Tree:
     """
 ######################################
     list_repr: Union[tuple, list, None] = None
+    unlabelled_repr = None
+    _max_color = 0
 
     def __post_init__(self):
-        tuple_repr = _to_tuple(self.list_repr)
-        object.__setattr__(self, 'list_repr', tuple_repr)
+        if self.list_repr is not None:
+            if not _check_valid(self.list_repr):
+                raise ValueError(repr(self.list_repr) + " is not a valid list representation for a tree.")
+            tuple_repr = _to_labelled_tuple(self.list_repr)
+            object.__setattr__(self, 'list_repr', tuple_repr)
+            unlabelled_repr = _to_unlabelled_tuple(tuple_repr)
+            object.__setattr__(self, 'unlabelled_repr', unlabelled_repr)
+            object.__setattr__(self, '_max_color', _get_max_color(tuple_repr))
 
     def __copy__(self):
         return self
@@ -47,7 +56,12 @@ class Tree:
         return self
 
     def __repr__(self):
-        return repr(_to_list(self.list_repr)) if self.list_repr is not None else "\u2205"
+        if self.list_repr is None:
+            return "\u2205"
+        if self._max_color == 0:
+            return repr(_to_list(self.unlabelled_repr))
+        else:
+            return repr(_to_list(self.list_repr))
 
     def __hash__(self):
         return hash(self.sorted_list_repr())
@@ -66,7 +80,7 @@ class Tree:
         """
         if self.list_repr is None:
             return EMPTY_FOREST
-        return Forest(tuple(Tree(rep) for rep in self.list_repr))
+        return Forest(tuple(Tree(rep) for rep in self.list_repr[:-1]))
 
     def nodes(self) -> int:
         """
@@ -80,7 +94,11 @@ class Tree:
             t = Tree([[[]],[]])
             t.nodes() #Returns 4
         """
-        return _nodes(self.list_repr)
+        return _nodes(self.unlabelled_repr)
+
+    def max_color(self):
+        #TODO
+        return _get_max_color(self.list_repr)
 
     def height(self) -> int:
         """
@@ -95,7 +113,7 @@ class Tree:
             t = Tree([[[]],[]])
             t.height() #Returns 3
         """
-        return _height(self.list_repr)
+        return _height(self.unlabelled_repr)
 
     def factorial(self) -> int:
         """
@@ -109,7 +127,7 @@ class Tree:
             t = Tree([[[]],[]])
             t.factorial() #Returns 8
         """
-        return _factorial(self.list_repr)[0]
+        return _factorial(self.unlabelled_repr)[0]
 
     def sigma(self) -> int:
         """
@@ -128,7 +146,7 @@ class Tree:
             t = Tree([[[]],[]])
             t.sigma()
         """
-        return _sigma(self.list_repr)
+        return _sigma(self.unlabelled_repr)
 
     def alpha(self) -> int:
         """
@@ -330,7 +348,7 @@ class Tree:
             t = Tree([[[]],[]])
             t.level_sequence() #Returns [0, 1, 2, 1]
         """
-        return _list_repr_to_level_sequence(self.list_repr)
+        return _list_repr_to_level_sequence(self.unlabelled_repr)
 
     def sorted(self) -> 'Tree':
         """
@@ -389,6 +407,8 @@ class Tree:
                 t = Tree([[],[]])
                 next(t) # returns Tree([[[[]]]])
         """
+        if self._max_color > 0:
+            warnings.warn("Calling next() on a labelled tree will disregard the labelling.")
         if self.list_repr is None:
             return Tree([])
 
@@ -420,6 +440,10 @@ class Tree:
             return TensorProductSum(term_list)
         raise TypeError("Cannot take tensor product of Tree and " + str(type(other)))
 
+    def unlabelled(self):
+        #TODO
+        return Tree(self.unlabelled_repr)
+
 ######################################
 @dataclass(frozen=True)
 class Forest:
@@ -441,6 +465,8 @@ class Forest:
 
     def __post_init__(self):
         tuple_repr = tuple(self.tree_list)
+        if tuple_repr == tuple():
+            tuple_repr = (Tree(None),)
         object.__setattr__(self, 'tree_list', tuple_repr)
 
     def __copy__(self):
@@ -522,6 +548,10 @@ class Forest:
             f.nodes() #Returns 3
         """
         return sum(t.nodes() for t in self.tree_list)
+
+    def max_color(self) -> int:
+        #TODO
+        return max(t.max_color() for t in self.tree_list)
 
     def num_trees(self) -> int:
         """
@@ -717,11 +747,13 @@ class Forest:
             f1.singleton_reduced() #Returns Tree([[],[]])
             f2.singleton_reduced() #Returns Tree([])
         """
+        if self.max_color() > 0:
+            warnings.warn("Singleton reduced representation will not respect colorings")
         out = self.reduce()
         if len(out.tree_list) > 1:
-            new_tree_list = tuple(filter(lambda x: x.list_repr != tuple(), out.tree_list))
+            new_tree_list = tuple(filter(lambda x: len(x.list_repr) != 1, out.tree_list))
             if len(new_tree_list) == 0:
-                new_tree_list = (SINGLETON_TREE,)
+                new_tree_list = (Tree([]),)
             out = Forest(new_tree_list)
         return out
 
@@ -837,6 +869,10 @@ class ForestSum:
             f.nodes() #Returns 6
         """
         return sum(f.nodes() for c, f in self.term_list)
+
+    def max_color(self) -> int:
+        #TODO
+        return max(f.max_color() for _, f in self.term_list)
 
     def num_trees(self) -> int:
         """
@@ -1124,10 +1160,6 @@ EMPTY_TREE = Tree(None)
 EMPTY_FOREST = Forest((EMPTY_TREE,))
 EMPTY_FOREST_SUM = ForestSum( ( (1, EMPTY_FOREST), ) )
 ZERO_FOREST_SUM = ForestSum( ( (0, EMPTY_FOREST), ) )
-
-SINGLETON_TREE = Tree(tuple())
-SINGLETON_FOREST = Forest((SINGLETON_TREE,))
-SINGLETON_FOREST_SUM = ForestSum( ( (1, SINGLETON_FOREST), ) )
 
 ##############################################
 ##############################################
