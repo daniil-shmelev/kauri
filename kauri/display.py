@@ -12,6 +12,17 @@ from .utils import _branch_level_sequences, _str
 EMPTY_FONTSIZE = 10
 TENSOR_FONTSIZE = 14
 
+COLORS = ['black',
+          'firebrick',
+          'mediumblue',
+          'forestgreen',
+          'rebeccapurple',
+          'darkorange',
+          'silver',
+          'saddlebrown',
+          'gold',
+          'pink']
+
 def _get_node_coords(layout, x=0, y=0, scale=0.2):
     gap = scale / 2
     if layout == []:
@@ -87,21 +98,22 @@ def _display_plotly_forest(f, x, y, h, scale, traces, gap, empty = False):
 
     for t in f.tree_list:
         level_seq = t.level_sequence()
+        color_seq = t.color_sequence()
         c_, w = _get_node_coords(level_seq, x, 0, scale)
         c_ = [(cx + w / 2, cy) for cx, cy in c_]
+
+        # Edges
+        traces.extend(_get_tree_traces(level_seq, c_, scale))
 
         # Nodes
         traces.append(go.Scatter(
             x=[p[0] for p in c_],
             y=[p[1] for p in c_],
             mode='markers',
-            marker={"color": 'black', "size": 6},
+            marker={'color' : [COLORS[i] for i in color_seq]},
             showlegend=False,
             hoverinfo='skip'
         ))
-
-        # Edges
-        traces.extend(_get_tree_traces(level_seq, c_, scale))
 
         x += w + gap
         if len(c_) > 0:
@@ -247,28 +259,31 @@ def _display_tensor_plotly(tensor_sum,
 #Matplotlib
 ###############################################################
 
-def _display_tree(layout, coords, scale = 0.2):
+def _display_tree(layout, color_sequence, coords, scale = 0.2):
 
     if layout == []:
         return
 
     xroot, yroot = coords[0]
 
-    plt.scatter([xroot], [yroot], c='k', marker='o', linewidth= scale / 2)
+    plt.scatter([xroot], [yroot], marker='o', linewidth= scale / 2, color = COLORS[color_sequence[0]], zorder = 1)
 
     branch_layouts = []
     branch_coords = []
+    branch_colors = []
     for idx, i in enumerate(layout[1:]):
         if i == 1:
             branch_layouts.append([0])
             branch_coords.append([coords[idx+1]])
+            branch_colors.append([color_sequence[idx + 1]])
         else:
             branch_layouts[-1].append(i - 1)
             branch_coords[-1].append(coords[idx+1])
+            branch_colors[-1].append(color_sequence[idx + 1])
 
-    for lay, c in zip(branch_layouts, branch_coords):
-        plt.plot([xroot, c[0][0]], [yroot, c[0][1]], color = "black")
-        _display_tree(lay, c, scale)
+    for lay, c, cols in zip(branch_layouts, branch_coords, branch_colors):
+        plt.plot([xroot, c[0][0]], [yroot, c[0][1]], color = 'black', zorder = -1)
+        _display_tree(lay, cols, c, scale)
 
 def _display_forest(f, x, y, scale, tree_gap, h, empty = False):
 
@@ -280,7 +295,7 @@ def _display_forest(f, x, y, scale, tree_gap, h, empty = False):
     for t in f.tree_list:
         c, w = _get_node_coords(t.level_sequence(), x, 0, scale)
         c = [(c_[0] + w / 2, c_[1]) for c_ in c]
-        _display_tree(t.level_sequence(), c, scale)
+        _display_tree(t.level_sequence(), t.color_sequence(), c, scale)
         x += w + tree_gap
         if len(c) > 0:
             h_ = max(c_[1] for c_ in c)
@@ -403,6 +418,9 @@ def display(obj : ForestSum, *, #TODO: change to Tree, Forest, ForestSum or Tens
     """
     if not isinstance(obj, (Tree, Forest, ForestSum, TensorProductSum)):
         raise TypeError("Cannot display object of type " + str(type(obj)) + ". Object must be Tree, Forest, ForestSum or TensorProductSum.")
+
+    if obj.max_color() > 9:
+        raise ValueError("Cannot display labelled trees with over 10 different colors.")
 
     if use_plt:
         if scale is None:

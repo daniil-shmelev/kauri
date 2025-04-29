@@ -134,6 +134,18 @@ def _list_repr_to_level_sequence(rep):
         layout += [i+1 for i in lay]
     return layout
 
+def _list_repr_to_color_sequence(rep):
+    if rep is None:
+        return []
+    if len(rep) == 1:
+        return rep
+
+    layout = [rep[-1]]
+    for r in rep[:-1]:
+        lay = _list_repr_to_color_sequence(r)
+        layout += lay
+    return layout
+
 def _level_sequence_to_list_repr(level_seq):
     if len(level_seq) == 0:
         return None

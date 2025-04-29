@@ -16,7 +16,8 @@ import warnings
 from .utils import (_nodes, _height, _factorial, _sigma,
                     _sorted_list_repr, _list_repr_to_level_sequence,
                     _to_tuple, _to_list, _next_layout, _level_sequence_to_list_repr,
-                    _check_valid, _to_labelled_tuple, _get_max_color, _to_unlabelled_tuple)
+                    _check_valid, _to_labelled_tuple, _get_max_color, _to_unlabelled_tuple,
+                    _list_repr_to_color_sequence)
 
 ######################################
 #TODO: Make totally ordered?
@@ -443,6 +444,9 @@ class Tree:
     def unlabelled(self):
         #TODO
         return Tree(self.unlabelled_repr)
+
+    def color_sequence(self):
+        return _list_repr_to_color_sequence(self.list_repr)
 
 ######################################
 @dataclass(frozen=True)
@@ -1326,3 +1330,6 @@ class TensorProductSum:
 
     def __getitem__(self, i):
         return self.term_list[i]
+
+    def max_color(self):
+        return max(max(f1.max_color(), f2.max_color()) for _, f1, f2 in self.term_list)
