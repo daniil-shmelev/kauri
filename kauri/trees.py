@@ -97,9 +97,9 @@ class Tree:
         """
         return _nodes(self.unlabelled_repr)
 
-    def max_color(self):
+    def colors(self):
         #TODO
-        return _get_max_color(self.list_repr)
+        return self._max_color + 1
 
     def height(self) -> int:
         """
@@ -553,9 +553,9 @@ class Forest:
         """
         return sum(t.nodes() for t in self.tree_list)
 
-    def max_color(self) -> int:
+    def colors(self) -> int:
         #TODO
-        return max(t.max_color() for t in self.tree_list)
+        return max(t.colors() for t in self.tree_list)
 
     def num_trees(self) -> int:
         """
@@ -751,7 +751,7 @@ class Forest:
             f1.singleton_reduced() #Returns Tree([[],[]])
             f2.singleton_reduced() #Returns Tree([])
         """
-        if self.max_color() > 0:
+        if self.colors() > 1:
             warnings.warn("Singleton reduced representation will not respect colorings")
         out = self.reduce()
         if len(out.tree_list) > 1:
@@ -874,9 +874,9 @@ class ForestSum:
         """
         return sum(f.nodes() for c, f in self.term_list)
 
-    def max_color(self) -> int:
+    def colors(self) -> int:
         #TODO
-        return max(f.max_color() for _, f in self.term_list)
+        return max(f.colors() for _, f in self.term_list)
 
     def num_trees(self) -> int:
         """
@@ -1331,5 +1331,5 @@ class TensorProductSum:
     def __getitem__(self, i):
         return self.term_list[i]
 
-    def max_color(self):
-        return max(max(f1.max_color(), f2.max_color()) for _, f1, f2 in self.term_list)
+    def colors(self):
+        return max(max(f1.colors(), f2.colors()) for _, f1, f2 in self.term_list)

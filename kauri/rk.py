@@ -8,6 +8,7 @@ import numpy as np
 import sympy
 from scipy.optimize import root
 import matplotlib.pyplot as plt
+from tqdm import tqdm
 
 from .gentrees import trees_of_order
 from .trees import Tree, Forest, ForestSum
@@ -203,7 +204,8 @@ class RK:
     :param a: The Runge--Kutta parameter matrix :math:`A`.
     :param b: The Runge--Kutta parameter vector :math:`b`.
     """
-    def __init__(self, a, b):
+    def __init__(self, a, b, name = None):
+        self.name = name
         self.s = len(b)
         if len(a) != self.s or len(a[0]) != self.s:
             raise ValueError("Parameter 'a' must be a square s x s matrix and b a vector of length s")
@@ -217,6 +219,9 @@ class RK:
         for i in range(self.s):
             self.deriv_dict[(i, repr(None))] = 1
             self.deriv_dict[(i, repr([]))] = 1
+
+        self.np_a = np.array(a)
+        self.np_b = np.array(b)
 
     def __repr__(self):
         out = "["
@@ -284,6 +289,16 @@ class RK:
 
         y_next = y0 + h * sum(self.b[i] * k[i] for i in range(self.s))
         return y_next
+
+    # def _explicit_step(self, y0, t0, f, h):
+    #     k = np.empty(self.s)
+    #
+    #     for i in range(self.s):
+    #         y_stage = y0 + h * np.sum(self.np_a @ k)
+    #         k[i] = f(t0 + self.c[i] * h, y_stage)
+    #
+    #     y_next = y0 + h * np.dot(self.np_b, k)
+    #     return y_next
 
     def _implicit_step(self, y0, t0, f, h, tol = 1e-10, max_iter = 100):
         y0 = np.array(y0)
@@ -405,7 +420,7 @@ class RK:
 
         step_func = (lambda y_, t_ : self._explicit_step(y_, t_, f_, h)) if self.explicit else (lambda y_, t_ : self._implicit_step(y_, t_, f_, h, tol, max_iter))
 
-        for _ in range(n):
+        for _ in tqdm(range(n)):
             y = step_func(y, t)
             t += h
             t_vals.append(t)
@@ -580,6 +595,6 @@ class RK:
         n = 0
         while True:
             for t in trees_of_order(n):
-                if abs(self.elementary_weights(t) - 1. / t.factorial()) > tol:
+                if abs(self._elementary_weights(t.list_repr) - 1. / t.factorial()) > tol:
                     return n-1
             n += 1

@@ -22,7 +22,7 @@ Example usage::
 """
 
 def _safe_antipode(t):
-    if t.max_color() > 0:
+    if t.colors() > 1:
         raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
     return _antipode(t)
 
@@ -57,7 +57,7 @@ def coproduct(t : Tree) -> TensorProductSum:
         cem.coproduct(Tree([])) # Returns 1 [] ⊗ []
         cem.coproduct(Tree([[]])) # Returns 1 [] ⊗ [[]]+1 [[]] ⊗ []
     """
-    if t.max_color() > 0:
+    if t.colors() > 1:
         raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
     return _coproduct(t)
 
