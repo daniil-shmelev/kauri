@@ -17,5 +17,6 @@ Docs
    /pages/rk
    /pages/bck
    /pages/cem
+   /pages/bseries
    /pages/display
 
