@@ -189,13 +189,13 @@ class Map:
     __radd__ = __add__
     __rsub__ = __sub__
 
-    def __matmul__(self, other : 'Map') -> 'Map': #TODO: change to &
+    def __and__(self, other : 'Map') -> 'Map':
         """
         Returns the composition of two maps, given by
 
         .. math::
 
-            (f \\, @ \\, g)(t) := (f \\circ g)(t) := f(g(t))
+            (f \\, \\& \\, g)(t) := (f \\circ g)(t) := f(g(t))
 
         :type other: Map
         :rtype: Map
@@ -207,7 +207,7 @@ class Map:
 
             t = kr.Tree([[]])
 
-            (bck.antipode @ bck.antipode)(t)
+            (bck.antipode & bck.antipode)(t)
             bck.antipode(bck.antipode(t)) #Same as above
         """
         return Map(lambda x : self(other(x) * Tree(None)))
@@ -272,7 +272,7 @@ class Map:
         :return: Exponential map
         :rtype: Map
         """
-        return self ^ (exact_weights @ Map(cem_antipode))
+        return self ^ (exact_weights & Map(cem_antipode))
 
 
 # Some common examples provided for convenience

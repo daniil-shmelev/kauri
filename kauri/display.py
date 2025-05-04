@@ -419,7 +419,7 @@ def display(obj : ForestSum, *, #TODO: change to Tree, Forest, ForestSum or Tens
     if not isinstance(obj, (Tree, Forest, ForestSum, TensorProductSum)):
         raise TypeError("Cannot display object of type " + str(type(obj)) + ". Object must be Tree, Forest, ForestSum or TensorProductSum.")
 
-    if obj.max_color() > 9:
+    if obj.colors() > 9:
         raise ValueError("Cannot display labelled trees with over 10 different colors.")
 
     if use_plt:

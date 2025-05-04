@@ -45,13 +45,13 @@ class MapTests(unittest.TestCase):
         f = Map(lambda x : x**2)
 
         for t in trees:
-            self.assertEqual((f @ S)(t), f(S(t)))
+            self.assertEqual((f & S)(t), f(S(t)))
 
     def test_compose_scalar(self):
         f = lambda x : x.factorial()
 
         for t in trees:
-            self.assertEqual(f(t), (kauri.bck.bck.counit @ f)(t))
+            self.assertEqual(f(t), (kauri.bck.bck.counit & f)(t))
 
     def test_product_scalar(self):
         m1 = ident ^ 2

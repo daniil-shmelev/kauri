@@ -22,14 +22,14 @@ def _derivative_symbolic(i, t_rep, a, b, s):
     if t_rep in (None, []):
         return 1
     out = 1
-    for subtree in t_rep:
+    for subtree in t_rep[:-1]:
         out *= _internal_symbolic(i, subtree, a, b, s)
     return out
 
 def _elementary_symbolic(t_rep, a, b, s):
     if t_rep is None:
         return 1
-    if t_rep == []:
+    if len(t_rep) == 1:
         return sum(b)
     return sum(b[i] * _derivative_symbolic(i, t_rep, a, b, s) for i in range(s))
 

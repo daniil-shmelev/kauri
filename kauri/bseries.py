@@ -1,10 +1,11 @@
 """
 BSeries
 """
+import itertools
+from functools import cache
+
 import sympy as sp
 from kauri import Tree, trees_up_to_order, Map
-from functools import cache
-import itertools
 
 @cache
 def _elementary_differential(tree : Tree, f : sp.ImmutableDenseMatrix, y_vars : sp.ImmutableDenseMatrix):
@@ -52,7 +53,7 @@ def elementary_differential(tree : Tree, f : sp.Matrix, y : sp.Matrix) -> sp.Mat
 
         F([t_1, t_2, \\ldots, t_k])(y) = f^{(k)}(y)(F(t_1)(y), F(t_2)(y), \\ldots, F(t_m)(y)).
 
-    :param tree: Tree corresponding to the elementary differential
+    :param tree: Unlabelled tree corresponding to the elementary differential
     :type tree: Tree
     :param f: Vector field
     :type f: sympy.Matrix
@@ -71,6 +72,9 @@ def elementary_differential(tree : Tree, f : sp.Matrix, y : sp.Matrix) -> sp.Mat
             t = kr.Tree([[[]],[]])
             elementary_differential(t, f, y) # Returns sp.Matrix([[4 * y1**5 ], [ 4 * y1**4 * y2]])
     """
+    if tree.colors() > 1:
+        raise ValueError("Tree passed to elementary differential must be unlabelled.")
+
     return _elementary_differential(tree, sp.ImmutableDenseMatrix(f), sp.ImmutableDenseMatrix(y))
 
 
@@ -115,6 +119,9 @@ class BSeries:
         self.f = sp.ImmutableDenseMatrix(f) #Immutable for cache in elementary_differential
         self.y = sp.ImmutableDenseMatrix(y)
         self.h = sp.symbols('h')
+        self.order = order
+        self.weights = weights
+        self.dim = len(y)
         self.symbolic_expr = sp.zeros(*sp.shape(y))
         for t in trees_up_to_order(order):
             self.symbolic_expr = self.symbolic_expr + self.h ** t.nodes() * weights(t) * _elementary_differential(t, self.f, self.y) / t.sigma()
@@ -124,12 +131,38 @@ class BSeries:
         if len(self.y) == 1:
             out = out.subs(self.y[0], y)
         else:
-            for i in range(len(self.y)):
+            for i in range(self.dim):
                 out = out.subs(self.y[i], y[i])
         return [float(x) for x in out]
 
     def symbolic(self):
-        pass
+        return self.symbolic_expr
 
-    def __and__(self, other): #Composition of B-Series, given by the product of characters
-        pass
+    def __and__(self, other):
+        """
+        Returns the composition of two B-Series, assuming they are with respect
+        to the same variables and vector field. That is, given two B-Series:
+
+        .. math::
+
+            B_h(\\varphi, y_0) := \\sum_{|t| \\leq n} \\frac{h^{|t|}}{\\sigma(t)} \\varphi(t) F(t)(y_0),
+
+        .. math::
+
+            B_h(\\psi, y_0) := \\sum_{|t| \\leq n} \\frac{h^{|t|}}{\\sigma(t)} \\psi(t) F(t)(y_0),
+
+        returns their composition :math:`B_h(\\psi, B_h(\\varphi, y_0)) = B_h(\\varphi * \\psi, y_0)`,
+        where the product is the BCK product of characters. The truncation order of the resulting B-series
+        is the minimum of the truncation orders of the original two.
+
+        :param other: other
+        :type other: BSeries
+        """
+        if not isinstance(other, BSeries):
+            raise TypeError("Cannot multiply BSeries and object of type " + str(type(other)))
+        if self.y != other.y:
+            raise ValueError("Cannot compose B-Series: symbolic variables y of the two series do not match")
+        if self.f != other.f:
+            raise ValueError("Cannot compose B-Series: vector fields of the two series do not match")
+
+        return BSeries(self.y, self.f, self.weights * other.weights, min(self.order, other.order))

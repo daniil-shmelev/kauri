@@ -59,23 +59,23 @@ class CEMTests(unittest.TestCase):
 
     def test_antipode_squared(self):
         f = cem.antipode
-        g = f @ f
+        g = f & f
         for t in trees[1:]:
             self.assertEqual(t, g(t))
 
     def test_antipode_squared_2(self):
         f = cem.antipode
-        g = f @ f
+        g = f & f
 
         for t in trees[1:]:
             self.assertEqual(0, cem.map_power(ident - g, t.nodes())(t))
 
     def test_antipode_squared_3(self):
         f = cem.antipode
-        g = f @ f
+        g = f & f
 
         h = Map(lambda x : cem.map_power(ident - g, x.nodes() - 1)(x))
-        m = (ident + f) @ h
+        m = (ident + f) & h
 
         for t in trees[2:]: #Exclude the unit (and empty T)
             self.assertEqual(0, m(t))

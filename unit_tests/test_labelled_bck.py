@@ -45,23 +45,23 @@ class LabelledBCKTests(unittest.TestCase):
 
     def test_antipode_squared(self):
         f = bck.antipode
-        g = f @ f
+        g = f & f
         for t in labelled_trees:
             self.assertEqual(t, g(t))
 
     def test_antipode_squared_2(self):
         f = bck.antipode
-        g = f @ f
+        g = f & f
 
         for t in labelled_trees[1:]:
             self.assertEqual(0, ((ident - g) ** t.nodes())(t))
 
     def test_antipode_squared_3(self):
         f = bck.antipode
-        g = f @ f
+        g = f & f
 
         h = Map(lambda x: ((ident - g) ** (x.nodes() - 1))(x))
-        m = (ident + f) @ h
+        m = (ident + f) & h
 
         for t in labelled_trees[1:]:
             self.assertEqual(0, m(t))
