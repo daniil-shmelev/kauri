@@ -45,3 +45,9 @@ class LabelledTests(unittest.TestCase):
         self.assertEqual(1, T([0]).colors())
         self.assertEqual(10, T([9]).colors())
         self.assertEqual(6, T([[[5],2],1]).colors())
+
+    def test_totally_ordered(self):
+        self.assertTrue(T([0]) < T([1]))
+        self.assertTrue(T([[[3],1],[1]]) < T([[[6],0],[0]]))
+        self.assertTrue(T([[[1], 0], [0],0]) > T([[[0], 1], [1],1]))
+        self.assertTrue(T([[[1], 0], [0],0]) < T([[[1], 1], [1],1]))

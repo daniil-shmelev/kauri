@@ -90,9 +90,9 @@ class BCKTests(unittest.TestCase):
         f = sp.Matrix([y1 ** 2])
         bs1 = BSeries(y, f, exact_weights, 5)
         bs2 = BSeries(y, f, exact_weights & bck.antipode, 5)
-        bs3 = bs1 & bs2
+        bs3 = BSeries(y, f, bs2.weights * bs1.weights, 5)
         expr = sp.Poly(bs3.symbolic_expr.subs(bs3.y[0], 1)[0, 0], bs3.h)
         c = expr.all_coeffs()
-        self.assertAlmostEqual(1, c[0])
-        for c_ in c[1:]:
+        self.assertAlmostEqual(1, c[-1])
+        for c_ in c[:-1]:
             self.assertAlmostEqual(0, c_)

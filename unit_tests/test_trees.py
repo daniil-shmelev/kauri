@@ -216,3 +216,13 @@ class TreeTests(unittest.TestCase):
 
     def test_empty_forest(self):
         self.assertEqual(Forest([]), Forest([Tree(None)]))
+
+    def test_totally_ordered(self):
+        last_tree = Tree(None)
+        for current_tree in trees_up_to_order(5):
+            if current_tree == Tree(None):
+                continue
+            self.assertTrue(last_tree < current_tree, repr(last_tree) + " and " + repr(current_tree))
+            self.assertFalse(last_tree > current_tree, repr(last_tree) + " and " + repr(current_tree))
+            self.assertTrue(current_tree == current_tree, repr(current_tree))
+            last_tree = current_tree

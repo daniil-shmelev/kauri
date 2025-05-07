@@ -6,9 +6,16 @@ The hash is generated in such a way that two elements of the same class which ar
 (e.g. two different orderings of the same tree) will have the same hash.
 However, this is not the case across classes. For example, for a Tree t, `hash(t)`, `hash(t.as_forest())`
 and `hash(t.as_forest_sum())` are different.
+
+The class `Tree` is totally ordered by the lexicographic ordering. If the trees have the same structure
+but are colored differently, they are ordered based on color, with the color of the highest levels of the
+trees being the primary ordering.
+
 """
+
 import math
 from dataclasses import dataclass
+from functools import total_ordering
 from collections import Counter
 from typing import Union
 import warnings
@@ -17,20 +24,27 @@ from .utils import (_nodes, _height, _factorial, _sigma,
                     _sorted_list_repr, _list_repr_to_level_sequence,
                     _to_tuple, _to_list, _next_layout, _level_sequence_to_list_repr,
                     _check_valid, _to_labelled_tuple, _get_max_color, _to_unlabelled_tuple,
-                    _list_repr_to_color_sequence)
+                    _list_repr_to_color_sequence, LabelledReprComparison)
 
 ######################################
-#TODO: Make totally ordered?
 @dataclass(frozen=True)
+@total_ordering
 class Tree:
     """
-    A single non-planar rooted tree.
+    A single non-planar (un)labelled rooted tree, initialised by its list representation.
+    For example, the unlabelled cherry tree has the list representation [[],[]]. Noting
+    that every list corresponds to a node, we can apply a labelling/coloring by setting the last
+    element of the list to be a non-negative integer. For example, [[2], [1], 0] corresponds
+    to the cherry tree, with the root node labelled by 0, the left leaf labelled by 2 and
+    the right leaf labelled by 1. If a label is left out, it will default to 0.
 
     :param list_repr: The nested list representation of the tree
 
     Example usage::
 
-            t = Tree([[[]],[]])
+            t1 = Tree([[[]],[]]) # An unlabelled tree
+            t2 = Tree([[[3],1],[2],0]) # A labelled tree
+            t3 = Tree([[[3],1],[2]]) # This is the same as t2, since the missing label defaults to 0
     """
 ######################################
     list_repr: Union[tuple, list, None] = None
@@ -334,6 +348,22 @@ class Tree:
             return self.as_forest_sum() == other
         raise TypeError("Cannot check equality of Tree and " + str(type(other)))
 
+    def __lt__(self, other):
+        # Deal with empty trees
+        if self.list_repr is None:
+            if other.list_repr is None:
+                return False
+            else:
+                return True
+        if other.list_repr is None:
+            return False
+
+        # If trees are non-empty
+        if self.nodes() != other.nodes():
+            return self.nodes() < other.nodes()
+        else:
+            return LabelledReprComparison(self.sorted_list_repr()) < LabelledReprComparison(other.sorted_list_repr())
+
     def sorted_list_repr(self) -> list:
         """
         Returns the list representation of the sorted tree,
@@ -413,6 +443,7 @@ class Tree:
     def __next__(self) -> 'Tree':
         """
         Generates the next tree with respect to the lexicographic order.
+        If the tree is labelled, the labelling will be ignored.
 
         :return: Next tree
         :rtype: Tree
@@ -423,7 +454,7 @@ class Tree:
                 next(t) # returns Tree([[[[]]]])
         """
         if self._max_color > 0:
-            warnings.warn("Calling next() on a labelled tree will disregard the labelling.")
+            warnings.warn("Calling next() on a labelled tree will ignore the labelling.")
         if self.list_repr is None:
             return Tree([])
 
@@ -456,7 +487,13 @@ class Tree:
         raise TypeError("Cannot take tensor product of Tree and " + str(type(other)))
 
     def unlabelled(self):
-        #TODO
+        """
+        Returns the unlabelled version of the tree.
+
+        Example usage::
+
+            Tree([[[3],1],[2],0]).unlabelled() # Returns Tree([[[]],[]])
+        """
         return Tree(self.unlabelled_repr)
 
     def color_sequence(self):
@@ -568,7 +605,17 @@ class Forest:
         return sum(t.nodes() for t in self.tree_list)
 
     def colors(self) -> int:
-        #TODO
+        """
+        Returns the number of colors/labels in the forest. Since the labels are indexed starting from 0,
+        this is equivalent to one more than the maximum label.
+
+        :return: Number of colors
+        :rtype: int
+
+        Example usage::
+
+            (Tree([[9],0]) * Tree([3])).colors() # Returns 10
+        """
         return max(t.colors() for t in self.tree_list)
 
     def num_trees(self) -> int:
@@ -889,7 +936,17 @@ class ForestSum:
         return sum(f.nodes() for c, f in self.term_list)
 
     def colors(self) -> int:
-        #TODO
+        """
+        Returns the number of colors/labels in the forest sum. Since the labels are indexed starting from 0,
+        this is equivalent to one more than the maximum label.
+
+        :return: Number of colors
+        :rtype: int
+
+        Example usage::
+
+            (Tree([[9],0]) * Tree([3]) + Tree([2])).colors() # Returns 10
+        """
         return max(f.colors() for _, f in self.term_list)
 
     def num_trees(self) -> int:

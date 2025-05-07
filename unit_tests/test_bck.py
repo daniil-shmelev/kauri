@@ -1,7 +1,7 @@
 import unittest
 from kauri import *
 from kauri import Tree as T
-#TODO: split unit tests into multiple files
+
 trees = [T(None),
          T([]),
          T([[]]),

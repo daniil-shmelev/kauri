@@ -48,10 +48,10 @@ class MapTests(unittest.TestCase):
             self.assertEqual((f & S)(t), f(S(t)))
 
     def test_compose_scalar(self):
-        f = lambda x : x.factorial()
+        f = Map(lambda x : x.factorial())
 
         for t in trees:
-            self.assertEqual(f(t), (kauri.bck.bck.counit & f)(t))
+            self.assertEqual(f(t), (bck.counit & f)(t))
 
     def test_product_scalar(self):
         m1 = ident ^ 2
@@ -79,6 +79,3 @@ class MapTests(unittest.TestCase):
         a = Map(lambda x : 1 if x == T(None) or x == T([]) else 0) ** (-1)
         for t in trees:
             self.assertEqual((-1)**t.nodes(), a(t), repr(t))
-
-    def test_tensor_product_map(self):
-        m = bck.coproduct
