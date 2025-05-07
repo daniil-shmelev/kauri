@@ -64,6 +64,17 @@ class MapTests(unittest.TestCase):
             self.assertEqual(m3(t), 2 * t)
             self.assertEqual(m4(t), 2 * t)
 
+    def test_add_scalar(self):
+        m1 = ident + 2
+        m2 = 2 + ident
+        m3 = ident - 2
+        m4 = 2 - ident
+        for t in trees:
+            self.assertEqual(m1(t), 2 + t)
+            self.assertEqual(m2(t), 2 + t)
+            self.assertEqual(m3(t), t - 2)
+            self.assertEqual(m4(t), 2 - t)
+
     def test_inverse_identity(self):
         a = Map(lambda x : 1 if x == T(None) or x == T([]) else 0) ** (-1)
         for t in trees:

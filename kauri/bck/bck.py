@@ -51,6 +51,8 @@ def coproduct(t : Tree) -> TensorProductSum:
         bck.coproduct(kr.Tree([])) # Returns 1 ∅ ⊗ []+1 [] ⊗ ∅
         bck.coproduct(kr.Tree([[]])) # Returns 1 [[]] ⊗ ∅+1 ∅ ⊗ [[]]+1 [] ⊗ []
     """
+    if not isinstance(t, Tree):
+        raise TypeError("Argument to bck.coproduct must be a Tree, not " + str(type(t)))
     return _coproduct(t)
 
 def map_product(f : Map, g : Map) -> Map:
@@ -64,6 +66,12 @@ def map_product(f : Map, g : Map) -> Map:
     .. note::
         `bck.map_product(f,g)` is equivalent to the Map operator `f * g`
 
+    :param f: f
+    :type f: Map
+    :param g: g
+    :type g: Map
+    :rtype: Map
+
     Example usage::
 
         import kauri as kr
@@ -72,6 +80,8 @@ def map_product(f : Map, g : Map) -> Map:
         ident = kr.Map(lambda x : x)
         counit = bck.map_product(ident, bck.antipode) # Equivalent to indent * bck.antipode
     """
+    if not (isinstance(f, Map) and isinstance(g, Map)):
+        raise TypeError("Arguments in bck.map_product must be of type Map, not " + str(type(f)) + " and " + str(type(g)))
     return f * g
 
 def map_power(f : Map, exponent : int) -> Map:
@@ -88,6 +98,11 @@ def map_power(f : Map, exponent : int) -> Map:
     .. note::
         `bck.map_power(f, n)` is equivalent to the Map operator `f ** n`
 
+    :param f: f
+    :type f: Map
+    :param exponent: exponent
+    :type exponent: int
+
     Example usage::
 
         import kauri as kr
@@ -97,4 +112,8 @@ def map_power(f : Map, exponent : int) -> Map:
         S = bck.map_power(ident, -1) # antipode, equivalent to ident ** (-1)
         ident_sq = bck.map_power(ident, 2) # identity squared, equivalent to ident ** 2
     """
+    if not isinstance(f, Map):
+        raise TypeError("f must be a Map, not " + str(type(f)))
+    if not isinstance(exponent, int):
+        raise TypeError("exponent must be an int, not " + str(type(exponent)))
     return f ** exponent

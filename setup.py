@@ -26,5 +26,5 @@ setuptools.setup(name='kauri',
         url="https://github.com/daniil-shmelev/kauri",
         author="Daniil Shmelev",
         author_email="daniil.shmelev23@imperial.ac.uk",
-        install_requires=['matplotlib', 'plotly', 'numpy', 'scipy', 'sympy']
+        install_requires=['matplotlib', 'plotly', 'numpy', 'scipy', 'sympy', 'tqdm']
       )

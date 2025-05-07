@@ -20,6 +20,8 @@ class LabelledTests(unittest.TestCase):
         t = Tree([[1],0])
         self.assertEqual(t.list_repr, ((1,),0) )
 
+        with self.assertRaises(TypeError):
+            Tree(0)
         with self.assertRaises(ValueError):
             t = Tree([[],[],'s'])
         with self.assertRaises(ValueError):
@@ -36,3 +38,10 @@ class LabelledTests(unittest.TestCase):
         t1 = Tree([[[3], [2], 1], [2]])
         t2 = Tree([[2], [[2], [3], 1]])
         self.assertEqual(t1, t2)
+
+    def test_colors(self):
+        self.assertEqual(0, T(None).colors())
+        self.assertEqual(1, T([]).colors())
+        self.assertEqual(1, T([0]).colors())
+        self.assertEqual(10, T([9]).colors())
+        self.assertEqual(6, T([[[5],2],1]).colors())

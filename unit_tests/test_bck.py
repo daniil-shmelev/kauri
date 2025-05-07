@@ -111,3 +111,11 @@ class BCKTests(unittest.TestCase):
         m = func3_ * func_neg_3_
         for t in trees:
             self.assertEqual(bck.counit(t), m(t))
+
+    def test_type_error(self):
+        with self.assertRaises(TypeError):
+            bck.coproduct('s')
+        with self.assertRaises(TypeError):
+            bck.antipode('s')
+        with self.assertRaises(TypeError):
+            bck.counit('s')

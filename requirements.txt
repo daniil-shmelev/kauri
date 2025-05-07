@@ -3,3 +3,4 @@ plotly
 numpy>=1.26.4
 sympy>=1.12
 scipy>=1.13
+tqdm

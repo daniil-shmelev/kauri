@@ -3,6 +3,7 @@ Runge-Kutta Schemes
 """
 import copy
 from typing import Union, Callable, Tuple
+import warnings
 
 import numpy as np
 import sympy
@@ -322,7 +323,7 @@ class RK:
         sol = root(G, k0, method='hybr', tol=tol, options={'maxfev': max_iter})
 
         if not sol.success:
-            raise RuntimeError(f"Implicit RK solver failed: {sol.message}")
+            warnings.warn(f"Implicit RK solver failed: {sol.message}")
 
         K = sol.x.reshape((self.s, dim))
         y_next = y0 + h * sum(self.b[i] * K[i] for i in range(self.s))

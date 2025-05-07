@@ -57,6 +57,8 @@ def coproduct(t : Tree) -> TensorProductSum:
         cem.coproduct(Tree([])) # Returns 1 [] ⊗ []
         cem.coproduct(Tree([[]])) # Returns 1 [] ⊗ [[]]+1 [[]] ⊗ []
     """
+    if not isinstance(t, Tree):
+        raise TypeError("Argument to cem.coproduct must be a Tree, not " + str(type(t)))
     if t.colors() > 1:
         raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
     return _coproduct(t)
@@ -72,6 +74,12 @@ def map_product(f : Map, g : Map) -> Map:
     .. note::
         `cem.map_product(f,g)` is equivalent to the Map operator `f ^ g`
 
+    :param f: f
+    :type f: Map
+    :param g: g
+    :type g: Map
+    :rtype: Map
+
     Example usage::
 
         import kauri as kr
@@ -80,6 +88,8 @@ def map_product(f : Map, g : Map) -> Map:
         ident = kr.Map(lambda x : x)
         counit = cem.map_product(ident, cem.antipode) # Equivalent to ident ^ cem.antipode
     """
+    if not (isinstance(f, Map) and isinstance(g, Map)):
+        raise TypeError("Arguments in cem.map_product must be of type Map, not " + str(type(f)) + " and " + str(type(g)))
     return  f ^ g
 
 def map_power(f : Map, exponent : int) -> Map:
@@ -93,6 +103,11 @@ def map_power(f : Map, exponent : int) -> Map:
     and negative powers are defined as :math:`f^{-n} = f^n \\circ S_{CEM}`,
     where :math:`S_{CEM}` is the CEM antipode.
 
+    :param f: f
+    :type f: Map
+    :param exponent: exponent
+    :type exponent: int
+
     Example usage::
 
         import kauri as kr
@@ -103,7 +118,9 @@ def map_power(f : Map, exponent : int) -> Map:
         ident_sq = cem.map_power(ident, 2) # identity squared
     """
 
+    if not isinstance(f, Map):
+        raise TypeError("f must be a Map, not " + str(type(f)))
     if not isinstance(exponent, int):
-        raise TypeError("Exponent in Map power must be int, got " + str(type(exponent)) + " instead.")
+        raise TypeError("exponent must be an int, not " + str(type(exponent)))
 
     return Map(lambda x: _func_power(x, f.func, exponent, _coproduct, _counit, _antipode))

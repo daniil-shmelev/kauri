@@ -97,8 +97,22 @@ class Tree:
         """
         return _nodes(self.unlabelled_repr)
 
-    def colors(self):
-        #TODO
+    def colors(self) -> int:
+        """
+        Returns the number of colors/labels in a labelled tree. Since the labels are indexed starting from 0,
+        this is equivalent to one more than the maximum label.
+
+        :return: Number of colors
+        :rtype: int
+
+        Example usage::
+
+            Tree([]).colors() # Returns 1
+            Tree([0]).colors() # Returns 1
+            Tree([[9],1]).colors() # Returns 10
+        """
+        if self.list_repr is None:
+            return 0
         return self._max_color + 1
 
     def height(self) -> int:

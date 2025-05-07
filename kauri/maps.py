@@ -5,9 +5,9 @@ characters on the Hopf algebra, as well as more complicated maps.
 """
 import copy
 from functools import lru_cache
-from typing import Union
+from typing import Union, Callable
 
-from .trees import Tree, _is_reducible, EMPTY_TREE
+from .trees import Tree, Forest, ForestSum, _is_reducible, EMPTY_TREE, _is_tree_like
 from .generic_algebra import _apply, _func_power, _func_product
 
 from .bck_impl import _coproduct as bck_coproduct
@@ -26,14 +26,17 @@ class Map:
         Tree, Forest or ForestSum.
     :type func: Callable[[Tree], int | float | Tree | Forest | ForestSum]
     """
-    def __init__(self, func):
+    def __init__(self, func : Callable[[Tree], Union[int, float, Tree, Forest, ForestSum]]):
+        #TODO: typecheck?
         self.func = func
 
-    @lru_cache(maxsize = 128)
-    def __call__(self, t):
+    @lru_cache(maxsize = 128) # maxsize here since caching prevents the object being garbage collected
+    def __call__(self, t : Union[Tree, Forest, ForestSum]) -> Union[int, float, Tree, Forest, ForestSum]:
+        if not _is_tree_like(t):
+            raise TypeError("Argument to Map must be Tree, Forest or ForestSum, not " + str(type(t)))
         return _apply(t, self.func)
 
-    def __pow__(self, n : int) -> 'Map':
+    def __pow__(self, exponent : int) -> 'Map':
         """
         Returns the power of the map in the BCK Hopf algebra, where the product
         of functions is defined by
@@ -45,8 +48,8 @@ class Map:
         and negative powers are defined as :math:`f^{-n} = f^n \\circ S_{BCK}`,
          where :math:`S_{BCK}` is the BCK antipode.
 
-        :param n: Exponent
-        :type n: int
+        :param exponent: Exponent
+        :type exponent: int
         :rtype: Map
 
         Example usage::
@@ -57,12 +60,12 @@ class Map:
             S = ident ** (-1) # BCK antipode
             ident_sq = ident ** 2 # identity squared
         """
-        if not isinstance(n, int):
-            raise TypeError("Error in BCK power: exponent must be an integer, got " + str(type(n)) + " instead")
+        if not isinstance(exponent, int):
+            raise TypeError("Error in BCK power: exponent must be an integer, got " + str(type(exponent)) + " instead")
 
-        return Map(lambda x : _func_power(x, self.func, n, bck_coproduct, bck_counit, bck_antipode))
+        return Map(lambda x : _func_power(x, self.func, exponent, bck_coproduct, bck_counit, bck_antipode))
 
-    def __imul__(self, other):
+    def __imul__(self, other : Union[int, float, 'Map']):
         func_ = self.func
         if isinstance(other, (int, float)):
             self.func = lambda x : other * func_(x)
@@ -144,7 +147,9 @@ class Map:
 
     def __iadd__(self, other):
         func_ = self.func
-        if isinstance(other, Map):
+        if isinstance(other, (int, float)):
+            self.func = lambda x : func_(x) + other
+        elif isinstance(other, Map):
             self.func = lambda x: func_(x) + other.func(x)
         else:
             raise TypeError("Cannot add Map and object of type " + str(type(other)))
@@ -189,7 +194,7 @@ class Map:
     __radd__ = __add__
     __rsub__ = __sub__
 
-    def __and__(self, other : 'Map') -> 'Map':
+    def __and__(self, other : 'Map') -> 'Map': #TODO: scalars?
         """
         Returns the composition of two maps, given by
 
@@ -239,7 +244,7 @@ class Map:
 
     def preprocessed_integrator(self) -> 'Map':
         #TODO
-        return exact_weights ^ (self @ Map(cem_antipode))
+        return exact_weights ^ (self & Map(cem_antipode))
 
     def exp(self) -> 'Map':
         """

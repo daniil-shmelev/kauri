@@ -25,6 +25,19 @@ The ``kauri.cem`` sub-package implements the Calaque, Ebrahimi-Fard and Manchon 
 
       S_{CEM}(t) = -t - \\sum_{t, \\bullet \\neq s \\subset t} S_{CEM}(s) \\, t / s.
 
+.. note::
+
+    We adopt the singleton-reduced coproduct, where the singleton tree :math:`\\bullet`
+    appears in each forest at most once. This defines a Hopf algebra
+    on :math:`\\widetilde{H} = H / J`. There are alternative forms of the
+    coproduct defined directly on :math:`H`, but these do not define a Hopf
+    algebra.
+
+.. note::
+
+    Since :math:`\\bullet` is the unit, characters :math:`\\phi` on the resulting
+    Hopf algebra must satisfy :math:`\\phi(\\bullet) = 1`.
+
 """
 
 from .cem import antipode, counit, coproduct, map_power, map_product

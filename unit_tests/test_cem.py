@@ -115,3 +115,11 @@ class CEMTests(unittest.TestCase):
         for t in trees:
             self.assertAlmostEqual(m1(t), m2(t))
             self.assertAlmostEqual(m1(t), m3(t))
+
+    def test_type_error(self):
+        with self.assertRaises(TypeError):
+            cem.coproduct('s')
+        with self.assertRaises(TypeError):
+            cem.antipode('s')
+        with self.assertRaises(TypeError):
+            cem.counit('s')
