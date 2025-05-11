@@ -23,7 +23,7 @@ of a tree, and :math:`F(t)(y_0)` are the elementary differentials, defined recur
     F(\\bullet) = f(y),
 .. math::
 
-    F([t_1, t_2, \\ldots, t_k])(y) = f^{(k)}(y)(F(t_1)(y), F(t_2)(y), \\ldots, F(t_m)(y)).
+    F([t_1, t_2, \\ldots, t_k])(y) = f^{(k)}(y)(F(t_1)(y), F(t_2)(y), \\ldots, F(t_k)(y)).
 
 The main objective of this module is to evaluate existing B-series. For more complicated operations,
 it is recommended to work with the underlying character (or elementary weights function) and then
@@ -141,7 +141,7 @@ def elementary_differential(tree : Tree,
     .. math::
 
 
-        F([t_1, t_2, \\ldots, t_k])(y) = f^{(k)}(y)(F(t_1)(y), F(t_2)(y), \\ldots, F(t_m)(y)).
+        F([t_1, t_2, \\ldots, t_k])(y) = f^{(k)}(y)(F(t_1)(y), F(t_2)(y), \\ldots, F(t_k)(y)).
 
     :param tree: Unlabelled tree corresponding to the elementary differential
     :type tree: Tree

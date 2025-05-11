@@ -2,108 +2,143 @@
 <img src="docs/_static/logo.png" width="350">
 </p>
 
-[//]: # (TODO: rewrite)
-An implementation of the Butcher-Connes-Kreimer Hopf algebra of non-planar rooted trees [[Connes & Kreimer, 1999](#reference)], 
-commonly used for the analysis of B-series and Runge-Kutta schemes. The Hopf algebra is given by
-$(\mathcal{H}, \Delta,\mu,\varepsilon, \emptyset, S)$, where<br>
-- $\mathcal{H}$ is the set of all linear combinations of forests of trees
+Kauri is a Python package for symbolic and algebraic manipulation of rooted trees,
+often used in the study of B-series, Runge-Kutta methods, and backward error analysis. It implements Hopf algebraic structures and provides tools for symbolic computation and visualization.
+
+## Installation
+
+```
+pip install kauri
+```
+
+## Functionalities
+
+The main goal of the kauri package is to provide implementations of:
+
+- The Butcher-Connes-Kreimer (BCK) Hopf algebra of (un)labelled non-planar rooted trees [[Connes & Kreimer, 1999](#reference)], 
+used for the analysis of B-series and Runge-Kutta schemes
+- The Calaque, Ebrahimi-Fard and Manchon (CEM) Hopf algebra [[Calaque, Ebrahimi-Fard & Manchon, 2011](#reference)], 
+used for backward error analysis of B-series and Runge-Kutta schemes
+- Evaluation and manipulation of Runge-Kutta schemes, including symbolic expressions for elementary weights functions
+and order conditions
+- Evaluation and symbolic manipulation of truncated B-series over unlabelled trees
+
+## Simple Examples
+
+### Unlabelled BCK coproduct
+```python
+import kauri as kr
+import kauri.bck as bck
+
+t = kr.Tree([[], [[]]])
+cp = bck.coproduct(t)
+kr.display(cp)
+```
+Output:
+
+<img src="docs/_static/example1.png" width="500">
+
+### Labelled BCK antipode
+```python
+import kauri as kr
+import kauri.bck as bck
+
+t = kr.Tree([[[3],2],[1],0])
+s = bck.antipode(t)
+kr.display(s)
+```
+Output:
+
+<img src="docs/_static/example2.png" width="400">
+
+### Runge-Kutta order conditions
+```python
+import kauri as kr
+
+t = kr.Tree([[],[]])
+print(kr.rk_order_cond(t, s = 3, explicit = True))
+# Prints: a10**2*b1 + b2*(a20 + a21)**2 - 1/3
+```
+
+### Truncated B-series of RK4
+
+```python
+import kauri as kr
+import sympy as sp
+import numpy as np
+import matplotlib.pyplot as plt
+
+y1 = sp.symbols('y1')
+y = sp.Matrix([y1])
+f = sp.Matrix([y1 ** 2])
+
+m = kr.rk4.elementary_weights_map()
+bs = kr.BSeries(y, f, weights = m, order = 5)
+print(bs.series())
+
+t = np.linspace(0, 0.9, 100)
+true = [1 / (1 - x) for x in t]
+plt.plot(t, true, linestyle="--", color="black")
+plt.plot(t, [bs([1], h) for h in t], color = 'firebrick')
+plt.show()
+```
+
+## The BCK Hopf Algebra
+
+The Butcher-Connes-Kreimer Hopf algebra of (un)labelled non-planar rooted trees [[Connes & Kreimer, 1999](#reference)], is given by
+$(\mathcal{H}, \Delta_{BCK},\mu,\varepsilon_{BCK}, \emptyset, S_{BCK})$, where<br>
+- $\mathcal{H}$ is the set of all linear combinations of forests of (un)labelled trees
 - Multiplication $\mu$ is defined as the commutative juxtaposition of trees
-- Comultiplication $\Delta$ is defined by
-$$\Delta(t) = t \otimes I + I \otimes t + \sum_{s \subset t} s \otimes [t\setminus s]$$
-where the sum is over proper rootes subtrees $s$ of $t$, and $[t\setminus s]$ is the product of all branches fromed when
+- Comultiplication $\Delta_{BCK}$ is defined by
+$$\Delta_{BCK}(t) = t \otimes \emptyset + \emptyset \otimes t + \sum_{s \subset t} s \otimes [t\setminus s]$$
+where the sum is over proper rooted subtrees $s$ of $t$, and $[t\setminus s]$ is the product of all branches formed when
 $s$ is erased from $t$.
 - The unit $\emptyset$ is the empty tree
-- The counit $\varepsilon$ is given by $\varepsilon(\tau) = 1$ if $\tau = \emptyset$ and $0$ otherwise
-- The antipode $S$ is defined by
-$$S(t) = -t - \sum_{s \subset t} S([t \setminus s])s, \quad S(\bullet) = -\bullet$$
+- The counit $\varepsilon_{BCK}$ is given by $\varepsilon(\tau) = 1$ if $\tau = \emptyset$ and $0$ otherwise
+- The antipode $S_{BCK}$ is defined by
+$$S_{BCK}(t) = -t - \sum_{s \subset t} S([t \setminus s])s, \quad S_{BCK}(\bullet) = -\bullet$$
 
 Given two maps $f,g : \mathcal{H} \to \mathcal{H}$, we define their product map by
 $$(f\cdot g)(\tau) = \mu \circ (f \otimes g) \circ \Delta(\tau).$$
 
-## Objects
+## The CEM Hopf Algebra
 
-The implementation works with three objects,
-- Tree
-- Forest - a product of trees
-- ForestSum - a linear combination of forests
+The Calaque, Ebrahimi-Fard and Manchon (CEM) [[Calaque, Ebrahimi-Fard & Manchon, 2011](#reference)] Hopf algebra
+$(\widetilde{H}, \Delta_{CEM}, \mu, \varepsilon_{CEM}, \bullet, S_{CEM})$ is defined as follows.
 
-which are immutable, hashable, and support standard arithmetic operations *, +, - with any combination of the above structures and scalars. For example:
+- $\widetilde{H}$ is the space of non-empty unlabelled trees, defined as
+  $\widetilde{H} = H / J$ where $H$ is the space of unlabelled non-planar rooted trees and
+$J$ is the ideal generated by $\bullet - \emptyset$.
+- The unit is the single-node tree, $\bullet$.
+- The counit map is defined by $\varepsilon_{CEM}(\bullet) = 1$,
+  $\varepsilon_{CEM}(t) = 0$ for all $\bullet \neq t \in \widetilde{H}$.
+- Multiplication $\mu : \widetilde{H} \otimes \widetilde{H} \to \widetilde{H}$ is defined as the
+  commutative juxtaposition of two forests.
+- Comultiplication $\Delta : \widetilde{H} \to \widetilde{H} \otimes \widetilde{H}$ is defined as
 
-```python
-t0 = Tree(None) #The empty tree
-t1 = Tree([]) #The single-node tree
-t2 = Tree([[]]) #Tree with 2-nodes
-t3 = Tree([[],[]]) #Cherry tree
+  $$\Delta_{CEM}(t) = \sum_{s \subset t} s \otimes t / s$$
 
-f1 = Forest([t1, t2])
-f2 = Forest([t3])
+  where the sum runs over all possible subforests $s$ of $t$, and
+  $t / s$ is the tree obtained by contracting each connected component of
+  $s$ onto a vertex [[Calaque, Ebrahimi-Fard & Manchon, 2011](#reference)].
+- The antipode $S_{CEM}$ is defined by $S_{CEM}(\bullet) = \bullet$ and
 
-print(f1 == (t1 * t2)) #This will evaluate to True
+  $$S_{CEM}(t) = -t - \sum_{t, \bullet \neq s \subset t} S_{CEM}(s) \,\, t / s.$$
 
-s1 = ForestSum([(2,f1), (-1,f2)]) #2*f1 - f2
-s2 = s1 + 5*t0
+## Truncated B-series
 
-print(s1 == (2*f1 - t3)) #This will evaluate to True
+Consider an ODE of the form $$\frac{dy}{ds} = f(y)$$
 
-print(s2 == (2*f1 - t3 + 5)) #This will evaluate to True, since the empty tree t0
-                             #is treated as equivalent to the scalar 1.
-```
+Given a weights function $\varphi$, the associated truncated B-Series is
 
-There are two ways of viewing the above objects. `print(...)` will show the list representation, whilst `display(...)`
-will plot the trees. For example, `print(s2)` will output
-```python
-2*[] [[]] + -1*[[], []] + 5*∅
-```
-whilst `display(s2)` plots:<br><br>
-<img src="docs/_static/example.png" width="150">
+$$B_h(\varphi, y_0) := \sum_{|t| \leq n} \frac{h^{|t|}}{\sigma(t)} \varphi(t) F(t)(y_0),$$
 
-## Functions
+where the sum runs over all trees of order at most $n$, $\sigma(t)$ is the symmetry factor
+of a tree, and $F(t)(y_0)$ are the elementary differentials, defined recursively on trees by:
 
-```python
-t.nodes()  # Returns the number of nodes in a tree or forest t
-t.factorial()  # Returns the tree factorial of a tree or forest t
-t.sigma()  # Returns the symmetry factor sigma of a tree
-t.alpha()  # Returns the number of heap-orderings of a tree
-t.beta()  # Returns the number of orderings of a tree
-t.sorted()  # Returns the sorted representation of the tree, with the heaviest branches moved to the left
-t.join()  # For a forest t, returns the tree formed by joining the trees of the forest with a common root
-t.unjoin()  # For a tree t, returns the forest formed by deleting the root
-t.coproduct()  # For a tree t, returns a list of truncs and a list of corresponding branches, split according to the coproduct Delta
-t.antipode()  # Returns the antipode of a tree, forest or forest sum t
-t.sign()  # Returns t if t.numNodes() is even, otherwise -t
-t.signed_antipode()  # Returns the composition of the sign and antipode functions
-t.as_forest()  # For a tree t, returns t as a forest
-t.as_forest_sum()  # For a tree or forest t, returns t as a forest sum
-t.singleton_reduced()  # For a forest or forest sum t, removes redundant occurences of Tree([]) in each forest
-```
-
-Additionally, given two functions `func1`, `func2` defined as maps from trees to scalars, trees, forests or forest sums, the
-following functions will work with `func1`, `func2` as if they were multiplicative linear maps.
-
-```python
-t.apply(func1) #Applies func1 to a tree, forest or forest sum t
-t.apply_product(func1, func2) #Applies the product map func1*func2 to t
-t.apply_power(func1, n) #Applys the n^th power of func1 to t
-```
-
-For convenience, we provide a sample set of functions to use in place of func1, func2 listed below, although one may also
-define custom functions.
-
-```python
-ident(t) #Returns t
-counit(t) #Returns 1 if t is the empty tree and 0 otherwise
-S(t) #Returns t.antipode()
-exact_weights(t) #Returns 1 / t.factorial()
-RK_elementary_weights(t, A, b) #Returns the elementary weights for an RK scheme with parameters (A,b)
-```
-
-To generate trees of a given order, we provide an implementation of the algorithm of [Beyer & Hedetniemi, 1980](#reference),
- used in the following functions
-```python
-next_tree(t) #Generates the next tree after t with respect to the lexicographic order
-trees_of_order(n) #A generator function generating all trees of order n
-trees_up_to_order(n) #A generator function generating all trees of order <= n
-```
+$$F(\emptyset) = y,$$
+$$F(\bullet) = f(y),$$
+$$F([t_1, t_2, \ldots, t_k])(y) = f^{(k)}(y)(F(t_1)(y), F(t_2)(y), \ldots, F(t_k)(y)).$$
 
 ## Citation
 
@@ -119,4 +154,5 @@ trees_up_to_order(n) #A generator function generating all trees of order <= n
 ## References
 <a name="reference"></a>
 - Connes, A., & Kreimer, D. (1999). *Hopf algebras, renormalization and noncommutative geometry*. In *Quantum field theory: perspective and prospective* (pp. 59–109). Springer.
+- Calaque, D., Ebrahimi-Fard, K., & Manchon, D. (2011). Two interacting Hopf algebras of trees: A Hopf-algebraic approach to composition and substitution of B-series. Advances in Applied Mathematics, 47(2), 282–308. Elsevier.
 - Beyer, T., & Hedetniemi, S. M. (1980). *Constant time generation of rooted trees*. In *SIAM Journal on Computing 9.4* (pp. 706-712)
