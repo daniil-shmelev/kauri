@@ -1,5 +1,5 @@
 import unittest
-from kauri import *
+from kauri import TensorProductSum
 from kauri import Tree as T
 
 trees = [T(None),
@@ -14,4 +14,6 @@ trees = [T(None),
 
 class TensorProductSumTests(unittest.TestCase):
     def test_tensor(self):
-        pass #TODO
+        t1 = T([]) @ T([[]]) + T([]) * T([]) @ T([[],[]])
+        t2 = TensorProductSum([(1, T([]), T([[]])), (1, T([]) * T([]), T([[],[]]))])
+        self.assertEqual(t1, t2)

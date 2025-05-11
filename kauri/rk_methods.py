@@ -1,69 +1,284 @@
+"""
+We provide a handful of Runge-Kutta schemes for convenience, as instances of the :class:`RK` class.
+We list these below, along with their Butcher tableux.
+"""
+
+from math import sqrt
+
 from .rk import RK
 
 euler = RK([[0]], [1], 'Euler')
+euler.__doc__ = """
+The Euler method
+
+.. math::
+
+        \\begin{array}{c|c}
+            0 & 0 \\\\
+            \\hline
+             & 1
+        \\end{array}
+"""
 
 heun_rk2 = RK([[0, 0],
             [1, 0]],
         [0.5, 0.5], 'Heun RK2')
+heun_rk2.__doc__ = """
+Heun's RK2 method
+
+.. math::
+
+        \\begin{array}{c|cc}
+            0 & 0 & 0 \\\\
+            1 & 1 & 0 \\\\
+            \\hline
+             & 1/2 & 1/2
+        \\end{array}
+"""
 
 midpoint = RK([[0, 0],
                   [0.5, 0]],
               [0, 1], 'Midpoint')
+midpoint.__doc__ = """
+The midpoint method
+
+.. math::
+
+        \\begin{array}{c|cc}
+            0 & 0 & 0 \\\\
+            1/2 & 1/2 & 0 \\\\
+            \\hline
+             & 0 & 1
+        \\end{array}
+"""
 
 kutta_rk3 = RK([[0, 0, 0],
                          [0.5, 0, 0],
                          [-1, 2, 0]],
                [1/6, 2/3, 1/6], 'Kutta RK3')
+kutta_rk3.__doc__ = """
+Kutta's RK3 method
+
+.. math::
+
+        \\begin{array}{c|ccc}
+            0 & 0 & 0 & 0 \\\\
+            1/2 & 1/2 & 0 & 0 \\\\
+            1 & -1 & 2 & 0 \\\\
+            \\hline
+             & 1/6 & 2/3 & 1/6
+        \\end{array}
+"""
 
 heun_rk3 = RK([[0, 0, 0],
                         [1/3, 0, 0],
                         [0, 2/3, 0]],
               [1/4, 0, 3/4], 'Heun RK3')
+heun_rk3.__doc__ = """
+Heun's RK3 method
+
+.. math::
+
+        \\begin{array}{c|ccc}
+            0 & 0 & 0 & 0 \\\\
+            1/3 & 1/3 & 0 & 0 \\\\
+            2/3 & 0 & 2/3 & 0 \\\\
+            \\hline
+             & 1/4 & 0 & 3/4
+        \\end{array}
+"""
 
 # Ralston's Third-Order Method (RK3)
 ralston_rk3 = RK([[0, 0, 0],
                            [1/2, 0, 0],
                            [0, 3/4, 0]],
                  [2/9, 1/3, 4/9], 'Ralston RK3')
+ralston_rk3.__doc__ = """
+Ralston's RK3 method
+
+.. math::
+
+        \\begin{array}{c|ccc}
+            0 & 0 & 0 & 0 \\\\
+            1/2 & 1/2 & 0 & 0 \\\\
+            3/4 & 0 & 3/4 & 0 \\\\
+            \\hline
+             & 2/9 & 1/3 & 4/9
+        \\end{array}
+"""
 
 rk4 = RK([[0, 0, 0, 0],
                            [0.5, 0, 0, 0],
                            [0, 0.5, 0, 0],
                            [0, 0, 1, 0]],
                  [1/6, 1/3, 1/3, 1/6], 'RK4')
+rk4.__doc__ = """
+The RK4 method
 
-cash_karp = RK([[0, 0, 0, 0, 0, 0],
-                            [1/5, 0, 0, 0, 0, 0],
-                            [3/40, 9/40, 0, 0, 0, 0],
-                            [3/10, -9/10, 6/5, 0, 0, 0],
-                            [-11/54, 5/2, -70/27, 35/27, 0, 0],
-                            [1631/55296, 175/512, 575/13824, 44275/110592, 253/4096, 0]],
-                  [37/378, 0, 250/621, 125/594, 0, 512/1771], 'Cash-Karp RK5')
+.. math::
 
-# Dormand–Prince Method (RK5(4))
-dopri = RK([[0, 0, 0, 0, 0, 0, 0],
-                                 [1/5, 0, 0, 0, 0, 0, 0],
-                                 [3/40, 9/40, 0, 0, 0, 0, 0],
-                                 [44/45, -56/15, 32/9, 0, 0, 0, 0],
-                                 [19372/6561, -25360/2187, 64448/6561, -212/729, 0, 0, 0],
-                                 [9017/3168, -355/33, 46732/5247, 49/176, -5103/18656, 0, 0],
-                                 [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84, 0]],
-                       [35/384, 0, 500/1113, 125/192, -2187/6784, 11/84, 0], 'DOPRI')
+        \\begin{array}{c|cccc}
+            0 & 0 & 0 & 0 & 0 \\\\
+            1/2 & 1/2 & 0 & 0 & 0 \\\\
+            1/2 & 0 & 1/2 & 0 & 0 \\\\
+            1 & 0 & 0 & 1 & 0 \\\\
+            \\hline
+             & 1/6 & 1/3 & 1/3 & 1/6
+        \\end{array}
+"""
 
-rkf45 = RK([[0, 0, 0, 0, 0, 0],
-                     [1/4, 0, 0, 0, 0, 0],
-                     [3/32, 9/32, 0, 0, 0, 0],
-                     [1932/2197, -7200/2197, 7296/2197, 0, 0, 0],
-                     [439/216, -8, 3680/513, -845/4104, 0, 0],
-                     [-8/27, 2, -3544/2565, 1859/4104, -11/40, 0]],
-           [16/135, 0, 6656/12825, 28561/56430, -9/50, 2/55], 'RKF45')
+ralston_rk4 = RK([[0, 0, 0, 0],
+                           [2/5, 0, 0, 0],
+                           [(-2889 + 1428*sqrt(5)) / 1024, (3785 - 1620*sqrt(5)) / 1024, 0, 0],
+                           [(-3365 + 2094*sqrt(5))/6040, (-975-3046*sqrt(5))/2552, (467040 + 203968*sqrt(5)) / 240845, 0]],
+                 [(263 + 24*sqrt(5)) / 1812, (125 - 1000*sqrt(5))/3828, (3426304 + 1661952*sqrt(5)) / 5924787, (30 - 4*sqrt(5)) / 123], 'Ralston RK4')
+ralston_rk4.__doc__ = """
+Ralston's RK4 method
+
+.. math::
+
+    \\begin{array}{c|cccc}
+        0 & 0 & 0 & 0 & 0 \\\\
+        \\frac{2}{5} & \\frac{2}{5} & 0 & 0 & 0 \\\\
+        \\frac{14 - 3\\sqrt{5}}{16} & \\frac{-2889 + 1428\\sqrt{5}}{1024} & \\frac{3785 - 1620\\sqrt{5}}{1024} & 0 & 0 \\\\
+        1 & \\frac{-3365 + 2094\\sqrt{5}}{6040} & \\frac{-975-3046\\sqrt{5}}{2552} & \\frac{467040+203968\\sqrt{5}}{240845} & 0 \\\\
+        \\hline
+        & \\frac{263+24\\sqrt{5}}{1812} & \\frac{125 - 1000\\sqrt{5}}{3828} & \\frac{3426304+1661952\\sqrt{5}}{5924787} & \\frac{30-4\\sqrt{5}}{123}
+    \\end{array}
+
+"""
+
+nystrom_rk5 = RK([[0,0,0,0,0,0],
+                  [1/3,0,0,0,0,0],
+                  [4/25, 6/25, 0,0,0,0],
+                  [1/4, -3, 15/4, 0,0,0],
+                  [2/27, 10/9, -50/81, 8/81, 0,0],
+                  [2/25, 12/25, 2/15, 8/75, 0,0]],
+                 [23/192, 0, 125/192, 0, -27/64, 125/192], 'Nystrom RK5')
+nystrom_rk5.__doc__ = """
+Nyström's RK5 method
+
+.. math::
+
+    \\begin{array}{c|cccccc}
+        0 & 0 & 0 & 0 & 0 & 0 & 0 \\\\
+        1/3 & 1/3 & 0 & 0 & 0 & 0 & 0 \\\\
+        2/5 & 4/25 & 6/25 & 0 & 0 & 0 & 0 \\\\
+        1 & 1/4 & -3 & 15/4 & 0 & 0 & 0 \\\\
+        2/5 & 2/27 & 10/9 & -50/81 & 8/81 & 0 & 0 \\\\
+        4/5 & 2/25 & 12/25 & 2/15 & 8/75 & 0 & 0 \\\\
+        \\hline
+        & 23/192 & 0 & 125/192 & 0 & -27/64 & 125/192
+    \\end{array}
+
+"""
 
 #######################################################################################
 ################################# Implicit Methods ####################################
 #######################################################################################
 
 backward_euler = RK([[1]], [1], 'Backward Euler')
+backward_euler.__doc__ = """
+The backward Euler method
+
+.. math::
+
+        \\begin{array}{c|c}
+            1 & 1 \\\\
+            \\hline
+             & 1
+        \\end{array}
+"""
+
 implicit_midpoint = RK([[0.5]], [1], 'Implicit Midpoint')
+implicit_midpoint.__doc__ = """
+The implicit midpoint method
+
+.. math::
+
+        \\begin{array}{c|c}
+            1/2 & 1/2 \\\\
+            \\hline
+             & 1
+        \\end{array}
+"""
+
 crank_nicolson = RK([[0, 0],
                                   [0.5, 0.5]],
                         [0.5, 0.5], 'Crank Nicolson')
+crank_nicolson.__doc__ = """
+The Crank Nicolson method
+
+.. math::
+
+        \\begin{array}{c|cc}
+            0 & 0 & 0 \\\\
+            1 & 1/2 & 1/2 \\\\
+            \\hline
+             & 1/2 & 1/2
+        \\end{array}
+"""
+
+gauss6 = RK([
+    [5/36, 2/9 - sqrt(15) / 15, 5/36 - sqrt(15) / 30],
+    [5/36 + sqrt(15)/24, 2/9, 5/36 - sqrt(15)/24],
+    [5/36 + sqrt(15)/30, 2/9 + sqrt(15)/15, 5/36]
+               ],
+              [5/18, 4/9, 5/18], 'Gauss 6')
+gauss6.__doc__ = """
+Kuntzmann & Butcher method of order 6, based on Gaussian quadrature
+
+.. math::
+
+    \\begin{array}{c|ccc}
+        \\frac{1}{2} - \\frac{\\sqrt{15}}{10} & \\frac{5}{36} & \\frac{2}{9} - \\frac{\\sqrt{15}}{15} & \\frac{5}{36} - \\frac{\\sqrt{15}}{30} \\\\
+        \\frac{1}{2} & \\frac{5}{36} + \\frac{\\sqrt{15}}{24} & \\frac{2}{9} & \\frac{5}{36} - \\frac{\\sqrt{15}}{24} \\\\
+        \\frac{1}{2} - \\frac{\\sqrt{15}}{10} & \\frac{5}{36} + \\frac{\\sqrt{15}}{30} & \\frac{2}{9} + \\frac{\\sqrt{15}}{15} & \\frac{5}{36} \\\\
+        \\hline
+         & \\frac{5}{18} & \\frac{4}{9} & \\frac{5}{18}
+    \\end{array}
+
+"""
+
+radau_iia = RK([
+    [(88 - 7 * sqrt(6)) / 360, (296 - 169 * sqrt(6)) / 1800, (-2 + 3 * sqrt(6)) / 225],
+    [(296 + 169 * sqrt(6)) / 1800, (88 + 7 * sqrt(6)) / 360, (-2 - 3 * sqrt(6)) / 225],
+    [(16 - sqrt(6)) / 36, (16 + sqrt(6)) / 36, 1/9]
+               ],
+              [(16 - sqrt(6)) / 36, (16 + sqrt(6)) / 36, 1/9], 'Radau IIA')
+radau_iia.__doc__ = """
+The Radau IIA method of order 5
+
+.. math::
+
+    \\begin{array}{c|ccc}
+        \\frac{4 - \\sqrt{6}}{10} & \\frac{88 - 7\\sqrt{6}}{360} & \\frac{296 - 169\\sqrt{6}}{1800} & \\frac{-2 + 3\\sqrt{6}}{225} \\\\
+        \\frac{4 + \\sqrt{6}}{10} & \\frac{296 + 169\\sqrt{6}}{1800} & \\frac{88 + 7\\sqrt{6}}{360} & \\frac{-2 - 3\\sqrt{6}}{225} \\\\
+        1 & \\frac{16 - \\sqrt{6}}{36} & \\frac{16 + \\sqrt{6}}{36} & \\frac{1}{9} \\\\
+        \\hline
+         & \\frac{16 - \\sqrt{6}}{36} & \\frac{16 + \\sqrt{6}}{36} & \\frac{1}{9} \\\\
+    \\end{array}
+
+"""
+
+lobatto6 = RK([
+    [0,0,0,0],
+    [(5 + sqrt(5)) / 60, 1/6, (15 - 7 * sqrt(5)) / 60, 0],
+    [(5 - sqrt(5)) / 60, (15 + 7 * sqrt(5)) / 60, 1/6, 0],
+    [1/6, (5-sqrt(5)) / 12, (5 + sqrt(5))/12, 0]
+               ],
+              [1/12, 5/12, 5/12, 1/12], 'Lobatto 6')
+lobatto6.__doc__ = """
+Butcher’s Lobatto formula of order 6
+
+.. math::
+
+        \\begin{array}{c|cccc}
+            0 & 0 & 0 & 0 & 0 \\\\
+            \\frac{5 - \\sqrt{5}}{10} & \\frac{5 + \\sqrt{5}}{60} & \\frac{1}{6} & \\frac{15 - 7\\sqrt{5}}{60} & 0 \\\\
+            \\frac{5 + \\sqrt{5}}{10} & \\frac{5 - \\sqrt{5}}{60} & \\frac{15 + 7\\sqrt{5}}{60} & \\frac{1}{6} & 0 \\\\
+            1 & \\frac{1}{6} & \\frac{5 - \\sqrt{5}}{12} & \\frac{5 + \\sqrt{5}}{12} & 0 \\\\
+            \\hline
+             & \\frac{1}{12} & \\frac{5}{12} & \\frac{5}{12} & \\frac{1}{12}
+        \\end{array}
+"""

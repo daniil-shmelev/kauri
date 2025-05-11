@@ -27,7 +27,8 @@ class Map:
     :type func: Callable[[Tree], int | float | Tree | Forest | ForestSum]
     """
     def __init__(self, func : Callable[[Tree], Union[int, float, Tree, Forest, ForestSum]]):
-        #TODO: typecheck?
+        if not callable(func):
+            raise TypeError("func parameter must be callable")
         self.func = func
 
     @lru_cache(maxsize = 128) # maxsize here since caching prevents the object being garbage collected
@@ -194,7 +195,7 @@ class Map:
     __radd__ = __add__
     __rsub__ = __sub__
 
-    def __and__(self, other : 'Map') -> 'Map': #TODO: scalars?
+    def __and__(self, other : 'Map') -> 'Map':
         """
         Returns the composition of two maps, given by
 
@@ -220,8 +221,8 @@ class Map:
     def modified_equation(self) -> 'Map':
         """
         Assuming the given map :math:`\\phi` corresponds to the elementary weights
-        function of a B-series method, returns the map corresponding to the elementary
-        weights function of the modified (B-series) vector field, :math:`\\widetilde{\\phi}`,
+        function of a B-series method, returns the map corresponding to the coefficients
+        of the modified (B-series) vector field, :math:`\\widetilde{\\phi}`,
         defined by
 
         .. math::
@@ -238,12 +239,33 @@ class Map:
         where :math:`\\mathrm{Id}` is the identity map on trees and
         :math:`e^{\\star (-1)} = e \\circ S_{CEM}` :cite:`chartier2010algebraic`.
 
-        :return: Elementary weights map of the modified vector field
+        :return: Map corresponding to the modified vector field
         """
         return self.log()
 
     def preprocessed_integrator(self) -> 'Map':
-        #TODO
+        """
+        Assuming the given map :math:`\\phi` corresponds to the elementary weights
+        function of a B-series method, returns the map corresponding to the coefficients
+        of the modified (B-series) vector field, :math:`\\widetilde{\\phi}`,
+        defined by
+
+        .. math::
+
+            (\\widetilde{\\phi} \\star \\phi)(t) = e(t)
+
+        where :math:`e(t) = 1 / t!` is the elementary weights function of
+        the exact solution, or equivalently
+
+        .. math::
+
+            \\widetilde{\\phi}(t) = (e \\star \\phi^{\\star (-1)})(t)
+
+        where :math:`\\mathrm{Id}` is the identity map on trees and
+        :math:`\\phi^{\\star (-1)} = \\phi \\circ S_{CEM}` :cite:`chartier2010algebraic`.
+
+        :return: Map corresponding to the modified vector field
+        """
         return exact_weights ^ (self & Map(cem_antipode))
 
     def exp(self) -> 'Map':
@@ -282,7 +304,20 @@ class Map:
 
 # Some common examples provided for convenience
 ident = Map(lambda x : x)
+ident.__doc__ = """
+The identity map, :math:`t \\mapsto t`.
+"""
 sign = Map(lambda x : x.sign())
+sign.__doc__ = """
+The sign map, or canonical involution, :math:`t \\mapsto (-1)^{|t|} t`.
+"""
 exact_weights = Map(lambda x : 1. / x.factorial())
-
+exact_weights.__doc__ = """
+The elementary weights function of the exact solution, :math:`t \\mapsto 1/t!`.
+"""
 omega = Map(lambda x : 1 if (x == Tree(None) or x == Tree([])) else 0).log()
+omega.__doc__ = """
+The coefficients of the modified equation for the (explicit) Euler method,
+:math:`t \\mapsto \\omega(t) := \\log(\\delta_\\emptyset + \\delta_\\bullet)`. 
+See :cite:`chartier2010algebraic` for details.
+"""

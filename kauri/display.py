@@ -1,8 +1,9 @@
 """
-Functions for plotting Tree, Forest, ForestSum and TensorProductSum objects.
+The display function plots objects of type :class:`Tree`, :class:`Forest`, :class:`ForestSum`
+or :class:`TensorProductSum`.
 """
-#TODO add plotting of TensorSum to display
-#TODO: simplify
+from typing import Union
+
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
@@ -18,10 +19,9 @@ COLORS = ['black',
           'forestgreen',
           'rebeccapurple',
           'darkorange',
-          'silver',
-          'saddlebrown',
-          'gold',
-          'pink']
+          'grey',
+          'dodgerblue',
+          'deeppink']
 
 def _get_node_coords(layout, x=0, y=0, scale=0.2):
     gap = scale / 2
@@ -394,17 +394,18 @@ def _display_tensor_plt(tensor_sum,
 #Display
 ###############################################################
 
-def display(obj : ForestSum, *, #TODO: change to Tree, Forest, ForestSum or TensorProductSum
+def display(obj : Union[Tree, Forest, ForestSum, TensorProductSum],
+            *,
             scale : float = None,
             fig_size : tuple = None,
             file_name : str = None,
             use_plt : bool = True,
             rationalise : bool = False) -> None:
-    """ #TODO
-    Plots a forest sum.
+    """
+    Plots a Tree, Forest, ForestSum or TensorProductSum.
 
-    :param forest_sum: Forest sum to plot
-    :type forest_sum: ForestSum
+    :param obj: Object to plot
+    :type obj: Tree | Forest | ForestSum | TensorProductSum
     :param scale: scale of the plot (default = 0.2 if use_plt is True otherwise 0.7)
     :type scale: float
     :param fig_size: figure size (default = (15,1) if use_plt is True otherwise (1500,50))

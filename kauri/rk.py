@@ -20,7 +20,7 @@ def _internal_symbolic(i, t_rep, a, b, s):
     return sum(a[i,j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
 
 def _derivative_symbolic(i, t_rep, a, b, s):
-    if t_rep in (None, []):
+    if t_rep in (None, []): # Empty and singleton tree
         return 1
     out = 1
     for subtree in t_rep[:-1]:
@@ -28,9 +28,9 @@ def _derivative_symbolic(i, t_rep, a, b, s):
     return out
 
 def _elementary_symbolic(t_rep, a, b, s):
-    if t_rep is None:
+    if t_rep is None: # Empty tree
         return 1
-    if len(t_rep) == 1:
+    if len(t_rep) == 1: # Singleton tree
         return sum(b)
     return sum(b[i] * _derivative_symbolic(i, t_rep, a, b, s) for i in range(s))
 
@@ -47,6 +47,7 @@ def _rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None):
     a = sympy.Matrix(s, s, lambda i, j: sympy.symbols(f'a{i}{j}'))
     b = sympy.Matrix(1, s, lambda i, j: sympy.symbols(f'b{j}'))
 
+    # Zero terms according to mask
     for i in range(s):
         for j in range(s):
             if not a_mask[i][j]:
@@ -117,6 +118,21 @@ def rk_symbolic_weight(
                 text_file.write(s)
 
     """
+    if not isinstance(t, (int, float, Tree, Forest, ForestSum)):
+        raise TypeError("t must be a Tree, Forest, ForestSum, int or float, not " + str(type(t)))
+    if not isinstance(s, int):
+        raise TypeError("Number of stages s must be an int, not " + str(type(s)))
+    if not isinstance(explicit, bool):
+        raise TypeError("explicit must be a bool, not " + str(type(explicit)))
+    if not (isinstance(a_mask, list) or a_mask is None):
+        raise TypeError("a_mask must be a list, not " + str(type(a_mask)))
+    if not (isinstance(b_mask, list) or b_mask is None):
+        raise TypeError("b_mask must be a list, not " + str(type(a_mask)))
+    if not isinstance(mathematica_code, bool):
+        raise TypeError("mathematica_code must be a bool, not " + str(type(mathematica_code)))
+    if not isinstance(rationalise, bool):
+        raise TypeError("rationalise must be a bool, not " + str(type(rationalise)))
+
     t_ = t
     if isinstance(t, (int, float)):
         t_ = t * Tree(None).as_forest_sum()
@@ -186,6 +202,9 @@ def rk_order_cond(
                 text_file.write(s)
 
     """
+    if not isinstance(t, (int, float, Tree, Forest, ForestSum)):
+        raise TypeError("t must be a Tree, Forest, ForestSum, int or float, not " + str(type(t)))
+
     return rk_symbolic_weight(t - 1. / t.factorial(), s, explicit, a_mask, b_mask, mathematica_code, rationalise)
 
 class RK:
@@ -206,6 +225,11 @@ class RK:
     :param b: The Runge--Kutta parameter vector :math:`b`.
     """
     def __init__(self, a, b, name = None):
+        if not isinstance(a, (list, np.ndarray)):
+            raise TypeError("a must be a list or array, not " + str(type(a)))
+        if not isinstance(b, (list, np.ndarray)):
+            raise TypeError("b must be a list or array, not " + str(type(a)))
+
         self.name = name
         self.s = len(b)
         if len(a) != self.s or len(a[0]) != self.s:
@@ -291,16 +315,6 @@ class RK:
         y_next = y0 + h * sum(self.b[i] * k[i] for i in range(self.s))
         return y_next
 
-    # def _explicit_step(self, y0, t0, f, h):
-    #     k = np.empty(self.s)
-    #
-    #     for i in range(self.s):
-    #         y_stage = y0 + h * np.sum(self.np_a @ k)
-    #         k[i] = f(t0 + self.c[i] * h, y_stage)
-    #
-    #     y_next = y0 + h * np.dot(self.np_b, k)
-    #     return y_next
-
     def _implicit_step(self, y0, t0, f, h, tol = 1e-10, max_iter = 100):
         y0 = np.array(y0)
         dim = len(y0)
@@ -330,13 +344,13 @@ class RK:
         return y_next
 
     def step(self,
-             y0 : Union[list, np.array],
+             y0 : Union[list, np.ndarray],
              t0 : float,
-             f : Callable[[float, float], Union[list, np.array]],
+             f : Callable[[float, float], Union[list, np.ndarray]],
              h : float,
              tol : float = 1e-10,
              max_iter : int = 100
-             ) -> Union[list, np.array]:
+             ) -> Union[list, np.ndarray]:
         """
         Runs one step of the Runge--Kutta method.
 
@@ -355,6 +369,20 @@ class RK:
         :return: Next point, y1
         :rtype: list | array
         """
+
+        if not isinstance(y0, (list, np.ndarray)):
+            raise TypeError("y0 must be a list or array, not " + str(type(y0)))
+        if not isinstance(t0, float):
+            raise TypeError("t0 must be a float, not " + str(type(t0)))
+        if not callable(f):
+            raise TypeError("f must be callable")
+        if not isinstance(h, float):
+            raise TypeError("h must be a float, not " + str(type(h)))
+        if not isinstance(tol, float):
+            raise TypeError("tol must be a float, not " + str(type(tol)))
+        if not isinstance(max_iter, float):
+            raise TypeError("max_iter must be an int, not " + str(type(max_iter)))
+
         def f_(t_, y_):
             return np.array(f(t_,y_))
         y0_ = np.array(y0).copy()
@@ -365,15 +393,15 @@ class RK:
         return self._implicit_step(y0_, t0, f_, h, tol, max_iter)
 
     def run(self,
-            y0 : Union[list, np.array],
+            y0 : Union[list, np.ndarray],
             t0 : float,
             t_end : float,
-            f : Callable[[float, float], Union[list, np.array]],
+            f : Callable[[float, float], Union[list, np.ndarray]],
             n : int,
             tol : float = 1e-10,
             max_iter : int = 100,
             plot : bool = False,
-            plot_dims : bool = None,
+            plot_dims : Union[list, np.ndarray] = None,
             plot_kwargs : dict = None
             ) -> Tuple[list, list]:
         """
@@ -403,6 +431,28 @@ class RK:
         :return: t_vals, y_vals - the lists of values of t and y respectively
         :rtype: tuple[list, list]
         """
+
+        if not isinstance(y0, (list, np.ndarray)):
+            raise TypeError("y0 must be a list or array, not " + str(type(y0)))
+        if not isinstance(t0, float):
+            raise TypeError("t0 must be a float, not " + str(type(t0)))
+        if not isinstance(t_end, float):
+            raise TypeError("t_end must be a float, not " + str(type(t0)))
+        if not callable(f):
+            raise TypeError("f must be callable")
+        if not isinstance(n, int):
+            raise TypeError("n must be a float, not " + str(type(n)))
+        if not isinstance(tol, float):
+            raise TypeError("tol must be a float, not " + str(type(tol)))
+        if not isinstance(max_iter, float):
+            raise TypeError("max_iter must be an int, not " + str(type(max_iter)))
+        if not (isinstance(plot, bool) or plot is None):
+            raise TypeError("plot must be a bool, not " + str(type(plot)))
+        if not (isinstance(plot_dims, (list, np.ndarray)) or plot_dims is None):
+            raise TypeError("plot_dims must be a list or array, not " + str(type(plot_dims)))
+        if not (isinstance(plot_kwargs, dict) or plot_kwargs is None):
+            raise TypeError("plot_kwargs must be a dict, not " + str(type(plot_kwargs)))
+
         if plot_kwargs is None:
             plot_kwargs = {}
         if plot_dims is None:
@@ -432,40 +482,43 @@ class RK:
 
         return t_vals, y_vals
 
-    def __add__(self, other : 'RK') -> 'RK':
-        """
-        Returns the sum of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
-
-        .. math::
-
-            \\begin{array}{c|cc}
-                c_1 & A_1 & 0 \\\\
-                c_2 & 0 & A_2\\\\
-                \\hline
-                 & b_1 & b_2
-            \\end{array}
-
-        :rtype: RK
-        """
-        s1 = other.s
-        a1 = other.a
-        b1 = other.b
-
-        s2 = self.s
-        a2 = self.a
-        b2 = self.b
-
-        a = [[a1[i][j] for j in range(s1)] + [0 for j in range(s2)] for i in range(s1)]
-        a += [[0 for j in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
-        b = b1 + b2
-
-        return RK(a, b)
-
-    def __neg__(self):
-        return RK(self.a, [-self.b[i] for i in range(self.s)])
-
-    def __sub__(self, other):
-        return self + other.__neg__()
+    # def __add__(self, other : 'RK') -> 'RK':
+    #     """
+    #     Returns the sum of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
+    #
+    #     .. math::
+    #
+    #         \\begin{array}{c|cc}
+    #             c_1 & A_1 & 0 \\\\
+    #             c_2 & 0 & A_2\\\\
+    #             \\hline
+    #              & b_1 & b_2
+    #         \\end{array}
+    #
+    #     :rtype: RK
+    #     """
+    #     if not isinstance(other, RK):
+    #         raise TypeError("Cannot add RK and object of type " + str(type(other)))
+    #
+    #     s1 = other.s
+    #     a1 = other.a
+    #     b1 = other.b
+    #
+    #     s2 = self.s
+    #     a2 = self.a
+    #     b2 = self.b
+    #
+    #     a = [[a1[i][j] for j in range(s1)] + [0 for _ in range(s2)] for i in range(s1)]
+    #     a += [[0 for _ in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
+    #     b = b1 + b2
+    #
+    #     return RK(a, b)
+    #
+    # def __neg__(self):
+    #     return RK(self.a, [-self.b[i] for i in range(self.s)])
+    #
+    # def __sub__(self, other):
+    #     return self + other.__neg__()
 
     def __mul__(self, other : 'RK') -> 'RK':
         """
@@ -484,6 +537,9 @@ class RK:
 
         :rtype: RK
         """
+        if not isinstance(other, RK):
+            raise TypeError("Cannot compose RK and object of type " + str(type(other)))
+
         s1 = other.s
         a1 = other.a
         b1 = other.b
@@ -593,6 +649,9 @@ class RK:
         :type tol: float
         :rtype: int
         """
+        if not isinstance(tol, float):
+            raise TypeError("tol must be a float, not " + str(type(tol)))
+
         n = 0
         while True:
             for t in trees_of_order(n):
