@@ -6,7 +6,7 @@ with open(os.path.join(this_directory, "README.md"), encoding="utf-8") as f:
     long_description = f.read()
 
 setuptools.setup(name='kauri',
-        version='0.1.0',
+        version='1.0.0',
         description="Algebraic manipulation of non-planar rooted trees in Python",
         packages=setuptools.find_packages(),
         long_description=long_description,
