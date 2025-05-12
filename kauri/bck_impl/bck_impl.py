@@ -29,7 +29,7 @@ def _antipode(t):
     return out.reduce()
 
 @cache
-def _coproduct_helper(t):
+def _coproduct_helper_2(t):
     # This returns the coproduct as a list of (Forest, Tree) tuples
     # The function _coproduct then converts this to a tensor product sum
     # and simplifies.
@@ -58,7 +58,7 @@ def _coproduct_helper(t):
     subtree_coproducts = []
     for rep in t.list_repr[:-1]: # Recall last element is the root label, so take [:-1]
         subtree = Tree(rep)
-        subtree_coproducts.append(_coproduct_helper(subtree))
+        subtree_coproducts.append(_coproduct_helper_2(subtree))
 
     t_coproduct = [(Forest((t,)), EMPTY_TREE)] # First term of coproduct, t x empty tree
 
@@ -75,6 +75,27 @@ def _coproduct_helper(t):
 
     return t_coproduct
 
-def _coproduct(t):
-    cp = _coproduct_helper(t)
+def _coproduct_2(t):
+    cp = _coproduct_helper_2(t)
     return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).reduce()
+
+@cache
+def _coproduct(t):
+    # This follows the recursive definition of https://arxiv.org/pdf/hep-th/9808042
+    # using B_- and B_+
+    if t == Tree(None):
+        return TensorProductSum(( (1, EMPTY_FOREST, EMPTY_FOREST), )) # Tree(None) @ Tree(None)
+    if len(t.list_repr) == 1:
+        return TensorProductSum(( (1, EMPTY_FOREST, t.as_forest()), (1, t.as_forest(), EMPTY_FOREST) )) # Tree(None) @ t + t @ Tree(None)
+
+    root_color = t.list_repr[-1]
+    branches = t.unjoin()
+
+    cp_prod = 1
+    for subtree in branches:
+        cp = _coproduct(subtree)
+        cp_prod = cp_prod * cp
+
+    # Return t \otimes \emptyset + (id \otimes B_+)[\Delta(B_-(t))]
+    out = t @ Tree(None) + TensorProductSum(tuple((c, f1, f2.join(root_color)) for c, f1, f2 in cp_prod))
+    return out.reduce()

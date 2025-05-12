@@ -83,7 +83,8 @@ class Tree:
 
     def unjoin(self) -> 'Forest':
         """
-        For a tree :math:`t = [t_1, t_2, ..., t_k]`, returns the forest :math:`t_1 t_2 \\cdots t_k`
+        For a tree :math:`t = [t_1, t_2, ..., t_k]`, returns the forest :math:`t_1 t_2 \\cdots t_k`.
+        In :cite:`connes1999hopf`, this map is denoted by :math:`B_-`.
 
         :return: :math:`t_1 t_2 \\cdots t_k`
         :rtype: Forest
@@ -573,10 +574,13 @@ class Forest:
     def __iter__(self):
         yield from self.tree_list
 
-    def join(self) -> 'Tree':
+    def join(self, root_color : int = 0) -> 'Tree':
         """
         For a forest :math:`t_1 t_2 \\cdots t_k`, returns the tree :math:`[t_1, t_2, \\cdots, t_k]`.
+        In :cite:`connes1999hopf`, this map is denoted by :math:`B_+`.
 
+        :param root_color: Color to assign to the root (default 0)
+        :type root_color: int
         :return: :math:`[t_1, t_2, \\cdots, t_k]`
         :rtype: Tree
 
@@ -585,7 +589,10 @@ class Forest:
             f = Tree([]) * Tree([[]])
             f.join() #Returns Tree([[],[[]]])
         """
-        out = [t.list_repr for t in self.tree_list]
+        if not isinstance(root_color, int):
+            raise TypeError("root_color must be int, not " + str(type(root_color)))
+
+        out = [t.list_repr for t in self.tree_list] + [root_color]
         out = tuple(filter(lambda x: x is not None, out))
         return Tree(out)
 
@@ -1381,16 +1388,26 @@ class TensorProductSum:
             raise TypeError("Cannot subtract " + str(type(other)) + " from TensorSum")
         return self + (-other)
 
-    def __mul__(self, other : Union[int, float]) -> 'TensorProductSum':
+    def __mul__(self, other : Union[int, float, 'TensorProductSum']) -> 'TensorProductSum':
         """
-        Multiplies a tensor product sum by a scalar.
+        Multiplies a tensor product sum by a scalar or tensor product sum.
 
-        :param other: Scalar
-        :type other: int | float
+        :param other: Other
+        :type other: int | float | TensorProductSum
         """
-        if isinstance(other, (int, float)):
+        if isinstance(other, TensorProductSum):
+            new_term_list = []
+            for c1, f11, f12 in self:
+                for c2, f21, f22 in other:
+                    new_term_list.append((c1 * c2, f11 * f21, f12 * f22))
+            return TensorProductSum(tuple(new_term_list))
+        elif isinstance(other, (int, float)):
             return TensorProductSum(tuple((other * x[0], x[1], x[2]) for x in self.term_list))
         raise TypeError("Cannot multiply TensorSum by " + str(type(other)))
+
+    __radd__ = __add__
+    __rsub__ = __sub__
+    __rmul__ = __mul__
 
     def __iter__(self):
         for c, f1, f2 in self.term_list:
