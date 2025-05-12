@@ -380,7 +380,7 @@ class RK:
             raise TypeError("h must be a float, not " + str(type(h)))
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))
-        if not isinstance(max_iter, float):
+        if not isinstance(max_iter, int):
             raise TypeError("max_iter must be an int, not " + str(type(max_iter)))
 
         def f_(t_, y_):
@@ -444,7 +444,7 @@ class RK:
             raise TypeError("n must be a float, not " + str(type(n)))
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))
-        if not isinstance(max_iter, float):
+        if not isinstance(max_iter, int):
             raise TypeError("max_iter must be an int, not " + str(type(max_iter)))
         if not (isinstance(plot, bool) or plot is None):
             raise TypeError("plot must be a bool, not " + str(type(plot)))

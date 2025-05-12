@@ -7,7 +7,7 @@ import copy
 from functools import lru_cache
 from typing import Union, Callable
 
-from .trees import Tree, Forest, ForestSum, _is_reducible, EMPTY_TREE, _is_tree_like
+from .trees import Tree, Forest, ForestSum, _is_simplifiable, EMPTY_TREE, _is_tree_like
 from .generic_algebra import _apply, _func_power, _func_product
 
 from .bck_impl import _coproduct as bck_coproduct
@@ -86,7 +86,7 @@ class Map:
                     out = other.func(EMPTY_TREE)
                 else:
                     out = _func_product(x, func_, other.func, cem_coproduct)
-                if _is_reducible(out):
+                if _is_simplifiable(out):
                     out = out.singleton_reduced()
                 return out
             self.func = f_

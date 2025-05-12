@@ -30,7 +30,7 @@ def _antipode(t):
             continue # We've already included the -t term at the start, so move on
         out = out - c * _antipode(subtree) * branches
 
-    return out.singleton_reduced().reduce() # Single node tree is the unit, so can apply .singleton_reduced() here
+    return out.singleton_reduced().simplify() # Single node tree is the unit, so can apply .singleton_reduced() here
 
 @cache
 def _coproduct_helper(t):
@@ -89,7 +89,7 @@ def _coproduct_helper(t):
             # Must ensure that the first tree in the forest is connected to the root,
             # as it's important to know what this tree is for the recursion.
             # If no such tree, add an empty tree to the forest to signify this
-            # Forest constructor does not call Forest.reduce(), meaning this empty tree will survive
+            # Forest constructor does not call Forest.simplify(), meaning this empty tree will survive
             t_list_ = []
             root_tree_repr = [] # The tree connected to the root
             for edge, f in zip(edges, p):
@@ -105,5 +105,5 @@ def _coproduct_helper(t):
 
 def _coproduct(t):
     f, s = _coproduct_helper(t)
-    cp = zip([x.reduce().singleton_reduced() for x in f], s)
-    return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).reduce()
+    cp = zip([x.simplify().singleton_reduced() for x in f], s)
+    return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).simplify()

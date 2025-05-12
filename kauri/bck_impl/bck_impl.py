@@ -26,7 +26,7 @@ def _antipode(t):
             continue # We've already included the -t term at the start, so move on
         out = out - c * _forest_apply(branches, _antipode) * subtree
 
-    return out.reduce()
+    return out.simplify()
 
 @cache
 def _coproduct_helper_2(t):
@@ -77,7 +77,7 @@ def _coproduct_helper_2(t):
 
 def _coproduct_2(t):
     cp = _coproduct_helper_2(t)
-    return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).reduce()
+    return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).simplify()
 
 @cache
 def _coproduct(t):
@@ -98,4 +98,4 @@ def _coproduct(t):
 
     # Return t \otimes \emptyset + (id \otimes B_+)[\Delta(B_-(t))]
     out = t @ Tree(None) + TensorProductSum(tuple((c, f1, f2.join(root_color)) for c, f1, f2 in cp_prod))
-    return out.reduce()
+    return out.simplify()

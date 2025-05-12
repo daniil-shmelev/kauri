@@ -1,7 +1,7 @@
 """
 Utility functions for dealing with generic Hopf algebras on trees
 """
-from .trees import Forest, ForestSum, _is_reducible
+from .trees import Forest, ForestSum, _is_simplifiable
 
 def _forest_apply(f, func):
     # Apply a function func multiplicatively to a forest f
@@ -9,8 +9,8 @@ def _forest_apply(f, func):
     for t in f.tree_list:
         out = out * func(t)
 
-    if _is_reducible(out):
-        out = out.reduce()
+    if _is_simplifiable(out):
+        out = out.simplify()
     return out
 
 def _forest_sum_apply(fs, func):
@@ -22,8 +22,8 @@ def _forest_sum_apply(fs, func):
             term = term * func(t)
         out += c * term
 
-    if _is_reducible(out):
-        out = out.reduce()
+    if _is_simplifiable(out):
+        out = out.simplify()
     return out
 
 def _apply(t, func):
@@ -50,8 +50,8 @@ def _func_product(t, func1, func2, coproduct):
         subtree = subtree_[0] # subtree_ is a forest with one tree, which is subtree_[0]
         out += c * _forest_apply(branches, func1) * func2(subtree)
 
-    if _is_reducible(out):
-        out = out.reduce()
+    if _is_simplifiable(out):
+        out = out.simplify()
 
     return out
 
@@ -73,6 +73,6 @@ def _func_power(t, func, exponent, coproduct, counit, antipode):
             return _func_power(x, func, exponent - 1, coproduct, counit, antipode)
         res = _func_product(t, func, m, coproduct)
 
-    if _is_reducible(res):
-        res = res.reduce()
+    if _is_simplifiable(res):
+        res = res.simplify()
     return res

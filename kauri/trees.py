@@ -4,12 +4,12 @@ Tree, Forest, ForestSum and TensorProductSum classes.
 The classes `Tree`, `Forest` and `ForestSum` are immutable and hashable.
 The hash is generated in such a way that two elements of the same class which are equivalent
 (e.g. two different orderings of the same tree) will have the same hash.
-However, this is not the case across classes. For example, for a Tree t, `hash(t)`, `hash(t.as_forest())`
-and `hash(t.as_forest_sum())` are different.
+However, this is not the case across classes. For example, for a Tree t, `hash(t)`,
+`hash(t.as_forest())` and `hash(t.as_forest_sum())` are different.
 
-The class `Tree` is totally ordered by the lexicographic ordering. If the trees have the same structure
-but are colored differently, they are ordered based on color, with the color of the highest levels of the
-trees being the primary ordering.
+The class `Tree` is totally ordered by the lexicographic ordering. If the trees have
+the same structure but are colored differently, they are ordered based on color, with
+the color of the highest levels of the trees being the primary ordering.
 
 """
 
@@ -22,7 +22,7 @@ import warnings
 
 from .utils import (_nodes, _height, _factorial, _sigma,
                     _sorted_list_repr, _list_repr_to_level_sequence,
-                    _to_tuple, _to_list, _next_layout, _level_sequence_to_list_repr,
+                    _to_list, _next_layout, _level_sequence_to_list_repr,
                     _check_valid, _to_labelled_tuple, _get_max_color, _to_unlabelled_tuple,
                     _list_repr_to_color_sequence, LabelledReprComparison)
 
@@ -75,8 +75,7 @@ class Tree:
             return "\u2205"
         if self._max_color == 0:
             return repr(_to_list(self.unlabelled_repr))
-        else:
-            return repr(_to_list(self.list_repr))
+        return repr(_to_list(self.list_repr))
 
     def __hash__(self):
         return hash(self.sorted_list_repr())
@@ -114,8 +113,8 @@ class Tree:
 
     def colors(self) -> int:
         """
-        Returns the number of colors/labels in a labelled tree. Since the labels are indexed starting from 0,
-        this is equivalent to one more than the maximum label.
+        Returns the number of colors/labels in a labelled tree. Since the labels
+        are indexed starting from 0, this is equivalent to one more than the maximum label.
 
         :return: Number of colors
         :rtype: int
@@ -267,7 +266,7 @@ class Tree:
         else:
             raise TypeError("Cannot multiply Tree by object of type " + str(type(other)))
 
-        return out.reduce()
+        return out.simplify()
 
     __rmul__ = __mul__
 
@@ -290,7 +289,7 @@ class Tree:
             return EMPTY_FOREST
 
         out = Forest((self,) * n)
-        return out.reduce()
+        return out.simplify()
 
     def __add__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'ForestSum':
         """
@@ -312,7 +311,7 @@ class Tree:
         else:
             raise TypeError("Cannot add Tree and " + str(type(other)))
 
-        return out.reduce()
+        return out.simplify()
 
     def __sub__(self, other):
         return self + (-other)
@@ -354,16 +353,14 @@ class Tree:
         if self.list_repr is None:
             if other.list_repr is None:
                 return False
-            else:
-                return True
+            return True
         if other.list_repr is None:
             return False
 
         # If trees are non-empty
         if self.nodes() != other.nodes():
             return self.nodes() < other.nodes()
-        else:
-            return LabelledReprComparison(self.sorted_list_repr()) < LabelledReprComparison(other.sorted_list_repr())
+        return LabelledReprComparison(self.sorted_list_repr()) < LabelledReprComparison(other.sorted_list_repr())
 
     def sorted_list_repr(self) -> list:
         """
@@ -538,7 +535,7 @@ class Forest:
 
     def _set_counter(self):
         if self.count is None:
-            object.__setattr__(self, 'count', Counter(self.reduce().tree_list))
+            object.__setattr__(self, 'count', Counter(self.simplify().tree_list))
 
     def _set_hash(self):
         self._set_counter()
@@ -549,7 +546,7 @@ class Forest:
         self._set_hash()
         return self.hash_
 
-    def reduce(self) -> 'Forest':  # Remove redundant empty trees
+    def simplify(self) -> 'Forest':  # Remove redundant empty trees
         """
         Simplify the forest by removing redundant empty trees.
 
@@ -559,7 +556,7 @@ class Forest:
         Example usage::
 
             f = Tree([[],[[]]]) * Tree(None)
-            f.reduce() #Returns Tree([[],[[]]])
+            f.simplify() #Returns Tree([[],[[]]])
         """
         if len(self.tree_list) <= 1:
             return self
@@ -624,8 +621,8 @@ class Forest:
 
     def colors(self) -> int:
         """
-        Returns the number of colors/labels in the forest. Since the labels are indexed starting from 0,
-        this is equivalent to one more than the maximum label.
+        Returns the number of colors/labels in the forest. Since the labels are
+        indexed starting from 0, this is equivalent to one more than the maximum label.
 
         :return: Number of colors
         :rtype: int
@@ -709,7 +706,7 @@ class Forest:
         else:
             raise TypeError("Cannot multiply Forest and " + str(type(other)))
 
-        return out.reduce()
+        return out.simplify()
 
     __rmul__ = __mul__
 
@@ -731,7 +728,7 @@ class Forest:
         if n == 0:
             return EMPTY_FOREST
         out = Forest(self.tree_list * n)
-        return out.reduce()
+        return out.simplify()
 
     def __add__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'ForestSum':
         """
@@ -753,7 +750,7 @@ class Forest:
         else:
             raise TypeError("Cannot add Forest and " + str(type(other)))
 
-        return out.reduce()
+        return out.simplify()
 
     def __sub__(self, other):
         return self + (-other)
@@ -834,7 +831,7 @@ class Forest:
         """
         if self.colors() > 1:
             warnings.warn("Singleton reduced representation will not respect colorings")
-        out = self.reduce()
+        out = self.simplify()
         if len(out.tree_list) > 1:
             new_tree_list = tuple(filter(lambda x: len(x.list_repr) != 1, out.tree_list))
             if len(new_tree_list) == 0:
@@ -922,7 +919,7 @@ class ForestSum:
 
     def _set_counter(self):
         if self.count is None:
-            object.__setattr__(self, 'count', Counter(self.reduce().term_list))
+            object.__setattr__(self, 'count', Counter(self.simplify().term_list))
 
     def _set_hash(self):
         self._set_counter()
@@ -968,8 +965,8 @@ class ForestSum:
 
     def colors(self) -> int:
         """
-        Returns the number of colors/labels in the forest sum. Since the labels are indexed starting from 0,
-        this is equivalent to one more than the maximum label.
+        Returns the number of colors/labels in the forest sum. Since the labels are
+        indexed starting from 0, this is equivalent to one more than the maximum label.
 
         :return: Number of colors
         :rtype: int
@@ -1011,7 +1008,7 @@ class ForestSum:
         return len(self.term_list)
 
 
-    def reduce(self) -> 'ForestSum':
+    def simplify(self) -> 'ForestSum':
         """
         Simplify the forest sum by removing redundant empty trees
         and cancelling terms where applicable.
@@ -1022,13 +1019,13 @@ class ForestSum:
         Example usage::
 
             s = Tree([[],[[]]]) * Tree(None) + Tree([]) + Tree([[]]) - Tree([[]])
-            s.reduce() #Returns Tree([[],[[]]]) + Tree([])
+            s.simplify() #Returns Tree([[],[[]]]) + Tree([])
         """
         new_forest_list = []
         new_coeff_list = []
 
         for c, f in self.term_list:
-            f_reduced = f.reduce()
+            f_reduced = f.simplify()
 
             for i, f2 in enumerate(new_forest_list):
                 if f_reduced.equals(f2):
@@ -1096,7 +1093,7 @@ class ForestSum:
             raise TypeError("Cannot multiply ForestSum and " + str(type(object)))
 
         out = ForestSum(new_term_list)
-        return out.reduce()
+        return out.simplify()
 
     __rmul__ = __mul__
 
@@ -1123,7 +1120,7 @@ class ForestSum:
         for _ in range(n-1):
             temp = temp * self
 
-        return temp.reduce()
+        return temp.simplify()
 
     def __add__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'ForestSum':
         """
@@ -1146,7 +1143,7 @@ class ForestSum:
             raise TypeError("Cannot add ForestSum and " + str(type(other)))
 
         out = ForestSum(new_term_list)
-        return out.reduce()
+        return out.simplify()
 
     def __sub__(self, other):
         return self + (- other)
@@ -1256,7 +1253,7 @@ def _is_scalar(obj):
 def _is_tree_or_forest(obj):
     return isinstance(obj, (Tree, Forest))
 
-def _is_reducible(obj):
+def _is_simplifiable(obj):
     return isinstance(obj, (Forest, ForestSum))
 
 def _is_tree_like(obj):
@@ -1319,7 +1316,7 @@ class TensorProductSum:
                 r += " " + term_str
         return r
 
-    def reduce(self) -> 'TensorProductSum':
+    def simplify(self) -> 'TensorProductSum':
         """
         Simplify the tensor product sum by removing redundant empty trees
         and cancelling terms where applicable.
@@ -1330,13 +1327,13 @@ class TensorProductSum:
         Example usage::
 
             tp = Tree([[],[[]]]) @ (Tree([]) * Tree(None)) + Tree([]) @ Tree([[]]) - Tree([]) @ Tree([[]])
-            tp.reduce() #Returns 1 [[], [[]]] ⊗ []
+            tp.simplify() #Returns 1 [[], [[]]] ⊗ []
         """
         new_term_list = []
 
         for c, f1, f2 in self.term_list:
-            f1_reduced = f1.reduce()
-            f2_reduced = f2.reduce()
+            f1_reduced = f1.simplify()
+            f2_reduced = f2.simplify()
 
             for i, (_, f1_, f2_) in enumerate(new_term_list):
                 if f1_reduced.equals(f1_) and f2_reduced.equals(f2_):
@@ -1368,7 +1365,7 @@ class TensorProductSum:
 
     def _set_counter(self):
         if self.count is None:
-            object.__setattr__(self, 'count', Counter(self.reduce().term_list))
+            object.__setattr__(self, 'count', Counter(self.simplify().term_list))
 
     def _set_hash(self):
         self._set_counter()
@@ -1437,7 +1434,7 @@ class TensorProductSum:
                 for c2, f21, f22 in other:
                     new_term_list.append((c1 * c2, f11 * f21, f12 * f22))
             return TensorProductSum(tuple(new_term_list))
-        elif isinstance(other, (int, float)):
+        if isinstance(other, (int, float)):
             return TensorProductSum(tuple((other * x[0], x[1], x[2]) for x in self.term_list))
         raise TypeError("Cannot multiply TensorSum by " + str(type(other)))
 
@@ -1456,4 +1453,15 @@ class TensorProductSum:
         return self.term_list[i]
 
     def colors(self):
+        """
+        Returns the number of colors/labels in the tensor product sum. Since the labels are
+        indexed starting from 0, this is equivalent to one more than the maximum label.
+
+        :return: Number of colors
+        :rtype: int
+
+        Example usage::
+
+            (Tree([[9],0]) @ Tree([3]) + Tree([2]) @ Tree([4])).colors() # Returns 10
+        """
         return max(max(f1.colors(), f2.colors()) for _, f1, f2 in self.term_list)
