@@ -518,6 +518,8 @@ class Forest:
     """
 ######################################
     tree_list : Union[tuple, list] = tuple()
+    count : Counter = None
+    hash_ : int = None
 
     def __post_init__(self):
         tuple_repr = tuple(self.tree_list)
@@ -534,9 +536,18 @@ class Forest:
         memodict[id(self)] = self
         return self
 
+    def _set_counter(self):
+        if self.count is None:
+            object.__setattr__(self, 'count', Counter(self.reduce().tree_list))
+
+    def _set_hash(self):
+        self._set_counter()
+        if self.hash_ is None:
+            object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
+
     def __hash__(self):
-        counts = Counter(self.reduce().tree_list)
-        return hash(frozenset(counts.items()))
+        self._set_hash()
+        return self.hash_
 
     def reduce(self) -> 'Forest':  # Remove redundant empty trees
         """
@@ -754,7 +765,9 @@ class Forest:
         return self * (-1)
 
     def equals(self, other_forest):
-        return Counter(self.reduce().tree_list) == Counter(other_forest.reduce().tree_list)
+        self._set_counter()
+        other_forest._set_counter()
+        return self.count == other_forest.count
 
     def __eq__(self, other : Union['Forest', 'ForestSum']) -> bool:
         """
@@ -878,6 +891,8 @@ class ForestSum:
     """
 ######################################
     term_list : Union[tuple, list] = tuple()
+    count : Counter = None
+    hash_ : int = None
 
     def __post_init__(self):
         new_term_list = []
@@ -905,9 +920,18 @@ class ForestSum:
         memodict[id(self)] = self
         return self
 
+    def _set_counter(self):
+        if self.count is None:
+            object.__setattr__(self, 'count', Counter(self.reduce().term_list))
+
+    def _set_hash(self):
+        self._set_counter()
+        if self.hash_ is None:
+            object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
+
     def __hash__(self):
-        self_reduced = self.reduce()
-        return hash(frozenset(Counter(self_reduced.term_list).items()))
+        self._set_hash()
+        return self.hash_
 
     def __repr__(self):
         if len(self.term_list) == 0:
@@ -1134,9 +1158,9 @@ class ForestSum:
         return self * (-1)
 
     def equals(self, other):
-        self_reduced = self.reduce()
-        other_reduced = other.reduce()
-        return Counter(self_reduced.term_list) == Counter(other_reduced.term_list)
+        self._set_counter()
+        other._set_counter()
+        return self.count == other.count
 
 
     def __eq__(self, other : 'ForestSum') -> bool:
@@ -1261,6 +1285,8 @@ class TensorProductSum:
             tp = Tree([]) @ Tree([[]]) - 2 * Tree([[],[]]) @ Tree(None)
     """
     term_list: Union[tuple, list, None] #(c, f1, f2)
+    count : Counter = None
+    hash_ : int = None
 
     def __post_init__(self):
         tuple_list = []
@@ -1340,6 +1366,15 @@ class TensorProductSum:
         """
         return TensorProductSum(tuple((c, f1.singleton_reduced(), f2.singleton_reduced()) for c, f1, f2 in self.term_list))
 
+    def _set_counter(self):
+        if self.count is None:
+            object.__setattr__(self, 'count', Counter(self.reduce().term_list))
+
+    def _set_hash(self):
+        self._set_counter()
+        if self.hash_ is None:
+            object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
+
     def __eq__(self, other : 'TensorProductSum') -> bool:
         """
         Compares the tensor product sum with another tensor product sum and returns true if
@@ -1362,12 +1397,13 @@ class TensorProductSum:
         """
         if not isinstance(other, TensorProductSum):
             raise TypeError("Cannot check equality of TensorSum and " + str(type(other)))
-        self_reduced = self.reduce()
-        other_reduced = other.reduce()
-        return Counter(self_reduced.term_list) == Counter(other_reduced.term_list)
+        self._set_counter()
+        other._set_counter()
+        return self.count == other.count
 
     def __hash__(self):
-        return hash(frozenset(Counter(self.term_list).items()))
+        self._set_hash()
+        return self.hash_
 
     def __add__(self, other : 'TensorProductSum') -> 'TensorProductSum':
         """
