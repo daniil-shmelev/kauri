@@ -11,6 +11,10 @@ often used in the study of B-series, Runge-Kutta methods, and backward error ana
 pip install kauri
 ```
 
+## Documentation
+
+Full documentation is available at [https://kauri.readthedocs.io](https://kauri.readthedocs.io)
+
 ## Functionalities
 
 The main goal of the kauri package is to provide implementations of:
