@@ -7,7 +7,8 @@ from typing import Union
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-from .trees import Tree, ForestSum, Forest, TensorProductSum
+from .trees import Tree, ForestSum, Forest
+from .tensor_product import TensorProductSum
 from .utils import _branch_level_sequences, _str
 
 EMPTY_FONTSIZE = 10

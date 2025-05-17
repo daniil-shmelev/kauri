@@ -3,7 +3,8 @@ Front-end for the BCK module
 """
 from ..bck_impl import _counit, _coproduct, _antipode
 from ..maps import Map
-from ..trees import Tree, TensorProductSum
+from ..trees import Tree
+from ..tensor_product import TensorProductSum
 
 counit = Map(_counit)
 counit.__doc__ = """

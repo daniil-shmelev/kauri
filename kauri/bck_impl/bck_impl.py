@@ -3,8 +3,8 @@ Back-end for the BCK module
 """
 from functools import cache
 import itertools
-from ..trees import (Tree, Forest, TensorProductSum,
-                     EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM)
+from ..trees import Tree, Forest, EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM
+from ..tensor_product import TensorProductSum
 from ..generic_algebra import _forest_apply
 
 def _counit(t):

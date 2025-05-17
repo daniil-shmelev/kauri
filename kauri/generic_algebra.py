@@ -1,7 +1,8 @@
 """
 Utility functions for dealing with generic Hopf algebras on trees
 """
-from .trees import Forest, ForestSum, _is_simplifiable
+from .abstract_tree import _is_simplifiable
+from .trees import Forest, ForestSum
 
 def _forest_apply(f, func):
     # Apply a function func multiplicatively to a forest f

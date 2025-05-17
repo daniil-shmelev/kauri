@@ -3,7 +3,8 @@ Back-end for the CEM module
 """
 from functools import cache
 import itertools
-from ..trees import (Tree, Forest, TensorProductSum)
+from ..trees import Tree, Forest
+from ..tensor_product import TensorProductSum
 
 # We adopt the singleton-reduced coproduct, which defines a Hopf algebra
 # on planar trees quotiented by ([] - 1). As such, characters on the
