@@ -131,7 +131,7 @@ def _display_plotly(forest_sum,
     gap = scale / 2
     traces = []
 
-    if not isinstance(forest_sum, ForestSum):
+    if not isinstance(forest_sum, AbstractForestSum):
         if isinstance(forest_sum, (int, float)):
             forest_sum = Tree(None) * forest_sum
         else:
@@ -312,12 +312,12 @@ def _display_plt(forest_sum,
     coeff_gap = scale / 2
 
     plt.figure(figsize = fig_size)
-    if not isinstance(forest_sum, ForestSum):
+    if not isinstance(forest_sum, AbstractForestSum):
         if isinstance(forest_sum, (int, float)):
             forest_sum = Tree(None) * forest_sum
         else:
             forest_sum = forest_sum.as_forest_sum()
-    if forest_sum == ForestSum([]):
+    if forest_sum.nodes() == 0:
         plt.text(0, 0, str(0))
         h = 1
     else:
@@ -395,7 +395,7 @@ def _display_tensor_plt(tensor_sum,
 #Display
 ###############################################################
 
-def display(obj : Union[Tree, Forest, ForestSum, TensorProductSum],
+def display(obj : Union[AbstractTree, AbstractForest, AbstractForestSum, TensorProductSum],
             *,
             scale : float = None,
             fig_size : tuple = None,
@@ -418,7 +418,7 @@ def display(obj : Union[Tree, Forest, ForestSum, TensorProductSum],
         Plotly is quicker, but results in larger file sizes when used in notebooks.
     :type use_plt: bool
     """
-    if not isinstance(obj, (Tree, Forest, ForestSum, TensorProductSum)):
+    if not isinstance(obj, (AbstractTree, AbstractForest, AbstractForestSum, TensorProductSum)):
         raise TypeError("Cannot display object of type " + str(type(obj)) + ". Object must be Tree, Forest, ForestSum or TensorProductSum.")
 
     if obj.colors() > 9:

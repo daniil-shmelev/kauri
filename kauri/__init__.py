@@ -3,7 +3,7 @@ Algebraic manipulation of rooted trees for the analysis of B-series and Runge-Ku
 """
 from .abstract_tree import TensorProductSum
 from .trees import Tree, Forest, ForestSum
-from .tensor_product import TensorProductSum
+from .ptrees import PTree, PForest, PForestSum
 from .maps import Map, ident, sign, exact_weights, omega
 from .display import display
 from .gentrees import trees_of_order, trees_up_to_order
