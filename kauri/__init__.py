@@ -1,6 +1,7 @@
 """
 Algebraic manipulation of rooted trees for the analysis of B-series and Runge-Kutta schemes.
 """
+from .abstract_tree import TensorProductSum
 from .trees import Tree, Forest, ForestSum
 from .tensor_product import TensorProductSum
 from .maps import Map, ident, sign, exact_weights, omega

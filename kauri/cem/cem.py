@@ -4,7 +4,7 @@ Front-end for the CEM module
 from ..cem_impl import _counit, _coproduct, _antipode
 from ..maps import Map
 from ..trees import Tree
-from ..tensor_product import TensorProductSum
+from ..abstract_tree import TensorProductSum
 from ..generic_algebra import _func_power
 
 counit = Map(_counit)
