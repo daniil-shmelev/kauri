@@ -28,8 +28,9 @@ from tqdm import tqdm
 
 from .gentrees import trees_of_order
 from .trees import Tree, Forest, ForestSum
-from .maps import Map
+from .maps import Map, sign
 from .generic_algebra import _apply
+from .bck import counit
 
 def _internal_symbolic(i, t_rep, a, b, s):
     return sum(a[i,j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
@@ -456,7 +457,7 @@ class RK:
         if not callable(f):
             raise TypeError("f must be callable")
         if not isinstance(n, int):
-            raise TypeError("n must be a float, not " + str(type(n)))
+            raise TypeError("n must be an int, not " + str(type(n)))
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))
         if not isinstance(max_iter, int):
