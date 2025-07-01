@@ -24,7 +24,8 @@ from .rk import RK, rk_symbolic_weight, rk_order_cond
 
 from .rk_methods import (euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
                          ralston_rk3, rk4, ralston_rk4, nystrom_rk5, backward_euler,
-                         implicit_midpoint, crank_nicolson, gauss6, radau_iia, lobatto6)
+                         implicit_midpoint, crank_nicolson, gauss6, radau_iia, lobatto6,
+                         EES25, EES27)
 
 from .bseries import BSeries, elementary_differential
 

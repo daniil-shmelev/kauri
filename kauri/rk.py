@@ -656,7 +656,7 @@ class RK:
         """
         return self.elementary_weights_map().modified_equation()
 
-    def order(self, tol : float = 1e-15) -> int:
+    def order(self, tol : float = 1e-10) -> int:
         """
         Returns the order of the RK scheme.
 
@@ -673,4 +673,20 @@ class RK:
             for t in trees_of_order(n):
                 if abs(self._elementary_weights(t.list_repr) - 1. / t.factorial()) > tol:
                     return n-1
-            n += 1
+            n += 1 #TODO: make this terminate after some big order, say 10
+
+    def symmetric_order(self, tol : float = 1e-10) -> int:
+        #TODO: Doc, citing paper
+
+        if not isinstance(tol, float):
+            raise TypeError("tol must be a float, not " + str(type(tol)))
+
+        ew = self.elementary_weights_map()
+        m = (ew & sign) * ew
+
+        n = 0
+        while True:
+            for t in trees_of_order(n):
+                if abs(m(t) - counit(t)) > tol:
+                    return n - 1
+            n += 1 #TODO: make this terminate after some big order, say 10

@@ -37,11 +37,13 @@ class RKTests(unittest.TestCase):
             self.assertAlmostEqual(exact_weights(t), rk_weights(t))
 
     def test_order(self):
-        schemes = [heun_rk2, heun_rk3, rk4, nystrom_rk5]
-        orders = [2,3,4,5]
+        methods = [euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
+                   ralston_rk3, rk4, ralston_rk4, nystrom_rk5, backward_euler,
+                   implicit_midpoint, crank_nicolson, gauss6, radau_iia, lobatto6]
+        orders = [1, 2, 2, 3, 3, 3, 4, 4, 5, 1, 2, 2, 6, 5, 6]
 
-        for scheme, order in zip(schemes, orders):
-            self.assertEqual(order, scheme.order())
+        for m, ord in zip(methods, orders):
+            self.assertEqual(ord, m.order(), msg=m.name)
 
     def test_symbolic_weight(self):
         t = Tree([[], []])
@@ -72,3 +74,13 @@ class RKTests(unittest.TestCase):
     #         if t == Tree(None):
     #             continue
     #         self.assertAlmostEqual(m1(t), m2(t), msg = repr(t))
+
+    def test_ees25_order(self):
+        rk = EES25(0.1)
+        self.assertEqual(2, rk.order())
+        self.assertEqual(5, rk.symmetric_order())
+
+    def test_ees27_order(self):
+        rk = EES27(0.1)
+        self.assertEqual(2, rk.order())
+        self.assertEqual(7, rk.symmetric_order())
