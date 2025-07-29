@@ -36,6 +36,8 @@ Explicit Methods
     :no-value:
 .. autodata:: nystrom_rk5
     :no-value:
+.. autofunction:: EES25
+.. autofunction:: EES27
 
 Implicit Methods
 ~~~~~~~~~~~~~~~~~~

@@ -18,5 +18,6 @@ Docs
    /pages/bck
    /pages/cem
    /pages/bseries
+   /pages/oddeven
    /pages/display
 

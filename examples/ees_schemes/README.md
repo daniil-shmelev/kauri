@@ -1,6 +1,7 @@
 # Explicit and Effectively Symmetric Runge-Kutta Methods
 
-This directory contains supporting code for the paper "Explicit and Effectively Symmetric Runge-Kutta Methods" [ARXIV].
+This directory contains supporting code for the paper
+_[Explicit and Effectively Symmetric Runge-Kutta Methods](https://arxiv.org/abs/2507.21006)_.
 
 ## Derivation of EES Schemes
 
@@ -40,5 +41,12 @@ using the implicit midpoint scheme and various EES schemes.
 The notebook `galactic_orbit.ipynb` runs the example of a galactic orbit
 using classical Runge-Kutta methods and EES(2,7).
 
-
-[//]: # (TODO: add paper citation here)
+## Citation
+```bibtex    
+@misc{shmelev2025ees,
+  title={Explicit and Effectively Symmetric Runge-Kutta Methods}, 
+  author={Shmelev, Daniil and Ebrahimi-Fard, Kurusch and Tapia, Nikolas and Salvi, Cristopher},
+  journal={arXiv:2507.21006},
+  year={2025}
+}
+```

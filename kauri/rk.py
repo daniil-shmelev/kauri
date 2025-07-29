@@ -675,8 +675,15 @@ class RK:
                     return n-1
             n += 1 #TODO: make this terminate after some big order, say 10
 
-    def symmetric_order(self, tol : float = 1e-10) -> int:
-        #TODO: Doc, citing paper
+    def antisymmetric_order(self, tol : float = 1e-10) -> int:
+        """
+        Returns the antisymmetric order of the RK scheme. See :cite:`shmelev2025ees`
+        for details.
+
+        :param tol: Tolerance for evaluating order conditions.
+        :type tol: float
+        :rtype: int
+        """
 
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))

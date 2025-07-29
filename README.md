@@ -169,13 +169,13 @@ F([t_1, t_2, \ldots, t_k])(y) = f^{(k)}(y)(F(t_1)(y), F(t_2)(y), \ldots, F(t_k)(
 ```
 
 ## Citation
-
-```bibtex
-@misc{shmelev2025kauri,
-  title={Kauri: Algebraic manipulation of non-planar rooted trees in Python},
-  author={Shmelev, Daniil},
-  year={2025},
-  howpublished={\url{https://github.com/daniil-shmelev/kauri}}
+If you found this library useful in your research, please consider citing:
+```bibtex    
+@misc{shmelev2025ees,
+  title={Explicit and Effectively Symmetric Runge-Kutta Methods}, 
+  author={Shmelev, Daniil and Ebrahimi-Fard, Kurusch and Tapia, Nikolas and Salvi, Cristopher},
+  journal={arXiv:2507.21006},
+  year={2025}
 }
 ```
 

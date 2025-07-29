@@ -288,21 +288,38 @@ Butcher’s Lobatto formula of order 6
 
 .. math::
 
-        \\begin{array}{c|cccc}
-            0 & 0 & 0 & 0 & 0 \\\\
-            \\frac{5 - \\sqrt{5}}{10} & \\frac{5 + \\sqrt{5}}{60} & \\frac{1}{6} & \\frac{15 - 7\\sqrt{5}}{60} & 0 \\\\
-            \\frac{5 + \\sqrt{5}}{10} & \\frac{5 - \\sqrt{5}}{60} & \\frac{15 + 7\\sqrt{5}}{60} & \\frac{1}{6} & 0 \\\\
-            1 & \\frac{1}{6} & \\frac{5 - \\sqrt{5}}{12} & \\frac{5 + \\sqrt{5}}{12} & 0 \\\\
-            \\hline
-             & \\frac{1}{12} & \\frac{5}{12} & \\frac{5}{12} & \\frac{1}{12}
-        \\end{array}
+    \\begin{array}{c|cccc}
+        0 & 0 & 0 & 0 & 0 \\\\
+        \\frac{5 - \\sqrt{5}}{10} & \\frac{5 + \\sqrt{5}}{60} & \\frac{1}{6} & \\frac{15 - 7\\sqrt{5}}{60} & 0 \\\\
+        \\frac{5 + \\sqrt{5}}{10} & \\frac{5 - \\sqrt{5}}{60} & \\frac{15 + 7\\sqrt{5}}{60} & \\frac{1}{6} & 0 \\\\
+        1 & \\frac{1}{6} & \\frac{5 - \\sqrt{5}}{12} & \\frac{5 + \\sqrt{5}}{12} & 0 \\\\
+        \\hline
+         & \\frac{1}{12} & \\frac{5}{12} & \\frac{5}{12} & \\frac{1}{12}
+    \\end{array}
 """
 
 #######################################################################################
 ################################# EES Methods #########################################
 #######################################################################################
 
-def EES25(x):#TODO: Doc
+def EES25(x):
+    """
+    The Explicit and Effectively Symmetric scheme of order 2 and antisymmetric order 5,
+    :math:`EES(2,5;x)` :cite:`shmelev2025ees`.
+
+    .. math::
+
+        \\begin{array}{c|cccc}
+            0 & 0 & 0 & 0 \\\\
+            \\displaystyle\\frac{1+2x}{4(1-x)} & \\displaystyle\\frac{1+2x}{4(1-x)} & 0 & 0 \\\\
+            \\displaystyle\\frac{3}{4(1-x)} & \\displaystyle\\frac{(4x-1)^2}{4(x-1)(1-4x^2)} & \\displaystyle\\frac{1-x}{(1-4x^2)} & 0 \\\\
+            \\hline
+            & x & \\displaystyle\\frac{1}{2} & \\displaystyle\\frac{1}{2} - x
+        \\end{array}
+
+    :param x: Parameter of the :math:`EES(2,5)` scheme.
+    :rtype: kauri.RK
+    """
     b1 = x
     b2 = 1/2
     b3 = 1/2 - x
@@ -317,7 +334,15 @@ def EES25(x):#TODO: Doc
     return RK(A, b, 'EES25')
 
 
-def EES27(x, plus=True):# TODO: doc
+def EES27(x, plus=True):
+    """
+    The Explicit and Effectively Symmetric scheme of order 2 and antisymmetric order 7,
+    :math:`EES(2,7;x)`. For the Butcher tableau, see :cite:`shmelev2025ees`.
+
+    :param x: Parameter of the :math:`EES(2,5)` scheme.
+    :param plus: If True, takes :math:`+\\sqrt{2}` in the Butcher tableau, otherwise :math:`-\\sqrt{2}`.
+    :rtype: kauri.RK
+    """
     sqrt2 = sqrt(2) if plus else - sqrt(2)
 
     b1 = x
