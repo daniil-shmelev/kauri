@@ -108,6 +108,6 @@ class BCKTests(unittest.TestCase):
         bs3 = BSeries(y, f, bs2.weights * bs1.weights, 5)
         expr = sp.Poly(bs3.symbolic_expr.subs(bs3.y[0], 1)[0, 0], bs3.h)
         c = expr.all_coeffs()
-        self.assertAlmostEqual(1, c[-1])
+        self.assertAlmostEqual(1., c[-1])
         for c_ in c[:-1]:
-            self.assertAlmostEqual(0, c_)
+            self.assertAlmostEqual(0., float(c_))

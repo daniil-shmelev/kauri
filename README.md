@@ -1,5 +1,9 @@
 <p align="center">
-<img src="docs/_static/logo.png" width="350">
+  <picture>
+    <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/logo_dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/logo_light.png" media="(prefers-color-scheme: light)">
+    <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/logo_light.png" width="350" alt="Logo">
+  </picture>
 </p>
 
 Kauri is a Python package for symbolic and algebraic manipulation of rooted trees,
@@ -40,7 +44,10 @@ kr.display(cp)
 ```
 Output:
 
-<img src="docs/_static/example1.png" width="600">
+<picture>
+  <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/example1.png">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/example1.png" width="500" alt="example1">
+</picture>
 
 ### Labelled BCK antipode
 ```python
@@ -53,7 +60,10 @@ kr.display(s)
 ```
 Output:
 
-<img src="docs/_static/example2.png" width="500">
+<picture>
+  <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/example2.png">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/example2.png" width="500" alt="example2">
+</picture>
 
 ### Runge-Kutta order conditions
 ```python

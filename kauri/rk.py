@@ -564,9 +564,9 @@ class RK:
         a2 = self.a
         b2 = self.b
 
-        a = [[a1[i][j] for j in range(s1)] + [0 for j in range(s2)] for i in range(s1)]
+        a = [[a1[i][j] for j in range(s1)] + [0 for _ in range(s2)] for i in range(s1)]
         a += [[b1[j] for j in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
-        b = b1 + b2
+        b = list(b1) + list(b2)
 
         return RK(a,b)
 

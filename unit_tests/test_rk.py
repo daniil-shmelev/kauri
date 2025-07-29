@@ -78,9 +78,9 @@ class RKTests(unittest.TestCase):
     def test_ees25_order(self):
         rk = EES25(0.1)
         self.assertEqual(2, rk.order())
-        self.assertEqual(5, rk.symmetric_order())
+        self.assertEqual(5, rk.antisymmetric_order())
 
     def test_ees27_order(self):
         rk = EES27(0.1)
         self.assertEqual(2, rk.order())
-        self.assertEqual(7, rk.symmetric_order())
+        self.assertEqual(7, rk.antisymmetric_order())
