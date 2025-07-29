@@ -656,13 +656,16 @@ class RK:
         """
         return self.elementary_weights_map().modified_equation()
 
-    def order(self, tol : float = 1e-10) -> int:
+    def order(self, tol : float = 1e-10, limit : int = 10) -> int:
         """
         Returns the order of the RK scheme.
 
         :param tol: Tolerance for evaluating order conditions. An order condition of the form ``self.elementary_weights(t) = 1./t.factorial()``
             is considered to be satisfied if ``abs( self.elementary_weights(t) - 1./t.factorial() ) > tol``
         :type tol: float
+        :param limit: Highest admissible order. If the order equals or exceeds this limit, a runtime error
+            will be raised.
+        :type limit: int
         :rtype: int
         """
         if not isinstance(tol, float):
@@ -673,15 +676,20 @@ class RK:
             for t in trees_of_order(n):
                 if abs(self._elementary_weights(t.list_repr) - 1. / t.factorial()) > tol:
                     return n-1
-            n += 1 #TODO: make this terminate after some big order, say 10
+            if n >= limit:
+                raise RuntimeError("Order equals or exceeds limit of " + str(limit))
+            n += 1
 
-    def antisymmetric_order(self, tol : float = 1e-10) -> int:
+    def antisymmetric_order(self, tol : float = 1e-10, limit : int = 10) -> int:
         """
         Returns the antisymmetric order of the RK scheme. See :cite:`shmelev2025ees`
         for details.
 
         :param tol: Tolerance for evaluating order conditions.
         :type tol: float
+        :param limit: Highest admissible order. If the order equals or exceeds this limit, a runtime error
+            will be raised.
+        :type limit: int
         :rtype: int
         """
 
@@ -696,4 +704,6 @@ class RK:
             for t in trees_of_order(n):
                 if abs(m(t) - counit(t)) > tol:
                     return n - 1
-            n += 1 #TODO: make this terminate after some big order, say 10
+            if n >= limit:
+                raise RuntimeError("Order equals or exceeds limit of " + str(limit))
+            n += 1
