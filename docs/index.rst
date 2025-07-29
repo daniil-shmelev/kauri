@@ -1,4 +1,4 @@
-.. image:: _static/logo.png
+.. image:: _static/logo_light.png
   :width: 400
   :align: center
 
