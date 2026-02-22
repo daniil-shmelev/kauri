@@ -17,7 +17,7 @@
 Runge-Kutta Schemes
 """
 import copy
-from typing import Union, Callable, Tuple
+from typing import Union, Callable, Tuple, cast, Any
 import warnings
 
 import numpy as np
@@ -27,10 +27,11 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from .gentrees import trees_of_order
-from .trees import Tree, Forest, ForestSum
-from .maps import Map, sign
-from .generic_algebra import _apply
+from .trees import Tree, Forest, ForestSum, TensorProductSum
+from .maps import Map, sign, exact_weights
 from .bck import counit
+from .cem_impl import _coproduct as cem_coproduct
+from .cem_impl import _antipode as cem_antipode
 
 def _internal_symbolic(i, t_rep, a, b, s):
     return sum(a[i,j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
@@ -75,17 +76,102 @@ def _rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None):
 
     return _elementary_symbolic(t.list_repr, a, b, s)
 
+class _SubstitutionCoactionEngine:
+    """
+    Internal substitution/coaction engine with pluggable coproduct/antipode.
+    This explicit term-enumeration path is the primary backend for
+    substitution-log order coefficients in RK order checks.
+    """
+
+    def __init__(
+            self,
+            coproduct : Callable[[Tree], TensorProductSum],
+            antipode : Callable[[Tree], ForestSum],
+            unit_tree : Tree
+    ):
+        self.coproduct = coproduct
+        self.antipode = antipode
+        self.unit_tree = unit_tree
+
+    def _apply_to_forest(self, forest : Forest, func : Callable[[Tree], Any]) -> Any:
+        out = 1
+        for tree in forest.tree_list:
+            out = out * func(tree)
+        return out
+
+    def _apply_to_forest_sum(self, forest_sum : ForestSum, func : Callable[[Tree], Any]) -> Any:
+        out = 0
+        for c, forest in forest_sum.term_list:
+            out += c * self._apply_to_forest(forest, func)
+        return out
+
+    def convolution_value(
+            self,
+            tree : Tree,
+            left_func : Callable[[Tree], Any],
+            right_func : Callable[[Tree], Any]
+    ) -> Any:
+        # Keep the singleton-reduced unit convention used in the CEM implementation.
+        if tree.list_repr is None:
+            return right_func(self.unit_tree)
+
+        cp = self.coproduct(tree)
+        out = 0
+        for c, branches, subtree_ in cp:
+            out += c * self._apply_to_forest(branches, left_func) * right_func(subtree_[0])
+        return out
+
+    def convolution_map(self, left : Map, right : Map) -> Map:
+        return Map(lambda tree : self.convolution_value(tree, left.func, right.func))
+
+    def inverse_map(self, map_ : Map) -> Map:
+        return Map(lambda tree : self._apply_to_forest_sum(self.antipode(tree), map_.func))
+
+    def log_relative_map(self, map_ : Map, exact_map : Map) -> Map:
+        return self.convolution_map(map_, self.inverse_map(exact_map))
+
+_RK_SUBSTITUTION_ENGINE = _SubstitutionCoactionEngine(cem_coproduct, cem_antipode, Tree([]))
+_EXACT_SUBSTITUTION_LOG_MAP = _RK_SUBSTITUTION_ENGINE.log_relative_map(exact_weights, exact_weights)
+
+def _rk_symbolic_weights_map(
+        s : int,
+        explicit : bool = False,
+        a_mask : Union[list, None] = None,
+        b_mask : Union[list, None] = None
+) -> Map:
+    return Map(lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
+
+def _rk_symbolic_substitution_backend(
+        s : int,
+        explicit : bool = False,
+        a_mask : Union[list, None] = None,
+        b_mask : Union[list, None] = None
+) -> dict[str, Map]:
+    weights_map = _rk_symbolic_weights_map(s, explicit, a_mask, b_mask)
+
+    # Expose both classical and substitution-form order-condition maps.
+    log_weights_map = _RK_SUBSTITUTION_ENGINE.log_relative_map(weights_map, exact_weights)
+    condition_map = weights_map - exact_weights
+    log_condition_map = log_weights_map - _EXACT_SUBSTITUTION_LOG_MAP
+
+    return {
+        "weights": weights_map,
+        "condition": condition_map,
+        "log_condition": log_condition_map
+    }
+
 def rk_symbolic_weight(
         t : Union[Tree, Forest, ForestSum],
         s : int,
         explicit : bool = False,
-        a_mask : list = None,
-        b_mask : list = None,
+        a_mask : Union[list, None] = None,
+        b_mask : Union[list, None] = None,
         mathematica_code : bool = False,
         rationalise : bool = True
-) -> Union[sympy.core.add.Add, str]:
+) -> Union[sympy.core.basic.Basic, str, tuple]:
     """
     Returns the elementary weight of a Tree, Forest or ForestSum :math:`t` as a SymPy symbolic expression.
+    Internally this is evaluated through a Map backend shared with substitution-based order-condition tools.
 
     :param t: A Tree, Forest or ForestSum
     :param s: The number of Runge--Kutta stages
@@ -153,7 +239,8 @@ def rk_symbolic_weight(
     if isinstance(t, (int, float)):
         t_ = t * Tree(None).as_forest_sum()
 
-    out = _apply(t_, lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
+    backend = _rk_symbolic_substitution_backend(s, explicit, a_mask, b_mask)
+    out = cast(sympy.core.expr.Expr, backend["weights"](t_))
 
     if rationalise:
         out = sympy.nsimplify(out, tolerance=1e-10, rational = True)
@@ -167,13 +254,14 @@ def rk_order_cond(
         t : Union[Tree, Forest, ForestSum],
         s : int,
         explicit : bool = False,
-        a_mask : list = None,
-        b_mask : list = None,
+        a_mask : Union[list, None] = None,
+        b_mask : Union[list, None] = None,
         mathematica_code : bool = False,
         rationalise : bool = True
-) -> Union[sympy.core.add.Add, str]:
+) -> Union[sympy.core.basic.Basic, str, tuple]:
     """
     Returns the Runge--Kutta order condition associated with tree :math:`t` as a SymPy symbolic expression.
+    This function uses the shared RK symbolic backend, which also exposes substitution-log conditions.
 
     :param t: A Tree
     :param s: The number of Runge--Kutta stages
@@ -220,7 +308,42 @@ def rk_order_cond(
     """
     if not isinstance(t, (int, float, Tree, Forest, ForestSum)):
         raise TypeError("t must be a Tree, Forest, ForestSum, int or float, not " + str(type(t)))
+    if not isinstance(s, int):
+        raise TypeError("Number of stages s must be an int, not " + str(type(s)))
+    if not isinstance(explicit, bool):
+        raise TypeError("explicit must be a bool, not " + str(type(explicit)))
+    if not (isinstance(a_mask, list) or a_mask is None):
+        raise TypeError("a_mask must be a list, not " + str(type(a_mask)))
+    if not (isinstance(b_mask, list) or b_mask is None):
+        raise TypeError("b_mask must be a list, not " + str(type(a_mask)))
+    if not isinstance(mathematica_code, bool):
+        raise TypeError("mathematica_code must be a bool, not " + str(type(mathematica_code)))
+    if not isinstance(rationalise, bool):
+        raise TypeError("rationalise must be a bool, not " + str(type(rationalise)))
 
+    t_ = t
+    if isinstance(t, (int, float)):
+        t_ = t * Tree(None).as_forest_sum()
+
+    backend = _rk_symbolic_substitution_backend(s, explicit, a_mask, b_mask)
+    out = cast(sympy.core.expr.Expr, backend["condition"](t_))
+
+    if rationalise:
+        out = sympy.nsimplify(out, tolerance=1e-10, rational = True)
+
+    if mathematica_code:
+        out = sympy.mathematica_code(out)
+    return out
+
+def _rk_order_cond_legacy(
+        t : Union[Tree, Forest, ForestSum],
+        s : int,
+        explicit : bool = False,
+        a_mask : Union[list, None] = None,
+        b_mask : Union[list, None] = None,
+        mathematica_code : bool = False,
+        rationalise : bool = True
+) -> Union[sympy.core.basic.Basic, str, tuple]:
     return rk_symbolic_weight(t - 1. / t.factorial(), s, explicit, a_mask, b_mask, mathematica_code, rationalise)
 
 class RK:
@@ -417,8 +540,8 @@ class RK:
             tol : float = 1e-10,
             max_iter : int = 100,
             plot : bool = False,
-            plot_dims : Union[list, np.ndarray] = None,
-            plot_kwargs : dict = None
+            plot_dims : Union[list, np.ndarray, None] = None,
+            plot_kwargs : Union[dict, None] = None
             ) -> Tuple[list, list]:
         """
         Runs the Runge--Kutta method.
@@ -660,6 +783,11 @@ class RK:
         """
         Returns the order of the RK scheme.
 
+        This is evaluated using substitution-algebra coefficients by comparing
+        :math:`\\log(\\phi)` against :math:`\\log(e)` on rooted trees, where
+        :math:`\\phi` is the scheme's elementary-weights character and
+        :math:`e(t)=1/t!` are exact B-series weights.
+
         :param tol: Tolerance for evaluating order conditions. An order condition of the form ``self.elementary_weights(t) = 1./t.factorial()``
             is considered to be satisfied if ``abs( self.elementary_weights(t) - 1./t.factorial() ) > tol``
         :type tol: float
@@ -668,6 +796,20 @@ class RK:
         :type limit: int
         :rtype: int
         """
+        if not isinstance(tol, float):
+            raise TypeError("tol must be a float, not " + str(type(tol)))
+
+        theta = _RK_SUBSTITUTION_ENGINE.log_relative_map(self.elementary_weights_map(), exact_weights)
+        n = 0
+        while True:
+            for t in trees_of_order(n):
+                if abs(theta(t) - _EXACT_SUBSTITUTION_LOG_MAP(t)) > tol:
+                    return n-1
+            if n >= limit:
+                raise RuntimeError("Order equals or exceeds limit of " + str(limit))
+            n += 1
+
+    def _order_legacy(self, tol : float = 1e-10, limit : int = 10) -> int:
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))
 
