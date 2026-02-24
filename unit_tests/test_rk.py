@@ -14,11 +14,8 @@
 # =========================================================================
 
 import unittest
-import sympy
-from typing import cast
 from kauri import *
 from kauri import Tree as T
-import kauri.rk as rk_module
 import kauri.bck as bck
 
 sample_trees = [T(None),
@@ -57,14 +54,6 @@ class RKTests(unittest.TestCase):
         t = Tree([[], []])
         self.assertEqual("a10**2*b1 + b2*(a20 + a21)**2 - 1/3", str(rk_order_cond(t, 3, True)))
 
-    def test_order_cond_legacy_equivalence(self):
-        for t in trees_up_to_order(4):
-            cond_new = rk_order_cond(t, 3, True)
-            cond_old = rk_module._rk_order_cond_legacy(t, 3, True)
-            lhs = cast(sympy.Expr, sympy.sympify(cond_new))
-            rhs = cast(sympy.Expr, sympy.sympify(cond_old))
-            self.assertEqual(0, sympy.simplify(lhs - rhs))
-
     def test_inverse(self):
         method = rk4
         inv_method = method ** (-1)
@@ -97,10 +86,3 @@ class RKTests(unittest.TestCase):
         self.assertEqual(2, rk.order())
         self.assertEqual(7, rk.antisymmetric_order())
 
-    def test_order_legacy_equivalence(self):
-        methods = [euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
-                   ralston_rk3, rk4, ralston_rk4, nystrom_rk5, backward_euler,
-                   implicit_midpoint, crank_nicolson, gauss6, radau_iia, lobatto6,
-                   EES25(0.1), EES27(0.1)]
-        for method in methods:
-            self.assertEqual(method._order_legacy(), method.order(), msg=method.name)

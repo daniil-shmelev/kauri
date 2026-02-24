@@ -17,7 +17,6 @@ import unittest
 from typing import Any, cast
 from kauri import *
 from kauri import Tree as T
-import kauri.rk as rk_module
 import kauri.cem as cem
 
 sample_trees = [T(None),
@@ -134,12 +133,12 @@ class CEMTests(unittest.TestCase):
             self.assertAlmostEqual(m1(t), m2(t))
             self.assertAlmostEqual(m1(t), m3(t))
 
-    def test_rk_substitution_engine_matches_log(self):
+    def test_map_log_matches_log_relative_definition(self):
         m = Map(lambda x : x.nodes() + 2)
-        engine_log = rk_module._RK_SUBSTITUTION_ENGINE.log_relative_map(m, exact_weights)
+        explicit_log_relative = m ^ (exact_weights & Map(cem.antipode))
         map_log = m.log()
         for t in sample_trees:
-            self.assertAlmostEqual(engine_log(t), map_log(t))
+            self.assertAlmostEqual(explicit_log_relative(t), map_log(t))
 
     def test_type_error(self):
         with self.assertRaises(TypeError):

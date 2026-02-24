@@ -17,7 +17,7 @@
 Runge-Kutta Schemes
 """
 import copy
-from typing import Union, Callable, Tuple, cast, Any
+from typing import Union, Callable, Tuple, cast
 import warnings
 
 import numpy as np
@@ -27,11 +27,9 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from .gentrees import trees_of_order
-from .trees import Tree, Forest, ForestSum, TensorProductSum
+from .trees import Tree, Forest, ForestSum
 from .maps import Map, sign, exact_weights
 from .bck import counit
-from .cem_impl import _coproduct as cem_coproduct
-from .cem_impl import _antipode as cem_antipode
 
 def _internal_symbolic(i, t_rep, a, b, s):
     return sum(a[i,j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
@@ -76,62 +74,7 @@ def _rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None):
 
     return _elementary_symbolic(t.list_repr, a, b, s)
 
-class _SubstitutionCoactionEngine:
-    """
-    Internal substitution/coaction engine with pluggable coproduct/antipode.
-    This explicit term-enumeration path is the primary backend for
-    substitution-log order coefficients in RK order checks.
-    """
-
-    def __init__(
-            self,
-            coproduct : Callable[[Tree], TensorProductSum],
-            antipode : Callable[[Tree], ForestSum],
-            unit_tree : Tree
-    ):
-        self.coproduct = coproduct
-        self.antipode = antipode
-        self.unit_tree = unit_tree
-
-    def _apply_to_forest(self, forest : Forest, func : Callable[[Tree], Any]) -> Any:
-        out = 1
-        for tree in forest.tree_list:
-            out = out * func(tree)
-        return out
-
-    def _apply_to_forest_sum(self, forest_sum : ForestSum, func : Callable[[Tree], Any]) -> Any:
-        out = 0
-        for c, forest in forest_sum.term_list:
-            out += c * self._apply_to_forest(forest, func)
-        return out
-
-    def convolution_value(
-            self,
-            tree : Tree,
-            left_func : Callable[[Tree], Any],
-            right_func : Callable[[Tree], Any]
-    ) -> Any:
-        # Keep the singleton-reduced unit convention used in the CEM implementation.
-        if tree.list_repr is None:
-            return right_func(self.unit_tree)
-
-        cp = self.coproduct(tree)
-        out = 0
-        for c, branches, subtree_ in cp:
-            out += c * self._apply_to_forest(branches, left_func) * right_func(subtree_[0])
-        return out
-
-    def convolution_map(self, left : Map, right : Map) -> Map:
-        return Map(lambda tree : self.convolution_value(tree, left.func, right.func))
-
-    def inverse_map(self, map_ : Map) -> Map:
-        return Map(lambda tree : self._apply_to_forest_sum(self.antipode(tree), map_.func))
-
-    def log_relative_map(self, map_ : Map, exact_map : Map) -> Map:
-        return self.convolution_map(map_, self.inverse_map(exact_map))
-
-_RK_SUBSTITUTION_ENGINE = _SubstitutionCoactionEngine(cem_coproduct, cem_antipode, Tree([]))
-_EXACT_SUBSTITUTION_LOG_MAP = _RK_SUBSTITUTION_ENGINE.log_relative_map(exact_weights, exact_weights)
+_EXACT_SUBSTITUTION_LOG_MAP = exact_weights.log()
 
 def _rk_symbolic_weights_map(
         s : int,
@@ -140,25 +83,6 @@ def _rk_symbolic_weights_map(
         b_mask : Union[list, None] = None
 ) -> Map:
     return Map(lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
-
-def _rk_symbolic_substitution_backend(
-        s : int,
-        explicit : bool = False,
-        a_mask : Union[list, None] = None,
-        b_mask : Union[list, None] = None
-) -> dict[str, Map]:
-    weights_map = _rk_symbolic_weights_map(s, explicit, a_mask, b_mask)
-
-    # Expose both classical and substitution-form order-condition maps.
-    log_weights_map = _RK_SUBSTITUTION_ENGINE.log_relative_map(weights_map, exact_weights)
-    condition_map = weights_map - exact_weights
-    log_condition_map = log_weights_map - _EXACT_SUBSTITUTION_LOG_MAP
-
-    return {
-        "weights": weights_map,
-        "condition": condition_map,
-        "log_condition": log_condition_map
-    }
 
 def rk_symbolic_weight(
         t : Union[Tree, Forest, ForestSum],
@@ -239,8 +163,8 @@ def rk_symbolic_weight(
     if isinstance(t, (int, float)):
         t_ = t * Tree(None).as_forest_sum()
 
-    backend = _rk_symbolic_substitution_backend(s, explicit, a_mask, b_mask)
-    out = cast(sympy.core.expr.Expr, backend["weights"](t_))
+    weights_map = _rk_symbolic_weights_map(s, explicit, a_mask, b_mask)
+    out = cast(sympy.core.expr.Expr, weights_map(t_))
 
     if rationalise:
         out = sympy.nsimplify(out, tolerance=1e-10, rational = True)
@@ -325,8 +249,8 @@ def rk_order_cond(
     if isinstance(t, (int, float)):
         t_ = t * Tree(None).as_forest_sum()
 
-    backend = _rk_symbolic_substitution_backend(s, explicit, a_mask, b_mask)
-    out = cast(sympy.core.expr.Expr, backend["condition"](t_))
+    weights_map = _rk_symbolic_weights_map(s, explicit, a_mask, b_mask)
+    out = cast(sympy.core.expr.Expr, (weights_map - exact_weights)(t_))
 
     if rationalise:
         out = sympy.nsimplify(out, tolerance=1e-10, rational = True)
@@ -334,17 +258,6 @@ def rk_order_cond(
     if mathematica_code:
         out = sympy.mathematica_code(out)
     return out
-
-def _rk_order_cond_legacy(
-        t : Union[Tree, Forest, ForestSum],
-        s : int,
-        explicit : bool = False,
-        a_mask : Union[list, None] = None,
-        b_mask : Union[list, None] = None,
-        mathematica_code : bool = False,
-        rationalise : bool = True
-) -> Union[sympy.core.basic.Basic, str, tuple]:
-    return rk_symbolic_weight(t - 1. / t.factorial(), s, explicit, a_mask, b_mask, mathematica_code, rationalise)
 
 class RK:
     """
@@ -621,44 +534,6 @@ class RK:
 
         return t_vals, y_vals
 
-    # def __add__(self, other : 'RK') -> 'RK':
-    #     """
-    #     Returns the sum of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
-    #
-    #     .. math::
-    #
-    #         \\begin{array}{c|cc}
-    #             c_1 & A_1 & 0 \\\\
-    #             c_2 & 0 & A_2\\\\
-    #             \\hline
-    #              & b_1 & b_2
-    #         \\end{array}
-    #
-    #     :rtype: RK
-    #     """
-    #     if not isinstance(other, RK):
-    #         raise TypeError("Cannot add RK and object of type " + str(type(other)))
-    #
-    #     s1 = other.s
-    #     a1 = other.a
-    #     b1 = other.b
-    #
-    #     s2 = self.s
-    #     a2 = self.a
-    #     b2 = self.b
-    #
-    #     a = [[a1[i][j] for j in range(s1)] + [0 for _ in range(s2)] for i in range(s1)]
-    #     a += [[0 for _ in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
-    #     b = b1 + b2
-    #
-    #     return RK(a, b)
-    #
-    # def __neg__(self):
-    #     return RK(self.a, [-self.b[i] for i in range(self.s)])
-    #
-    # def __sub__(self, other):
-    #     return self + other.__neg__()
-
     def __mul__(self, other : 'RK') -> 'RK':
         """
         Returns the composition of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
@@ -799,24 +674,11 @@ class RK:
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))
 
-        theta = _RK_SUBSTITUTION_ENGINE.log_relative_map(self.elementary_weights_map(), exact_weights)
+        theta = self.elementary_weights_map().log()
         n = 0
         while True:
             for t in trees_of_order(n):
                 if abs(theta(t) - _EXACT_SUBSTITUTION_LOG_MAP(t)) > tol:
-                    return n-1
-            if n >= limit:
-                raise RuntimeError("Order equals or exceeds limit of " + str(limit))
-            n += 1
-
-    def _order_legacy(self, tol : float = 1e-10, limit : int = 10) -> int:
-        if not isinstance(tol, float):
-            raise TypeError("tol must be a float, not " + str(type(tol)))
-
-        n = 0
-        while True:
-            for t in trees_of_order(n):
-                if abs(self._elementary_weights(t.list_repr) - 1. / t.factorial()) > tol:
                     return n-1
             if n >= limit:
                 raise RuntimeError("Order equals or exceeds limit of " + str(limit))
