@@ -20,7 +20,6 @@ Runge-Kutta Schemes
 import copy
 import warnings
 from collections.abc import Callable
-from typing import cast
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -170,7 +169,7 @@ def rk_symbolic_weight(
         t_ = t * Tree(None).as_forest_sum()
 
     weights_map = _rk_symbolic_weights_map(s, explicit, a_mask, b_mask)
-    out = cast(sympy.core.expr.Expr, weights_map(t_))
+    out = sympy.sympify(weights_map(t_))
 
     if rationalise:
         out = sympy.nsimplify(out, tolerance=1e-10, rational=True)
@@ -256,7 +255,7 @@ def rk_order_cond(
         t_ = t * Tree(None).as_forest_sum()
 
     weights_map = _rk_symbolic_weights_map(s, explicit, a_mask, b_mask)
-    out = cast(sympy.core.expr.Expr, (weights_map - exact_weights)(t_))
+    out = sympy.sympify((weights_map - exact_weights)(t_))
 
     if rationalise:
         out = sympy.nsimplify(out, tolerance=1e-10, rational=True)
