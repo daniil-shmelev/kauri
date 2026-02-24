@@ -16,12 +16,14 @@
 """
 Functions for generating rooted trees in lexicographic order, based on the algorithms of :cite:`beyer1980constant`.
 """
-from typing import Generator
+
+from collections.abc import Generator
 
 from .trees import Tree
 from .utils import _level_sequence_to_list_repr
 
-def trees_up_to_order(order : int) -> Generator[Tree, None, None]:
+
+def trees_up_to_order(order: int) -> Generator[Tree, None, None]:
     """
     Yields the trees up to and including order :math:`n`, ordered by the lexicographic order.
 
@@ -49,7 +51,8 @@ def trees_up_to_order(order : int) -> Generator[Tree, None, None]:
         yield t
         t = next(t)
 
-def trees_of_order(order : int) -> Generator[Tree, None, None]:
+
+def trees_of_order(order: int) -> Generator[Tree, None, None]:
     """
     Yields the trees of order :math:`n`, ordered by the lexicographic order.
 

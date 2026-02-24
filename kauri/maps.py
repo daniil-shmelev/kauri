@@ -18,19 +18,20 @@ This module provides the :class:`Map` class, which implements linear multiplicat
 and allows for their manipulation with respect to different Hopf algebras. In particular, this covers
 characters on the Hopf algebra, as well as more complicated maps.
 """
+
 import copy
+from collections.abc import Callable
 from functools import lru_cache
-from typing import Union, Callable
+from typing import Union
 
-from .trees import Tree, Forest, ForestSum, _is_simplifiable, EMPTY_TREE, _is_tree_like
-from .generic_algebra import _apply, _func_power, _func_product
-
-from .bck_impl import _coproduct as bck_coproduct
 from .bck_impl import _antipode as bck_antipode
+from .bck_impl import _coproduct as bck_coproduct
 from .bck_impl import _counit as bck_counit
-
-from .cem_impl import _coproduct as cem_coproduct
 from .cem_impl import _antipode as cem_antipode
+from .cem_impl import _coproduct as cem_coproduct
+from .generic_algebra import _apply, _func_power, _func_product
+from .trees import EMPTY_TREE, Forest, ForestSum, Tree, _is_simplifiable, _is_tree_like
+
 
 class Map:
     """
@@ -41,18 +42,23 @@ class Map:
         Tree, Forest or ForestSum.
     :type func: Callable[[Tree], int | float | Tree | Forest | ForestSum]
     """
-    def __init__(self, func : Callable[[Tree], Union[int, float, Tree, Forest, ForestSum]]):
+
+    def __init__(self, func: Callable[[Tree], int | float | Tree | Forest | ForestSum]):
         if not callable(func):
             raise TypeError("func parameter must be callable")
         self.func = func
 
-    @lru_cache(maxsize = 128) # maxsize here since caching prevents the object being garbage collected
-    def __call__(self, t : Union[Tree, Forest, ForestSum]) -> Union[int, float, Tree, Forest, ForestSum]:
+    @lru_cache(
+        maxsize=128
+    )  # maxsize here since caching prevents the object being garbage collected
+    def __call__(self, t: Tree | Forest | ForestSum) -> int | float | Tree | Forest | ForestSum:
         if not _is_tree_like(t):
-            raise TypeError("Argument to Map must be Tree, Forest or ForestSum, not " + str(type(t)))
+            raise TypeError(
+                "Argument to Map must be Tree, Forest or ForestSum, not " + str(type(t))
+            )
         return _apply(t, self.func)
 
-    def __pow__(self, exponent : int) -> 'Map':
+    def __pow__(self, exponent: int) -> "Map":
         """
         Returns the power of the map in the BCK Hopf algebra, where the product
         of functions is defined by
@@ -77,18 +83,26 @@ class Map:
             ident_sq = ident ** 2 # identity squared
         """
         if not isinstance(exponent, int):
-            raise TypeError("Error in BCK power: exponent must be an integer, got " + str(type(exponent)) + " instead")
+            raise TypeError(
+                "Error in BCK power: exponent must be an integer, got "
+                + str(type(exponent))
+                + " instead"
+            )
 
-        return Map(lambda x : _func_power(x, self.func, exponent, bck_coproduct, bck_counit, bck_antipode))
+        return Map(
+            lambda x: _func_power(x, self.func, exponent, bck_coproduct, bck_counit, bck_antipode)
+        )
 
-    def __imul__(self, other : Union[int, float, 'Map']):
+    def __imul__(self, other: Union[int, float, "Map"]):
         func_ = self.func
         if isinstance(other, (int, float)):
-            self.func = lambda x : other * func_(x)
+            self.func = lambda x: other * func_(x)
         elif isinstance(other, Map):
-            self.func = lambda x : _func_product(x, func_, other.func, bck_coproduct)
+            self.func = lambda x: _func_product(x, func_, other.func, bck_coproduct)
         else:
-            raise TypeError("Error in BCK product: Cannot multiply Map by object of type " + str(type(other)))
+            raise TypeError(
+                "Error in BCK product: Cannot multiply Map by object of type " + str(type(other))
+            )
         return self
 
     def __ixor__(self, other):
@@ -96,6 +110,7 @@ class Map:
         if isinstance(other, (int, float)):
             self.func = lambda x: other * func_(x)
         elif isinstance(other, Map):
+
             def f_(x):
                 if x.list_repr is None:
                     out = other.func(EMPTY_TREE)
@@ -104,12 +119,15 @@ class Map:
                 if _is_simplifiable(out):
                     out = out.singleton_reduced()
                 return out
+
             self.func = f_
         else:
-            raise TypeError("Error in CEM product: Cannot multiply Map by object of type " + str(type(other)))
+            raise TypeError(
+                "Error in CEM product: Cannot multiply Map by object of type " + str(type(other))
+            )
         return self
 
-    def __mul__(self, other : Union['Map', int, float]) -> 'Map':
+    def __mul__(self, other: Union["Map", int, float]) -> "Map":
         """
         Returns the product of maps in the BCK Hopf algebra, defined by
 
@@ -135,7 +153,7 @@ class Map:
         temp *= other
         return temp
 
-    def __xor__(self, other : Union['Map', int, float]) -> 'Map':
+    def __xor__(self, other: Union["Map", int, float]) -> "Map":
         """
         Returns the product of maps in the CEM Hopf algebra, defined by
 
@@ -164,14 +182,14 @@ class Map:
     def __iadd__(self, other):
         func_ = self.func
         if isinstance(other, (int, float)):
-            self.func = lambda x : func_(x) + other
+            self.func = lambda x: func_(x) + other
         elif isinstance(other, Map):
             self.func = lambda x: func_(x) + other.func(x)
         else:
             raise TypeError("Cannot add Map and object of type " + str(type(other)))
         return self
 
-    def __add__(self, other : 'Map') -> 'Map':
+    def __add__(self, other: "Map") -> "Map":
         """
         Returns the pointwise sum of two maps, given by
 
@@ -194,7 +212,7 @@ class Map:
         return temp
 
     def __neg__(self):
-        return Map(lambda x : -self.func(x))
+        return Map(lambda x: -self.func(x))
 
     def __isub__(self, other):
         self.__iadd__(-other)
@@ -210,7 +228,7 @@ class Map:
     __radd__ = __add__
     __rsub__ = __sub__
 
-    def __and__(self, other : 'Map') -> 'Map':
+    def __and__(self, other: "Map") -> "Map":
         """
         Returns the composition of two maps, given by
 
@@ -231,9 +249,9 @@ class Map:
             (bck.antipode & bck.antipode)(t)
             bck.antipode(bck.antipode(t)) #Same as above
         """
-        return Map(lambda x : self(other(x) * Tree(None)))
+        return Map(lambda x: self(other(x) * Tree(None)))
 
-    def modified_equation(self) -> 'Map':
+    def modified_equation(self) -> "Map":
         """
         Assuming the given map :math:`\\phi` corresponds to the elementary weights
         function of a B-series method, returns the map corresponding to the coefficients
@@ -258,7 +276,7 @@ class Map:
         """
         return self.log()
 
-    def preprocessed_integrator(self) -> 'Map':
+    def preprocessed_integrator(self) -> "Map":
         """
         Assuming the given map :math:`\\phi` corresponds to the elementary weights
         function of a B-series method, returns the map corresponding to the coefficients
@@ -283,7 +301,7 @@ class Map:
         """
         return exact_weights ^ (self & Map(cem_antipode))
 
-    def exp(self) -> 'Map':
+    def exp(self) -> "Map":
         """
         Returns the exponential of the map, defined as
 
@@ -299,7 +317,7 @@ class Map:
         """
         return self ^ exact_weights
 
-    def log(self) -> 'Map':
+    def log(self) -> "Map":
         """
         Returns the logarithm of the map, defined as
 
@@ -318,19 +336,19 @@ class Map:
 
 
 # Some common examples provided for convenience
-ident = Map(lambda x : x)
+ident = Map(lambda x: x)
 ident.__doc__ = """
 The identity map, :math:`t \\mapsto t`.
 """
-sign = Map(lambda x : x.sign())
+sign = Map(lambda x: x.sign())
 sign.__doc__ = """
 The sign map, or canonical involution, :math:`t \\mapsto (-1)^{|t|} t`.
 """
-exact_weights = Map(lambda x : 1. / x.factorial())
+exact_weights = Map(lambda x: 1.0 / x.factorial())
 exact_weights.__doc__ = """
 The elementary weights function of the exact solution, :math:`t \\mapsto 1/t!`.
 """
-omega = Map(lambda x : 1 if (x == Tree(None) or x == Tree([])) else 0).log()
+omega = Map(lambda x: 1 if (x == Tree(None) or x == Tree([])) else 0).log()
 omega.__doc__ = """
 The coefficients of the modified equation for the (explicit) Euler method,
 :math:`t \\mapsto \\omega(t) := \\log(\\delta_\\emptyset + \\delta_\\bullet)`. 

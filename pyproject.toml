@@ -1,0 +1,61 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "kauri"
+version = "1.0.0"
+description = "Algebraic manipulation of non-planar rooted trees in Python"
+readme = "README.md"
+requires-python = ">=3.10"
+license = { text = "Apache-2.0" }
+authors = [
+  { name = "Daniil Shmelev", email = "daniil.shmelev23@imperial.ac.uk" },
+]
+classifiers = [
+  "Development Status :: 4 - Beta",
+  "Environment :: Win32 (MS Windows)",
+  "Intended Audience :: Science/Research",
+  "License :: OSI Approved :: Apache Software License",
+  "Natural Language :: English",
+  "Operating System :: MacOS",
+  "Operating System :: Microsoft :: Windows",
+  "Operating System :: Unix",
+  "Programming Language :: Python",
+  "Topic :: Scientific/Engineering :: Mathematics",
+]
+dependencies = [
+  "matplotlib>=3.9.2",
+  "plotly",
+  "numpy>=1.26.4",
+  "sympy>=1.12",
+  "scipy>=1.13",
+  "tqdm",
+]
+
+[project.urls]
+Homepage = "https://github.com/daniil-shmelev/kauri"
+Documentation = "https://kauri.readthedocs.io"
+
+[dependency-groups]
+dev = [
+  "pytest>=8.0",
+  "ruff>=0.9.0",
+]
+
+[tool.setuptools.packages.find]
+include = ["kauri*"]
+
+[tool.ruff]
+target-version = "py310"
+line-length = 100
+src = ["kauri", "unit_tests"]
+exclude = ["build", "docs/_build", ".venv"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B"]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"

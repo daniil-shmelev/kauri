@@ -16,10 +16,11 @@
 """
 Front-end for the CEM module
 """
-from ..cem_impl import _counit, _coproduct, _antipode
-from ..maps import Map
-from ..trees import Tree, TensorProductSum
+
+from ..cem_impl import _antipode, _coproduct, _counit
 from ..generic_algebra import _func_power
+from ..maps import Map
+from ..trees import TensorProductSum, Tree
 
 counit = Map(_counit)
 counit.__doc__ = """
@@ -36,10 +37,12 @@ Example usage::
     cem.counit(Tree([[]])) # Returns 0
 """
 
+
 def _safe_antipode(t):
     if t.colors() > 1:
         raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
     return _antipode(t)
+
 
 antipode = Map(_safe_antipode)
 antipode.__doc__ = """
@@ -56,7 +59,8 @@ Example usage::
     cem.antipode(t)
 """
 
-def coproduct(t : Tree) -> TensorProductSum:
+
+def coproduct(t: Tree) -> TensorProductSum:
     """
     The coproduct :math:`\\Delta_{CEM}` of the CEM Hopf algebra.
 
@@ -78,7 +82,8 @@ def coproduct(t : Tree) -> TensorProductSum:
         raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
     return _coproduct(t)
 
-def map_product(f : Map, g : Map) -> Map:
+
+def map_product(f: Map, g: Map) -> Map:
     """
     Returns the product of maps in the CEM Hopf algebra, defined by
 
@@ -104,10 +109,16 @@ def map_product(f : Map, g : Map) -> Map:
         counit = cem.map_product(ident, cem.antipode) # Equivalent to ident ^ cem.antipode
     """
     if not (isinstance(f, Map) and isinstance(g, Map)):
-        raise TypeError("Arguments in cem.map_product must be of type Map, not " + str(type(f)) + " and " + str(type(g)))
-    return  f ^ g
+        raise TypeError(
+            "Arguments in cem.map_product must be of type Map, not "
+            + str(type(f))
+            + " and "
+            + str(type(g))
+        )
+    return f ^ g
 
-def map_power(f : Map, exponent : int) -> Map:
+
+def map_power(f: Map, exponent: int) -> Map:
     """
     Returns the power of a map in the CEM Hopf algebra, where the product of functions is defined by
 

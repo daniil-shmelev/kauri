@@ -17,26 +17,28 @@
 The display function plots objects of type :class:`Tree`, :class:`Forest`, :class:`ForestSum`
 or :class:`TensorProductSum`.
 """
-from typing import Union
 
 import matplotlib.pyplot as plt
 import plotly.graph_objects as go
 
-from .trees import Tree, ForestSum, Forest, TensorProductSum
+from .trees import Forest, ForestSum, TensorProductSum, Tree
 from .utils import _branch_level_sequences, _str
 
 EMPTY_FONTSIZE = 10
 TENSOR_FONTSIZE = 14
 
-COLORS = ['black',
-          'firebrick',
-          'mediumblue',
-          'forestgreen',
-          'rebeccapurple',
-          'darkorange',
-          'grey',
-          'dodgerblue',
-          'deeppink']
+COLORS = [
+    "black",
+    "firebrick",
+    "mediumblue",
+    "forestgreen",
+    "rebeccapurple",
+    "darkorange",
+    "grey",
+    "dodgerblue",
+    "deeppink",
+]
+
 
 def _get_node_coords(layout, x=0, y=0, scale=0.2):
     gap = scale / 2
@@ -56,7 +58,7 @@ def _get_node_coords(layout, x=0, y=0, scale=0.2):
         branch_widths.append(w)
 
     width = sum(branch_widths) + (len(branch_widths) - 1) * gap
-    pos = - width / 2
+    pos = -width / 2
     for i in range(len(branch_coords)):
         branch_coords[i] = [(c[0] + pos + branch_widths[i] / 2, c[1]) for c in branch_coords[i]]
         pos += branch_widths[i] + gap
@@ -66,9 +68,11 @@ def _get_node_coords(layout, x=0, y=0, scale=0.2):
 
     return coords, width
 
+
 ###############################################################
-#Plotly
+# Plotly
 ###############################################################
+
 
 def _get_tree_traces(layout, coords, scale=0.2):
     traces = []
@@ -82,33 +86,33 @@ def _get_tree_traces(layout, coords, scale=0.2):
     for idx, i in enumerate(layout[1:]):
         if i == 1:
             branch_layouts.append([0])
-            branch_coords.append([coords[idx+1]])
+            branch_coords.append([coords[idx + 1]])
         else:
             branch_layouts[-1].append(i - 1)
-            branch_coords[-1].append(coords[idx+1])
+            branch_coords[-1].append(coords[idx + 1])
 
     for lay, c in zip(branch_layouts, branch_coords):
         # Add edge line
-        traces.append(go.Scatter(
-            x=[xroot, c[0][0]],
-            y=[yroot, c[0][1]],
-            mode='lines',
-            line={"color" : 'black'},
-            showlegend=False,
-            hoverinfo='skip'
-        ))
+        traces.append(
+            go.Scatter(
+                x=[xroot, c[0][0]],
+                y=[yroot, c[0][1]],
+                mode="lines",
+                line={"color": "black"},
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
         traces.extend(_get_tree_traces(lay, c, scale))
 
     return traces
 
-def _display_plotly_forest(f, x, y, h, scale, traces, gap, empty = False):
+
+def _display_plotly_forest(f, x, y, h, scale, traces, gap, empty=False):
 
     if empty and f == Tree(None):
-        traces.append(go.Scatter(
-            x=[x], y=[y], text=["\u2205"], mode='text',
-            showlegend=False
-        ))
-        x += 2*gap
+        traces.append(go.Scatter(x=[x], y=[y], text=["\u2205"], mode="text", showlegend=False))
+        x += 2 * gap
         return x, h, traces
 
     for t in f.tree_list:
@@ -121,14 +125,16 @@ def _display_plotly_forest(f, x, y, h, scale, traces, gap, empty = False):
         traces.extend(_get_tree_traces(level_seq, c_, scale))
 
         # Nodes
-        traces.append(go.Scatter(
-            x=[p[0] for p in c_],
-            y=[p[1] for p in c_],
-            mode='markers',
-            marker={'color' : [COLORS[i] for i in color_seq]},
-            showlegend=False,
-            hoverinfo='skip'
-        ))
+        traces.append(
+            go.Scatter(
+                x=[p[0] for p in c_],
+                y=[p[1] for p in c_],
+                mode="markers",
+                marker={"color": [COLORS[i] for i in color_seq]},
+                showlegend=False,
+                hoverinfo="skip",
+            )
+        )
 
         x += w + gap
         if len(c_) > 0:
@@ -137,11 +143,8 @@ def _display_plotly_forest(f, x, y, h, scale, traces, gap, empty = False):
 
     return x, h, traces
 
-def _display_plotly(forest_sum,
-                    scale=0.7,
-                    fig_size=(1500, 50),
-                    file_name=None,
-                    rationalise = True):
+
+def _display_plotly(forest_sum, scale=0.7, fig_size=(1500, 50), file_name=None, rationalise=True):
     gap = scale / 2
     traces = []
 
@@ -159,10 +162,9 @@ def _display_plotly(forest_sum,
             c = abs(c)
 
         # Add coefficient as text
-        traces.append(go.Scatter(
-            x=[x], y=[y], text=[_str(c, rationalise)], mode='text',
-            showlegend=False
-        ))
+        traces.append(
+            go.Scatter(x=[x], y=[y], text=[_str(c, rationalise)], mode="text", showlegend=False)
+        )
 
         x += (len(_str(c, rationalise)) + 1) * gap
 
@@ -171,10 +173,7 @@ def _display_plotly(forest_sum,
 
         if i < len(forest_sum.term_list) - 1:
             op = "+" if forest_sum.term_list[i + 1][0] > 0 else "-"
-            traces.append(go.Scatter(
-                x=[x], y=[y], text=[op], mode='text',
-                showlegend=False
-            ))
+            traces.append(go.Scatter(x=[x], y=[y], text=[op], mode="text", showlegend=False))
             x += gap * 2
 
     fig = go.Figure(traces)
@@ -183,30 +182,25 @@ def _display_plotly(forest_sum,
     fig.update_layout(
         width=fig_size[0],
         height=fig_size[1],
-        xaxis={"showgrid" : False,
-               "zeroline" : False,
-               "visible" : False,
-               "range" : [-10, 100]},
-        yaxis={"showgrid" : False,
-               "zeroline" : False,
-               "visible" : False,
-               "range" : [-0.5, h + extra_padding + 0.5]},
-        margin={"l": 0, "r": 0, "t": 0, "b": 0}
+        xaxis={"showgrid": False, "zeroline": False, "visible": False, "range": [-10, 100]},
+        yaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "visible": False,
+            "range": [-0.5, h + extra_padding + 0.5],
+        },
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
     )
 
     if file_name:
         fig.write_image(file_name + ".png")
 
-    fig.show(config={
-        "displayModeBar": False,
-        "staticPlot": True
-    })
+    fig.show(config={"displayModeBar": False, "staticPlot": True})
 
-def _display_tensor_plotly(tensor_sum,
-                    scale=0.7,
-                    fig_size=(1500, 50),
-                    file_name=None,
-                    rationalise = True):
+
+def _display_tensor_plotly(
+    tensor_sum, scale=0.7, fig_size=(1500, 50), file_name=None, rationalise=True
+):
     gap = scale / 2
     traces = []
 
@@ -218,29 +212,22 @@ def _display_tensor_plotly(tensor_sum,
             c = abs(c)
 
         # Add coefficient as text
-        traces.append(go.Scatter(
-            x=[x], y=[y], text=[_str(c, rationalise)], mode='text',
-            showlegend=False
-        ))
+        traces.append(
+            go.Scatter(x=[x], y=[y], text=[_str(c, rationalise)], mode="text", showlegend=False)
+        )
 
         x += (len(_str(c, rationalise)) + 1) * gap
 
         x, h, traces = _display_plotly_forest(f1, x, y, h, scale, traces, gap, True)
         x += 1.5 * gap
-        traces.append(go.Scatter(
-            x=[x], y=[y], text=["\u2297"], mode='text',
-            showlegend=False
-        ))
+        traces.append(go.Scatter(x=[x], y=[y], text=["\u2297"], mode="text", showlegend=False))
         x += 2.5 * gap
         x, h, traces = _display_plotly_forest(f2, x, y, h, scale, traces, gap, True)
         x += 1.5 * gap
 
         if i < len(tensor_sum.term_list) - 1:
             op = "+" if tensor_sum.term_list[i + 1][0] > 0 else "-"
-            traces.append(go.Scatter(
-                x=[x], y=[y], text=[op], mode='text',
-                showlegend=False
-            ))
+            traces.append(go.Scatter(x=[x], y=[y], text=[op], mode="text", showlegend=False))
             x += gap * 2
 
     fig = go.Figure(traces)
@@ -249,39 +236,37 @@ def _display_tensor_plotly(tensor_sum,
     fig.update_layout(
         width=fig_size[0],
         height=fig_size[1],
-        xaxis={"showgrid" : False,
-               "zeroline" : False,
-               "visible" : False,
-               "range" : [-10, 100]},
-        yaxis={"showgrid" : False,
-               "zeroline" : False,
-               "visible" : False,
-               "range" : [-0.5, h + extra_padding + 0.5]},
-        margin={"l": 0, "r": 0, "t": 0, "b": 0}
+        xaxis={"showgrid": False, "zeroline": False, "visible": False, "range": [-10, 100]},
+        yaxis={
+            "showgrid": False,
+            "zeroline": False,
+            "visible": False,
+            "range": [-0.5, h + extra_padding + 0.5],
+        },
+        margin={"l": 0, "r": 0, "t": 0, "b": 0},
     )
 
     if file_name:
         fig.write_image(file_name + ".png")
 
-    fig.show(config={
-        "displayModeBar": False,
-        "staticPlot": True
-    })
-
+    fig.show(config={"displayModeBar": False, "staticPlot": True})
 
 
 ###############################################################
-#Matplotlib
+# Matplotlib
 ###############################################################
 
-def _display_tree(layout, color_sequence, coords, scale = 0.2):
+
+def _display_tree(layout, color_sequence, coords, scale=0.2):
 
     if layout == []:
         return
 
     xroot, yroot = coords[0]
 
-    plt.scatter([xroot], [yroot], marker='o', linewidth= scale / 2, color = COLORS[color_sequence[0]], zorder = 1)
+    plt.scatter(
+        [xroot], [yroot], marker="o", linewidth=scale / 2, color=COLORS[color_sequence[0]], zorder=1
+    )
 
     branch_layouts = []
     branch_coords = []
@@ -289,18 +274,19 @@ def _display_tree(layout, color_sequence, coords, scale = 0.2):
     for idx, i in enumerate(layout[1:]):
         if i == 1:
             branch_layouts.append([0])
-            branch_coords.append([coords[idx+1]])
+            branch_coords.append([coords[idx + 1]])
             branch_colors.append([color_sequence[idx + 1]])
         else:
             branch_layouts[-1].append(i - 1)
-            branch_coords[-1].append(coords[idx+1])
+            branch_coords[-1].append(coords[idx + 1])
             branch_colors[-1].append(color_sequence[idx + 1])
 
     for lay, c, cols in zip(branch_layouts, branch_coords, branch_colors):
-        plt.plot([xroot, c[0][0]], [yroot, c[0][1]], color = 'black', zorder = -1)
+        plt.plot([xroot, c[0][0]], [yroot, c[0][1]], color="black", zorder=-1)
         _display_tree(lay, cols, c, scale)
 
-def _display_forest(f, x, y, scale, tree_gap, h, empty = False):
+
+def _display_forest(f, x, y, scale, tree_gap, h, empty=False):
 
     if empty and f == Tree(None):
         plt.text(x, y, "\u2205", fontsize=EMPTY_FONTSIZE)
@@ -317,15 +303,12 @@ def _display_forest(f, x, y, scale, tree_gap, h, empty = False):
             h = max(h, h_)
     return x, h
 
-def _display_plt(forest_sum,
-                 scale = 0.2,
-                 fig_size = (15, 1),
-                 file_name = None,
-                 rationalise = True):
+
+def _display_plt(forest_sum, scale=0.2, fig_size=(15, 1), file_name=None, rationalise=True):
     tree_gap = scale / 4
     coeff_gap = scale / 2
 
-    plt.figure(figsize = fig_size)
+    plt.figure(figsize=fig_size)
     if not isinstance(forest_sum, ForestSum):
         if isinstance(forest_sum, (int, float)):
             forest_sum = Tree(None) * forest_sum
@@ -349,13 +332,13 @@ def _display_plt(forest_sum,
             x += coeff_gap / 2
             if i < len(forest_sum.term_list) - 1:
                 plt.text(x, y, "+" if forest_sum.term_list[i + 1][0] > 0 else "-")
-                x += coeff_gap*2
+                x += coeff_gap * 2
 
-    plt.xlim(- 1, 15)
+    plt.xlim(-1, 15)
     plt.ylim(-0.5, h + 0.5)
     plt.xticks([])
     plt.yticks([])
-    plt.axis('off')
+    plt.axis("off")
     plt.tight_layout()
 
     if file_name is not None:
@@ -363,11 +346,8 @@ def _display_plt(forest_sum,
 
     plt.show()
 
-def _display_tensor_plt(tensor_sum,
-                 scale = 0.2,
-                 fig_size = (15, 1),
-                 file_name = None,
-                 rationalise = True):
+
+def _display_tensor_plt(tensor_sum, scale=0.2, fig_size=(15, 1), file_name=None, rationalise=True):
     tree_gap = scale / 4
     coeff_gap = scale / 2
 
@@ -392,11 +372,11 @@ def _display_tensor_plt(tensor_sum,
             plt.text(x, y, "+" if tensor_sum.term_list[i + 1][0] > 0 else "-")
             x += coeff_gap * 2
 
-    plt.xlim(- 1, 15)
+    plt.xlim(-1, 15)
     plt.ylim(-0.5, h + 0.5)
     plt.xticks([])
     plt.yticks([])
-    plt.axis('off')
+    plt.axis("off")
     plt.tight_layout()
 
     if file_name is not None:
@@ -406,16 +386,19 @@ def _display_tensor_plt(tensor_sum,
 
 
 ###############################################################
-#Display
+# Display
 ###############################################################
 
-def display(obj : Union[Tree, Forest, ForestSum, TensorProductSum],
-            *,
-            scale : float = None,
-            fig_size : tuple = None,
-            file_name : str = None,
-            use_plt : bool = True,
-            rationalise : bool = False) -> None:
+
+def display(
+    obj: Tree | Forest | ForestSum | TensorProductSum,
+    *,
+    scale: float = None,
+    fig_size: tuple = None,
+    file_name: str = None,
+    use_plt: bool = True,
+    rationalise: bool = False,
+) -> None:
     """
     Plots a Tree, Forest, ForestSum or TensorProductSum.
 
@@ -433,7 +416,11 @@ def display(obj : Union[Tree, Forest, ForestSum, TensorProductSum],
     :type use_plt: bool
     """
     if not isinstance(obj, (Tree, Forest, ForestSum, TensorProductSum)):
-        raise TypeError("Cannot display object of type " + str(type(obj)) + ". Object must be Tree, Forest, ForestSum or TensorProductSum.")
+        raise TypeError(
+            "Cannot display object of type "
+            + str(type(obj))
+            + ". Object must be Tree, Forest, ForestSum or TensorProductSum."
+        )
 
     if obj.colors() > 9:
         raise ValueError("Cannot display labelled trees with over 10 different colors.")
@@ -442,7 +429,7 @@ def display(obj : Union[Tree, Forest, ForestSum, TensorProductSum],
         if scale is None:
             scale = 0.2
         if fig_size is None:
-            fig_size = (15,1)
+            fig_size = (15, 1)
 
         if isinstance(obj, TensorProductSum):
             _display_tensor_plt(obj, scale, fig_size, file_name, rationalise)

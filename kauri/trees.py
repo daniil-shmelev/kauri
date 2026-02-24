@@ -29,17 +29,30 @@ the color of the highest levels of the trees being the primary ordering.
 """
 
 import math
+import warnings
+from collections import Counter
 from dataclasses import dataclass
 from functools import total_ordering
-from collections import Counter
 from typing import Union
-import warnings
 
-from .utils import (_nodes, _height, _factorial, _sigma,
-                    _sorted_list_repr, _list_repr_to_level_sequence,
-                    _to_list, _next_layout, _level_sequence_to_list_repr,
-                    _check_valid, _to_labelled_tuple, _get_max_color, _to_unlabelled_tuple,
-                    _list_repr_to_color_sequence, LabelledReprComparison)
+from .utils import (
+    LabelledReprComparison,
+    _check_valid,
+    _factorial,
+    _get_max_color,
+    _height,
+    _level_sequence_to_list_repr,
+    _list_repr_to_color_sequence,
+    _list_repr_to_level_sequence,
+    _next_layout,
+    _nodes,
+    _sigma,
+    _sorted_list_repr,
+    _to_labelled_tuple,
+    _to_list,
+    _to_unlabelled_tuple,
+)
+
 
 ######################################
 @dataclass(frozen=True)
@@ -61,20 +74,23 @@ class Tree:
             t2 = Tree([[[3],1],[2],0]) # A labelled tree
             t3 = Tree([[[3],1],[2]]) # This is the same as t2, since the missing label defaults to 0
     """
-######################################
-    list_repr: Union[tuple, list, None] = None
+
+    ######################################
+    list_repr: tuple | list | None = None
     unlabelled_repr = None
     _max_color = 0
 
     def __post_init__(self):
         if self.list_repr is not None:
             if not _check_valid(self.list_repr):
-                raise ValueError(repr(self.list_repr) + " is not a valid list representation for a tree.")
+                raise ValueError(
+                    repr(self.list_repr) + " is not a valid list representation for a tree."
+                )
             tuple_repr = _to_labelled_tuple(self.list_repr)
-            object.__setattr__(self, 'list_repr', tuple_repr)
+            object.__setattr__(self, "list_repr", tuple_repr)
             unlabelled_repr = _to_unlabelled_tuple(tuple_repr)
-            object.__setattr__(self, 'unlabelled_repr', unlabelled_repr)
-            object.__setattr__(self, '_max_color', _get_max_color(tuple_repr))
+            object.__setattr__(self, "unlabelled_repr", unlabelled_repr)
+            object.__setattr__(self, "_max_color", _get_max_color(tuple_repr))
 
     def __copy__(self):
         return self
@@ -95,7 +111,7 @@ class Tree:
     def __hash__(self):
         return hash(self.sorted_list_repr())
 
-    def unjoin(self) -> 'Forest':
+    def unjoin(self) -> "Forest":
         """
         For a tree :math:`t = [t_1, t_2, ..., t_k]`, returns the forest :math:`t_1 t_2 \\cdots t_k`.
         In :cite:`connes1999hopf`, this map is denoted by :math:`B_-`.
@@ -241,7 +257,7 @@ class Tree:
         """
         return math.factorial(self.nodes()) // self.sigma()
 
-    def sign(self) -> 'ForestSum':
+    def sign(self) -> "ForestSum":
         """
         Returns the tree signed by the number of nodes, :math:`(-1)^{|t|} t`.
 
@@ -255,7 +271,9 @@ class Tree:
         """
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
-    def __mul__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> Union['Forest', 'ForestSum']:
+    def __mul__(
+        self, other: Union[int, float, "Tree", "Forest", "ForestSum"]
+    ) -> Union["Forest", "ForestSum"]:
         """
         Multiplies a tree by a:
 
@@ -271,13 +289,13 @@ class Tree:
             t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
         """
         if isinstance(other, (int, float)):
-            out = ForestSum(( (other,self),  ))
+            out = ForestSum(((other, self),))
         elif isinstance(other, Tree):
             out = Forest((self, other))
         elif isinstance(other, Forest):
             out = Forest((self,) + other.tree_list)
         elif isinstance(other, ForestSum):
-            out = ForestSum(tuple((c, self * f) for c,f in other.term_list))
+            out = ForestSum(tuple((c, self * f) for c, f in other.term_list))
         else:
             raise TypeError("Cannot multiply Tree by object of type " + str(type(other)))
 
@@ -285,7 +303,7 @@ class Tree:
 
     __rmul__ = __mul__
 
-    def __pow__(self, n : int) -> 'Forest':
+    def __pow__(self, n: int) -> "Forest":
         """
         Returns the :math:`n^{th}` power of a tree for a positive integer
         :math:`n`, given by a forest with :math:`n` copies of the tree.
@@ -306,7 +324,7 @@ class Tree:
         out = Forest((self,) * n)
         return out.simplify()
 
-    def __add__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'ForestSum':
+    def __add__(self, other: Union[int, float, "Tree", "Forest", "ForestSum"]) -> "ForestSum":
         """
         Adds a tree to a scalar, Tree, Forest or ForestSum.
 
@@ -318,11 +336,11 @@ class Tree:
             t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
         """
         if isinstance(other, (int, float)):
-            out = ForestSum((  (1, self), (other, EMPTY_FOREST)  ))
+            out = ForestSum(((1, self), (other, EMPTY_FOREST)))
         elif isinstance(other, (Tree, Forest)):
-            out = ForestSum((  (1, self), (1, other)  ))
+            out = ForestSum(((1, self), (1, other)))
         elif isinstance(other, ForestSum):
-            out = ForestSum( ((1, self),) + other.term_list )
+            out = ForestSum(((1, self),) + other.term_list)
         else:
             raise TypeError("Cannot add Tree and " + str(type(other)))
 
@@ -338,7 +356,7 @@ class Tree:
         temp = self * (-1)
         return temp
 
-    def __eq__(self, other : Union['Tree', 'Forest', 'ForestSum']) -> bool:
+    def __eq__(self, other: Union["Tree", "Forest", "ForestSum"]) -> bool:
         """
         Compares the tree with another object and returns true if they represent
         the same tree, regardless of class type (Tree, Forest or ForestSum) or
@@ -375,7 +393,9 @@ class Tree:
         # If trees are non-empty
         if self.nodes() != other.nodes():
             return self.nodes() < other.nodes()
-        return LabelledReprComparison(self.sorted_list_repr()) < LabelledReprComparison(other.sorted_list_repr())
+        return LabelledReprComparison(self.sorted_list_repr()) < LabelledReprComparison(
+            other.sorted_list_repr()
+        )
 
     def sorted_list_repr(self) -> list:
         """
@@ -408,7 +428,7 @@ class Tree:
         """
         return _list_repr_to_level_sequence(self.unlabelled_repr)
 
-    def sorted(self) -> 'Tree':
+    def sorted(self) -> "Tree":
         """
         Returns the sorted tree, where the heaviest branches are rotated to the left.
 
@@ -425,7 +445,7 @@ class Tree:
     def equals(self, other_tree):
         return self.sorted_list_repr() == other_tree.sorted_list_repr()
 
-    def as_forest(self) -> 'Forest':
+    def as_forest(self) -> "Forest":
         """
         Returns the tree t as a forest. Equivalent to Forest([t]).
 
@@ -439,7 +459,7 @@ class Tree:
         """
         return Forest((self,))
 
-    def as_forest_sum(self) -> 'ForestSum':
+    def as_forest_sum(self) -> "ForestSum":
         """
         Returns the tree t as a forest sum. Equivalent to ForestSum([Forest([t])]).
 
@@ -451,9 +471,9 @@ class Tree:
             t = Tree([[],[[]]])
             t.as_forest_sum() #Returns ForestSum([Forest([Tree([[[]],[]])])])
         """
-        return ForestSum(( (1, self), ))
+        return ForestSum(((1, self),))
 
-    def __next__(self) -> 'Tree':
+    def __next__(self) -> "Tree":
         """
         Generates the next tree with respect to the lexicographic order.
         If the tree is labelled, the labelling will be ignored.
@@ -475,7 +495,9 @@ class Tree:
         next_ = _next_layout(layout)
         return Tree(_level_sequence_to_list_repr(next_))
 
-    def __matmul__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'TensorProductSum':
+    def __matmul__(
+        self, other: Union[int, float, "Tree", "Forest", "ForestSum"]
+    ) -> "TensorProductSum":
         """
         Returns the tensor product of a Tree and a scalar, Tree, Forest or ForestSum.
 
@@ -489,9 +511,9 @@ class Tree:
             Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
         """
         if isinstance(other, (int, float)):
-            return TensorProductSum(( (other, self.as_forest(), EMPTY_FOREST), ))
+            return TensorProductSum(((other, self.as_forest(), EMPTY_FOREST),))
         if isinstance(other, (Tree, Forest)):
-            return TensorProductSum(( (1, self.as_forest(), other.as_forest()), ))
+            return TensorProductSum(((1, self.as_forest(), other.as_forest()),))
         if isinstance(other, ForestSum):
             term_list = []
             for c, f in other:
@@ -512,6 +534,7 @@ class Tree:
     def color_sequence(self):
         return _list_repr_to_color_sequence(self.list_repr)
 
+
 ######################################
 @dataclass(frozen=True)
 class Forest:
@@ -528,16 +551,17 @@ class Forest:
 
             f = Forest([t1,t2,t3])
     """
-######################################
-    tree_list : Union[tuple, list] = tuple()
-    count : Counter = None
-    hash_ : int = None
+
+    ######################################
+    tree_list: tuple | list = tuple()
+    count: Counter = None
+    hash_: int = None
 
     def __post_init__(self):
         tuple_repr = tuple(self.tree_list)
         if tuple_repr == tuple():
             tuple_repr = (Tree(None),)
-        object.__setattr__(self, 'tree_list', tuple_repr)
+        object.__setattr__(self, "tree_list", tuple_repr)
 
     def __copy__(self):
         return self
@@ -550,18 +574,18 @@ class Forest:
 
     def _set_counter(self):
         if self.count is None:
-            object.__setattr__(self, 'count', Counter(self.simplify().tree_list))
+            object.__setattr__(self, "count", Counter(self.simplify().tree_list))
 
     def _set_hash(self):
         self._set_counter()
         if self.hash_ is None:
-            object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
+            object.__setattr__(self, "hash_", hash(frozenset(self.count.items())))
 
     def __hash__(self):
         self._set_hash()
         return self.hash_
 
-    def simplify(self) -> 'Forest':  # Remove redundant empty trees
+    def simplify(self) -> "Forest":  # Remove redundant empty trees
         """
         Simplify the forest by removing redundant empty trees.
 
@@ -597,7 +621,7 @@ class Forest:
     def __iter__(self):
         yield from self.tree_list
 
-    def join(self, root_color : int = 0) -> 'Tree':
+    def join(self, root_color: int = 0) -> "Tree":
         """
         For a forest :math:`t_1 t_2 \\cdots t_k`, returns the tree :math:`[t_1, t_2, \\cdots, t_k]`.
         In :cite:`connes1999hopf`, this map is denoted by :math:`B_+`.
@@ -678,7 +702,7 @@ class Forest:
         """
         return math.prod(x.factorial() for x in self.tree_list)
 
-    def sign(self) -> 'ForestSum':
+    def sign(self) -> "ForestSum":
         """
         Returns the forest signed by the number of nodes, :math:`(-1)^{|f|} f`.
 
@@ -695,7 +719,9 @@ class Forest:
         """
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
-    def __mul__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> Union['Forest', 'ForestSum']:
+    def __mul__(
+        self, other: Union[int, float, "Tree", "Forest", "ForestSum"]
+    ) -> Union["Forest", "ForestSum"]:
         """
         Multiplies a forest by a:
 
@@ -711,13 +737,13 @@ class Forest:
             t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
         """
         if isinstance(other, (int, float)):
-            out = ForestSum(( (other, self), ))
+            out = ForestSum(((other, self),))
         elif isinstance(other, Tree):
             out = Forest(self.tree_list + (other,))
         elif isinstance(other, Forest):
             out = Forest(self.tree_list + other.tree_list)
         elif isinstance(other, ForestSum):
-            out = ForestSum(tuple( (c, self * f) for c, f in other.term_list ))
+            out = ForestSum(tuple((c, self * f) for c, f in other.term_list))
         else:
             raise TypeError("Cannot multiply Forest and " + str(type(other)))
 
@@ -725,7 +751,7 @@ class Forest:
 
     __rmul__ = __mul__
 
-    def __pow__(self, n : int) -> 'Forest':
+    def __pow__(self, n: int) -> "Forest":
         """
         Returns the :math:`n^{th}` power of a forest for a positive integer
         :math:`n`, given by a forest with :math:`n` copies of the original forest.
@@ -745,7 +771,7 @@ class Forest:
         out = Forest(self.tree_list * n)
         return out.simplify()
 
-    def __add__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'ForestSum':
+    def __add__(self, other: Union[int, float, "Tree", "Forest", "ForestSum"]) -> "ForestSum":
         """
         Adds a forest to a scalar, Tree, Forest or ForestSum.
 
@@ -757,11 +783,11 @@ class Forest:
             t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
         """
         if isinstance(other, (int, float)):
-            out = ForestSum((  (1, self), (other, EMPTY_FOREST)  ))
+            out = ForestSum(((1, self), (other, EMPTY_FOREST)))
         elif isinstance(other, (Tree, Forest)):
-            out = ForestSum(( (1, self), (1, other) ))
+            out = ForestSum(((1, self), (1, other)))
         elif isinstance(other, ForestSum):
-            out = ForestSum( ((1, self),) + other.term_list )
+            out = ForestSum(((1, self),) + other.term_list)
         else:
             raise TypeError("Cannot add Forest and " + str(type(other)))
 
@@ -781,7 +807,7 @@ class Forest:
         other_forest._set_counter()
         return self.count == other_forest.count
 
-    def __eq__(self, other : Union['Forest', 'ForestSum']) -> bool:
+    def __eq__(self, other: Union["Forest", "ForestSum"]) -> bool:
         """
         Compares the forest with another object and returns true if they
         represent the same forest, regardless of class type (Forest or ForestSum)
@@ -814,7 +840,7 @@ class Forest:
     def as_forest(self):
         return self
 
-    def as_forest_sum(self) -> 'ForestSum':
+    def as_forest_sum(self) -> "ForestSum":
         """
         Returns the forest f as a forest sum. Equivalent to ``ForestSum([f])``.
 
@@ -826,9 +852,9 @@ class Forest:
             f = Tree([[],[[]]]) * Tree([[]])
             f.as_forest_sum() #Returns ForestSum([t])
         """
-        return ForestSum(( (1,self), ))
+        return ForestSum(((1, self),))
 
-    def singleton_reduced(self) -> 'Forest':
+    def singleton_reduced(self) -> "Forest":
         """
         Removes redundant occurrences of the single-node tree in the forest.
         If the forest contains a tree with more than one node, removes all
@@ -854,7 +880,9 @@ class Forest:
             out = Forest(new_tree_list)
         return out
 
-    def __matmul__(self, other: Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'TensorProductSum':
+    def __matmul__(
+        self, other: Union[int, float, "Tree", "Forest", "ForestSum"]
+    ) -> "TensorProductSum":
         """
         Returns the tensor product of a Forest and a scalar, Tree, Forest or ForestSum.
 
@@ -868,9 +896,9 @@ class Forest:
             Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
         """
         if isinstance(other, (int, float)):
-            return TensorProductSum(( (other, self, EMPTY_FOREST), ))
+            return TensorProductSum(((other, self, EMPTY_FOREST),))
         if isinstance(other, (Tree, Forest)):
-            return TensorProductSum(( (1, self, other.as_forest()), ))
+            return TensorProductSum(((1, self, other.as_forest()),))
         if isinstance(other, ForestSum):
             term_list = []
             for c, f in other:
@@ -901,10 +929,11 @@ class ForestSum:
             s = ForestSum([(1, t1), (-2, t1*t2), (1, t2*t3)])
             s == t1 - 2 * t1 * t2 + t2 * t3 #True
     """
-######################################
-    term_list : Union[tuple, list] = tuple()
-    count : Counter = None
-    hash_ : int = None
+
+    ######################################
+    term_list: tuple | list = tuple()
+    count: Counter = None
+    hash_: int = None
 
     def __post_init__(self):
         new_term_list = []
@@ -921,7 +950,7 @@ class ForestSum:
                 raise TypeError("Terms must be tuples of type (int | float, Tree | Forest)")
 
         new_term_list = tuple(new_term_list)
-        object.__setattr__(self, 'term_list', new_term_list)
+        object.__setattr__(self, "term_list", new_term_list)
 
     def __copy__(self):
         return self
@@ -934,12 +963,12 @@ class ForestSum:
 
     def _set_counter(self):
         if self.count is None:
-            object.__setattr__(self, 'count', Counter(self.simplify().term_list))
+            object.__setattr__(self, "count", Counter(self.simplify().term_list))
 
     def _set_hash(self):
         self._set_counter()
         if self.hash_ is None:
-            object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
+            object.__setattr__(self, "hash_", hash(frozenset(self.count.items())))
 
     def __hash__(self):
         self._set_hash()
@@ -959,8 +988,8 @@ class ForestSum:
         return r
 
     def __iter__(self):
-        for c,f in self.term_list:
-            yield c,f
+        for c, f in self.term_list:
+            yield c, f
 
     def nodes(self) -> int:
         """
@@ -1022,8 +1051,7 @@ class ForestSum:
         """
         return len(self.term_list)
 
-
-    def simplify(self) -> 'ForestSum':
+    def simplify(self) -> "ForestSum":
         """
         Simplify the forest sum by removing redundant empty trees
         and cancelling terms where applicable.
@@ -1070,9 +1098,9 @@ class ForestSum:
             s = Tree([[],[[]]]) * Tree([]) + Tree([[]])
             s.factorial() #Returns 10
         """
-        return sum(c * f.factorial() for c,f in self.term_list)
+        return sum(c * f.factorial() for c, f in self.term_list)
 
-    def sign(self) -> 'ForestSum':
+    def sign(self) -> "ForestSum":
         """
         Returns the forest sum where every forest is replaced by its
         signed value, :math:`(-1)^{|f|} f`.
@@ -1085,9 +1113,9 @@ class ForestSum:
             s = Tree([[[]],[]]) * Tree([[]]) + 2 * Tree([])
             s.sign() #Returns Tree([[[]],[]]) * Tree([[]]) - 2 * Tree([])
         """
-        return ForestSum(tuple((-c if f.nodes() % 2 else c, f) for c,f in self.term_list))
+        return ForestSum(tuple((-c if f.nodes() % 2 else c, f) for c, f in self.term_list))
 
-    def __mul__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'ForestSum':
+    def __mul__(self, other: Union[int, float, "Tree", "Forest", "ForestSum"]) -> "ForestSum":
         """
         Multiplies a ForestSum by a scalar, Tree, Forest or ForestSum, returning a ForestSum.
 
@@ -1099,11 +1127,13 @@ class ForestSum:
             t = 2 * Tree([[]]) * ForestSum([Tree([]), Tree([[],[]])], [1, -2])
         """
         if isinstance(other, (int, float)):
-            new_term_list = tuple( (c * other, f) for c, f in self.term_list )
+            new_term_list = tuple((c * other, f) for c, f in self.term_list)
         elif isinstance(other, (Tree, Forest)):
-            new_term_list = tuple( (c, f * other) for c, f in self.term_list )
+            new_term_list = tuple((c, f * other) for c, f in self.term_list)
         elif isinstance(other, ForestSum):
-            new_term_list = tuple( (c1 * c2, f1 * f2) for c1, f1 in self.term_list for c2, f2 in other.term_list)
+            new_term_list = tuple(
+                (c1 * c2, f1 * f2) for c1, f1 in self.term_list for c2, f2 in other.term_list
+            )
         else:
             raise TypeError("Cannot multiply ForestSum and " + str(type(object)))
 
@@ -1112,8 +1142,7 @@ class ForestSum:
 
     __rmul__ = __mul__
 
-
-    def __pow__(self, n : int) -> 'ForestSum':
+    def __pow__(self, n: int) -> "ForestSum":
         """
         Returns the :math:`n^{th}` power of a forest sum for a positive integer :math:`n`.
 
@@ -1132,12 +1161,12 @@ class ForestSum:
             return EMPTY_FOREST_SUM
 
         temp = self
-        for _ in range(n-1):
+        for _ in range(n - 1):
             temp = temp * self
 
         return temp.simplify()
 
-    def __add__(self, other : Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'ForestSum':
+    def __add__(self, other: Union[int, float, "Tree", "Forest", "ForestSum"]) -> "ForestSum":
         """
         Adds a ForestSum to a scalar, Tree, Forest or ForestSum.
 
@@ -1161,7 +1190,7 @@ class ForestSum:
         return out.simplify()
 
     def __sub__(self, other):
-        return self + (- other)
+        return self + (-other)
 
     __radd__ = __add__
     __rsub__ = __sub__
@@ -1174,8 +1203,7 @@ class ForestSum:
         other._set_counter()
         return self.count == other.count
 
-
-    def __eq__(self, other : 'ForestSum') -> bool:
+    def __eq__(self, other: "ForestSum") -> bool:
         """
         Compares the forest sum with another forest sum and returns true if
         they represent the same forest sum, regardless of possible reorderings
@@ -1204,7 +1232,7 @@ class ForestSum:
             return self.equals(other)
         raise TypeError("Cannot check equality of ForestSum and " + str(type(other)))
 
-    def singleton_reduced(self) -> 'ForestSum':
+    def singleton_reduced(self) -> "ForestSum":
         """
         Removes redundant occurrences of the single-node tree in each forest of the
         forest sum. If the forest contains a tree with more than one node, removes
@@ -1224,7 +1252,9 @@ class ForestSum:
     def as_forest_sum(self):
         return self
 
-    def __matmul__(self, other: Union[int, float, 'Tree', 'Forest', 'ForestSum']) -> 'TensorProductSum':
+    def __matmul__(
+        self, other: Union[int, float, "Tree", "Forest", "ForestSum"]
+    ) -> "TensorProductSum":
         """
         Returns the tensor product of a ForestSum and a scalar, Tree, Forest or ForestSum.
 
@@ -1259,28 +1289,35 @@ class ForestSum:
     def __getitem__(self, i):
         return self.term_list[i]
 
+
 ##############################################
 ##############################################
+
 
 def _is_scalar(obj):
     return isinstance(obj, (int, float))
 
+
 def _is_tree_or_forest(obj):
     return isinstance(obj, (Tree, Forest))
+
 
 def _is_simplifiable(obj):
     return isinstance(obj, (Forest, ForestSum))
 
+
 def _is_tree_like(obj):
     return isinstance(obj, (Tree, Forest, ForestSum))
 
+
 EMPTY_TREE = Tree(None)
 EMPTY_FOREST = Forest((EMPTY_TREE,))
-EMPTY_FOREST_SUM = ForestSum( ( (1, EMPTY_FOREST), ) )
-ZERO_FOREST_SUM = ForestSum( ( (0, EMPTY_FOREST), ) )
+EMPTY_FOREST_SUM = ForestSum(((1, EMPTY_FOREST),))
+ZERO_FOREST_SUM = ForestSum(((0, EMPTY_FOREST),))
 
 ##############################################
 ##############################################
+
 
 @dataclass(frozen=True)
 class TensorProductSum:
@@ -1296,18 +1333,21 @@ class TensorProductSum:
 
             tp = Tree([]) @ Tree([[]]) - 2 * Tree([[],[]]) @ Tree(None)
     """
-    term_list: Union[tuple, list, None] #(c, f1, f2)
-    count : Counter = None
-    hash_ : int = None
+
+    term_list: tuple | list | None  # (c, f1, f2)
+    count: Counter = None
+    hash_: int = None
 
     def __post_init__(self):
         tuple_list = []
         for x in self.term_list:
             if not (_is_scalar(x[0]) and _is_tree_or_forest(x[1]) and _is_tree_or_forest(x[2])):
-                raise TypeError("Terms must be tuples of type (int | float, Tree | Forest, Tree | Forest)")
+                raise TypeError(
+                    "Terms must be tuples of type (int | float, Tree | Forest, Tree | Forest)"
+                )
             tuple_list.append((x[0], x[1].as_forest(), x[2].as_forest()))
         tuple_list = tuple(tuple_list)
-        object.__setattr__(self, 'term_list', tuple_list)
+        object.__setattr__(self, "term_list", tuple_list)
 
     def __copy__(self):
         return self
@@ -1331,7 +1371,7 @@ class TensorProductSum:
                 r += " " + term_str
         return r
 
-    def simplify(self) -> 'TensorProductSum':
+    def simplify(self) -> "TensorProductSum":
         """
         Simplify the tensor product sum by removing redundant empty trees
         and cancelling terms where applicable.
@@ -1361,7 +1401,7 @@ class TensorProductSum:
         result = tuple(term for term in new_term_list if term[0] != 0)
         return TensorProductSum(result)
 
-    def singleton_reduced(self) -> 'TensorProductSum':
+    def singleton_reduced(self) -> "TensorProductSum":
         """
         Removes redundant occurrences of the single-node tree in each forest of the
         tensor product sum. If the forest contains a tree with more than one node, removes
@@ -1376,18 +1416,22 @@ class TensorProductSum:
             s1 = (Tree([]) * Tree([[],[]])) @ (Tree([]) * Tree([]) * Tree([]))
             s1.singleton_reduced() #Returns Tree([[],[]]) @ Tree([])
         """
-        return TensorProductSum(tuple((c, f1.singleton_reduced(), f2.singleton_reduced()) for c, f1, f2 in self.term_list))
+        return TensorProductSum(
+            tuple(
+                (c, f1.singleton_reduced(), f2.singleton_reduced()) for c, f1, f2 in self.term_list
+            )
+        )
 
     def _set_counter(self):
         if self.count is None:
-            object.__setattr__(self, 'count', Counter(self.simplify().term_list))
+            object.__setattr__(self, "count", Counter(self.simplify().term_list))
 
     def _set_hash(self):
         self._set_counter()
         if self.hash_ is None:
-            object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
+            object.__setattr__(self, "hash_", hash(frozenset(self.count.items())))
 
-    def __eq__(self, other : 'TensorProductSum') -> bool:
+    def __eq__(self, other: "TensorProductSum") -> bool:
         """
         Compares the tensor product sum with another tensor product sum and returns true if
         they represent the same sum, regardless of possible reorderings of trees within forests
@@ -1417,7 +1461,7 @@ class TensorProductSum:
         self._set_hash()
         return self.hash_
 
-    def __add__(self, other : 'TensorProductSum') -> 'TensorProductSum':
+    def __add__(self, other: "TensorProductSum") -> "TensorProductSum":
         """
         Adds two tensor product sums.
 
@@ -1436,7 +1480,7 @@ class TensorProductSum:
             raise TypeError("Cannot subtract " + str(type(other)) + " from TensorSum")
         return self + (-other)
 
-    def __mul__(self, other : Union[int, float, 'TensorProductSum']) -> 'TensorProductSum':
+    def __mul__(self, other: Union[int, float, "TensorProductSum"]) -> "TensorProductSum":
         """
         Multiplies a tensor product sum by a scalar or tensor product sum.
 

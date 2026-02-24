@@ -78,13 +78,16 @@ and the symmetric-adjoint method is given by
 where `kr.sign` is the :class:`Map` sending `t` to `-t`.
 
 """
+
 import itertools
 from functools import cache
-from typing import Union
 
 import sympy as sp
 
-from kauri import Tree, trees_up_to_order, Map
+from .gentrees import trees_up_to_order
+from .maps import Map
+from .trees import Tree
+
 
 def _check_f_y(f, y):
     # Checks that f and y are correctly specified
@@ -96,8 +99,13 @@ def _check_f_y(f, y):
 
     # Make sure f, y are vectors of the same dimensions
     if not (f.shape[1] == 1 and y.shape[1] == 1 and f.shape[0] == y.shape[0]):
-        raise ValueError("""f, y must be column vectors, both of shape (d, 1) for some d.
-            Instead, got f of shape """ + str(f.shape) + " and y of shape " + str(y.shape))
+        raise ValueError(
+            """f, y must be column vectors, both of shape (d, 1) for some d.
+            Instead, got f of shape """
+            + str(f.shape)
+            + " and y of shape "
+            + str(y.shape)
+        )
 
     # Make sure f is in terms of y and nothing else
     allowed_symbols = set(y)
@@ -107,14 +115,15 @@ def _check_f_y(f, y):
             If these are constants, please add them to the ODE with a derivative of 0. If these represent
             time, please add them to the ODE with a derivative of 1.""")
 
+
 @cache
-def _elementary_differential(tree : Tree,
-                             f : sp.ImmutableDenseMatrix,
-                             y_vars : sp.ImmutableDenseMatrix):
+def _elementary_differential(
+    tree: Tree, f: sp.ImmutableDenseMatrix, y_vars: sp.ImmutableDenseMatrix
+):
     if tree.list_repr is None:
-        return y_vars # y
+        return y_vars  # y
     if len(tree.list_repr) == 1:
-        return f # f(y)
+        return f  # f(y)
 
     # tree = [t_1, ..., t_k], sub_diffs = [F(t_1), ..., F(t_k)]
     sub_diffs = tuple(_elementary_differential(subtree, f, y_vars) for subtree in tree.unjoin())
@@ -138,10 +147,8 @@ def _elementary_differential(tree : Tree,
 
     return result
 
-def elementary_differential(tree : Tree,
-                            f : sp.Matrix,
-                            y : sp.Matrix
-                            ) -> sp.Matrix:
+
+def elementary_differential(tree: Tree, f: sp.Matrix, y: sp.Matrix) -> sp.Matrix:
     """
     Returns the elementary differential of a vector field.
     These are defined recursively on trees by:
@@ -224,7 +231,7 @@ class BSeries:
             print(bs(1, 0.1)) # Evaluate the B-Series at y = 1, h = 0.1
     """
 
-    def __init__(self, y : sp.Matrix, f : sp.Matrix, weights : Map, order : int):
+    def __init__(self, y: sp.Matrix, f: sp.Matrix, weights: Map, order: int):
         if not isinstance(weights, Map):
             raise TypeError("weights must be a Map, not " + str(type(weights)))
         if not isinstance(order, int):
@@ -236,17 +243,23 @@ class BSeries:
 
         self.f = f
         self.y = y
-        self.f_imm = sp.ImmutableDenseMatrix(f) #Immutable for cache in elementary_differential
-        self.y_imm = sp.ImmutableDenseMatrix(y) #Immutable for cache in elementary_differential
-        self.h = sp.symbols('h')
+        self.f_imm = sp.ImmutableDenseMatrix(f)  # Immutable for cache in elementary_differential
+        self.y_imm = sp.ImmutableDenseMatrix(y)  # Immutable for cache in elementary_differential
+        self.h = sp.symbols("h")
         self.order = order
         self.weights = weights
         self.dim = len(y)
         self.symbolic_expr = sp.zeros(*sp.shape(y))
         for t in trees_up_to_order(order):
-            self.symbolic_expr = self.symbolic_expr + self.h ** t.nodes() * weights(t) * _elementary_differential(t, self.f_imm, self.y_imm) / t.sigma()
+            self.symbolic_expr = (
+                self.symbolic_expr
+                + self.h ** t.nodes()
+                * weights(t)
+                * _elementary_differential(t, self.f_imm, self.y_imm)
+                / t.sigma()
+            )
 
-    def __call__(self, y : list, h : Union[int, float]) -> list:
+    def __call__(self, y: list, h: int | float) -> list:
         """
         Evalutes the B-series at the given values for y and h.
 
@@ -261,7 +274,12 @@ class BSeries:
         if not isinstance(y, list):
             raise ValueError("y must be a list, not " + str(type(y)))
         if len(y) != self.dim:
-            raise ValueError("List of values for y is of incorrect length. Expected " + str(self.dim) + " got " + str(len(y)))
+            raise ValueError(
+                "List of values for y is of incorrect length. Expected "
+                + str(self.dim)
+                + " got "
+                + str(len(y))
+            )
         if not isinstance(h, (int, float)):
             raise ValueError("h must be an int or float, not " + str(type(h)))
 
