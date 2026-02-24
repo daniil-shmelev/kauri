@@ -14,13 +14,13 @@
 # =========================================================================
 
 """
-This module provides the :class:`Map` class, which implements linear multiplicative maps on trees
-and allows for their manipulation with respect to different Hopf algebras. In particular, this covers
-characters on the Hopf algebra, as well as more complicated maps.
+This module provides the :class:`Map` class, which implements linear
+multiplicative maps on trees and allows for their manipulation with
+respect to different Hopf algebras. In particular, this covers characters
+on the Hopf algebra, as well as more complicated maps.
 """
 
 import copy
-from collections.abc import Callable
 from functools import lru_cache
 from typing import Union
 
@@ -29,8 +29,8 @@ from .bck_impl import _coproduct as bck_coproduct
 from .bck_impl import _counit as bck_counit
 from .cem_impl import _antipode as cem_antipode
 from .cem_impl import _coproduct as cem_coproduct
-from .generic_algebra import _apply, _func_power, _func_product
-from .trees import EMPTY_TREE, Forest, ForestSum, Tree, _is_simplifiable, _is_tree_like
+from .generic_algebra import MapFunc, MapValue, _apply, _func_power, _func_product
+from .trees import EMPTY_TREE, Forest, ForestSum, Tree, _is_tree_like
 
 
 class Map:
@@ -40,10 +40,10 @@ class Map:
 
     :param func: A function taking as input a single tree and returning a scalar,
         Tree, Forest or ForestSum.
-    :type func: Callable[[Tree], int | float | Tree | Forest | ForestSum]
+    :type func: MapFunc
     """
 
-    def __init__(self, func: Callable[[Tree], int | float | Tree | Forest | ForestSum]):
+    def __init__(self, func: MapFunc) -> None:
         if not callable(func):
             raise TypeError("func parameter must be callable")
         self.func = func
@@ -51,7 +51,7 @@ class Map:
     @lru_cache(
         maxsize=128
     )  # maxsize here since caching prevents the object being garbage collected
-    def __call__(self, t: Tree | Forest | ForestSum) -> int | float | Tree | Forest | ForestSum:
+    def __call__(self, t: Tree | Forest | ForestSum) -> MapValue:
         if not _is_tree_like(t):
             raise TypeError(
                 "Argument to Map must be Tree, Forest or ForestSum, not " + str(type(t))
@@ -116,7 +116,7 @@ class Map:
                     out = other.func(EMPTY_TREE)
                 else:
                     out = _func_product(x, func_, other.func, cem_coproduct)
-                if _is_simplifiable(out):
+                if isinstance(out, (Forest, ForestSum)):
                     out = out.singleton_reduced()
                 return out
 
