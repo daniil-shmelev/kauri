@@ -4,3 +4,6 @@ build/
 /.idea
 /.ipynb_checkpoints
 /docs/_build
+*.pyc
+.specstory/
+*-info
