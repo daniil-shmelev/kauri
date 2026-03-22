@@ -18,7 +18,7 @@ import unittest
 from kauri.gentrees import planar_trees_of_order, planar_trees_up_to_order
 from kauri.maps import Map
 from kauri.planar_trees.mkw_truncated import coproduct_terms, verify_mkw_ees
-from kauri.planar_trees.planar_basis import EMPTY_PLANAR_TREE, PlanarTree
+from kauri.planar_trees.planar_basis import EMPTY_PLANAR_TREE, OrderedForest, PlanarTree
 
 
 class PlanarTreeTests(unittest.TestCase):
@@ -43,6 +43,20 @@ class PlanarTreeTests(unittest.TestCase):
         self.assertEqual(terms[0].right, PlanarTree([]))
         self.assertEqual(terms[1].left, PlanarTree([]).as_ordered_forest())
         self.assertEqual(terms[1].right, EMPTY_PLANAR_TREE)
+
+    def test_ordered_forest_rmul(self):
+        t1 = PlanarTree([])
+        t2 = PlanarTree([[]])
+        forest = OrderedForest((t2,))
+
+        # t1 * forest should prepend: (t1, t2)
+        left = t1 * forest
+        # forest * t1 should append: (t2, t1)
+        right = forest * t1
+
+        self.assertNotEqual(left, right)
+        self.assertEqual(left, OrderedForest((t1, t2)))
+        self.assertEqual(right, OrderedForest((t2, t1)))
 
     def test_mkw_verification(self):
         counit = Map(lambda tree: 1 if tree == EMPTY_PLANAR_TREE else 0)

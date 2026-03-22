@@ -88,7 +88,22 @@ class OrderedForest:
             return OrderedForestSum(terms).simplify()
         raise TypeError(f"Cannot multiply OrderedForest and {type(other)}")
 
-    __rmul__ = __mul__
+    def __rmul__(
+        self, other: int | float | PlanarTree | OrderedForest | OrderedForestSum
+    ) -> OrderedForest | OrderedForestSum:
+        if isinstance(other, (int, float)):
+            return OrderedForestSum(((sympy.sympify(other), self),))
+        if isinstance(other, PlanarTree):
+            return OrderedForest((other,) + self.tree_list).simplify()
+        if isinstance(other, OrderedForest):
+            return OrderedForest(other.tree_list + self.tree_list).simplify()
+        if isinstance(other, OrderedForestSum):
+            terms = tuple(
+                (coeff, OrderedForest(forest.tree_list + self.tree_list).simplify())
+                for coeff, forest in other.term_list
+            )
+            return OrderedForestSum(terms).simplify()
+        raise TypeError(f"Cannot multiply {type(other)} and OrderedForest")
 
 
 @dataclass(frozen=True)
