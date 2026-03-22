@@ -92,6 +92,10 @@ class Tree:
             return repr(_to_list(self.unlabelled_repr))
         return repr(_to_list(self.list_repr))
 
+    def _repr_svg_(self):
+        from .display import _to_svg
+        return _to_svg(self)
+
     def __hash__(self):
         return hash(self.sorted_list_repr())
 
@@ -594,6 +598,10 @@ class Forest:
         r += repr(self.tree_list[-1]) + ""
         return r
 
+    def _repr_svg_(self):
+        from .display import _to_svg
+        return _to_svg(self)
+
     def __iter__(self):
         yield from self.tree_list
 
@@ -957,6 +965,10 @@ class ForestSum:
             else:
                 r += " " + term_str
         return r
+
+    def _repr_svg_(self):
+        from .display import _to_svg
+        return _to_svg(self)
 
     def __iter__(self):
         for c,f in self.term_list:
@@ -1324,6 +1336,10 @@ class TensorProductSum:
             else:
                 r += " " + term_str
         return r
+
+    def _repr_svg_(self):
+        from .display import _to_svg
+        return _to_svg(self)
 
     def simplify(self) -> 'TensorProductSum':
         """
