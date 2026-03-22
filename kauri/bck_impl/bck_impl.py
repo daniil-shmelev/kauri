@@ -16,36 +16,32 @@
 """
 Back-end for the BCK module
 """
-
-import itertools
 from functools import cache
-
+import itertools
+from ..trees import (Tree, Forest, TensorProductSum,
+                     EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM)
 from ..generic_algebra import _forest_apply
-from ..trees import EMPTY_FOREST, EMPTY_FOREST_SUM, EMPTY_TREE, Forest, TensorProductSum, Tree
-
 
 def _counit(t):
     # Return 1 if t is the empty tree, otherwise 0
     return 1 if t.list_repr is None else 0
 
-
 @cache
 def _antipode(t):
     if t.list_repr is None:
-        return EMPTY_FOREST_SUM  # Antipode of empty tree is the empty tree
+        return EMPTY_FOREST_SUM # Antipode of empty tree is the empty tree
     if t.list_repr == tuple():
-        return -t  # Antipode of singleton is the negative singleton
+        return -t # Antipode of singleton is the negative singleton
 
     cp = _coproduct(t)
-    out = -t.as_forest_sum()  # First term, -t
-    for c, branches, subtree_ in cp:  # Remaining terms
-        subtree = subtree_[0]  # Convert from Forest to Tree
+    out = -t.as_forest_sum() # First term, -t
+    for c, branches, subtree_ in cp: # Remaining terms
+        subtree = subtree_[0] # Convert from Forest to Tree
         if subtree.equals(t) or subtree.equals(EMPTY_TREE):
-            continue  # We've already included the -t term at the start, so move on
+            continue # We've already included the -t term at the start, so move on
         out = out - c * _forest_apply(branches, _antipode) * subtree
 
     return out.simplify()
-
 
 @cache
 def _coproduct_helper_2(t):
@@ -68,18 +64,18 @@ def _coproduct_helper_2(t):
 
     # Caching of this function makes it fairly efficient for large computations.
 
-    if t.list_repr is None:  # Empty tree
+    if t.list_repr is None: # Empty tree
         return [(EMPTY_FOREST, EMPTY_TREE)]
-    if t.list_repr == tuple():  # Singleton tree
+    if t.list_repr == tuple(): # Singleton tree
         return [(EMPTY_FOREST, t), (t.as_forest(), EMPTY_TREE)]
 
     # Compute the coproducts of t_1, t_2, ..., t_k
     subtree_coproducts = []
-    for rep in t.list_repr[:-1]:  # Recall last element is the root label, so take [:-1]
+    for rep in t.list_repr[:-1]: # Recall last element is the root label, so take [:-1]
         subtree = Tree(rep)
         subtree_coproducts.append(_coproduct_helper_2(subtree))
 
-    t_coproduct = [(Forest((t,)), EMPTY_TREE)]  # First term of coproduct, t x empty tree
+    t_coproduct = [(Forest((t,)), EMPTY_TREE)] # First term of coproduct, t x empty tree
 
     # Remaining terms, compute these recursively
     for p in itertools.product(*subtree_coproducts):
@@ -89,27 +85,23 @@ def _coproduct_helper_2(t):
             if s.list_repr is not None:
                 R_c_repr += [s.list_repr]
             P_c_tree_list += f.tree_list
-        R_c_repr += [t.list_repr[-1]]  # Add label of root
+        R_c_repr += [t.list_repr[-1]] #Add label of root
         t_coproduct.append((Forest(P_c_tree_list), Tree(R_c_repr)))
 
     return t_coproduct
 
-
 def _coproduct_2(t):
     cp = _coproduct_helper_2(t)
     return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).simplify()
-
 
 @cache
 def _coproduct(t):
     # This follows the recursive definition of https://arxiv.org/pdf/hep-th/9808042
     # using B_- and B_+
     if t == Tree(None):
-        return TensorProductSum(((1, EMPTY_FOREST, EMPTY_FOREST),))  # Tree(None) @ Tree(None)
+        return TensorProductSum(( (1, EMPTY_FOREST, EMPTY_FOREST), )) # Tree(None) @ Tree(None)
     if len(t.list_repr) == 1:
-        return TensorProductSum(
-            ((1, EMPTY_FOREST, t.as_forest()), (1, t.as_forest(), EMPTY_FOREST))
-        )  # Tree(None) @ t + t @ Tree(None)
+        return TensorProductSum(( (1, EMPTY_FOREST, t.as_forest()), (1, t.as_forest(), EMPTY_FOREST) )) # Tree(None) @ t + t @ Tree(None)
 
     root_color = t.list_repr[-1]
     branches = t.unjoin()
@@ -120,7 +112,5 @@ def _coproduct(t):
         cp_prod = cp_prod * cp
 
     # Return t \otimes \emptyset + (id \otimes B_+)[\Delta(B_-(t))]
-    out = t @ Tree(None) + TensorProductSum(
-        tuple((c, f1, f2.join(root_color)) for c, f1, f2 in cp_prod)
-    )
+    out = t @ Tree(None) + TensorProductSum(tuple((c, f1, f2.join(root_color)) for c, f1, f2 in cp_prod))
     return out.simplify()

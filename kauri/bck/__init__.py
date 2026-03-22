@@ -40,4 +40,4 @@ The ``kauri.bck`` sub-package implements the Butcher-Connes-Kreimer (BCK) :cite:
   where :math:`n(t \\setminus s)` is the number of trees in the forest :math:`[t \\setminus s]`.
 """
 
-from .bck import antipode, coproduct, counit, map_power, map_product
+from .bck import antipode, counit, coproduct, map_power, map_product

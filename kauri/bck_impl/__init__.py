@@ -16,5 +16,4 @@
 """
 Back-end for the BCK module
 """
-
-from .bck_impl import _antipode, _coproduct, _counit
+from .bck_impl import _antipode, _counit, _coproduct

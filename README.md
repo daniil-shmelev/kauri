@@ -12,13 +12,7 @@ often used in the study of B-series, Runge-Kutta methods, and backward error ana
 ## Installation
 
 ```
-uv pip install kauri
-```
-
-For local development:
-
-```
-uv sync --dev
+pip install kauri
 ```
 
 ## Documentation

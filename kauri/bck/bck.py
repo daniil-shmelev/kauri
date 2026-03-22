@@ -16,10 +16,9 @@
 """
 Front-end for the BCK module
 """
-
-from ..bck_impl import _antipode, _coproduct, _counit
+from ..bck_impl import _counit, _coproduct, _antipode
 from ..maps import Map
-from ..trees import TensorProductSum, Tree
+from ..trees import Tree, TensorProductSum
 
 counit = Map(_counit)
 counit.__doc__ = """
@@ -51,8 +50,7 @@ Example usage::
     bck.antipode(t)
 """
 
-
-def coproduct(t: Tree) -> TensorProductSum:
+def coproduct(t : Tree) -> TensorProductSum:
     """
     The coproduct :math:`\\Delta_{BCK}` of the BCK Hopf algebra.
 
@@ -72,8 +70,7 @@ def coproduct(t: Tree) -> TensorProductSum:
         raise TypeError("Argument to bck.coproduct must be a Tree, not " + str(type(t)))
     return _coproduct(t)
 
-
-def map_product(f: Map, g: Map) -> Map:
+def map_product(f : Map, g : Map) -> Map:
     """
     Returns the product of maps in the BCK Hopf algebra, defined by
 
@@ -99,16 +96,10 @@ def map_product(f: Map, g: Map) -> Map:
         counit = bck.map_product(ident, bck.antipode) # Equivalent to indent * bck.antipode
     """
     if not (isinstance(f, Map) and isinstance(g, Map)):
-        raise TypeError(
-            "Arguments in bck.map_product must be of type Map, not "
-            + str(type(f))
-            + " and "
-            + str(type(g))
-        )
+        raise TypeError("Arguments in bck.map_product must be of type Map, not " + str(type(f)) + " and " + str(type(g)))
     return f * g
 
-
-def map_power(f: Map, exponent: int) -> Map:
+def map_power(f : Map, exponent : int) -> Map:
     """
     Returns the power of a map in the BCK Hopf algebra, where the product of functions is defined by
 
@@ -140,4 +131,4 @@ def map_power(f: Map, exponent: int) -> Map:
         raise TypeError("f must be a Map, not " + str(type(f)))
     if not isinstance(exponent, int):
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
-    return f**exponent
+    return f ** exponent

@@ -14,46 +14,18 @@
 # =========================================================================
 
 import unittest
-
-import kauri.bck as bck
-from kauri import (
-    EES25,
-    EES27,
-    Tree,
-    backward_euler,
-    crank_nicolson,
-    euler,
-    exact_weights,
-    gauss6,
-    heun_rk2,
-    heun_rk3,
-    implicit_midpoint,
-    kutta_rk3,
-    lobatto6,
-    midpoint,
-    nystrom_rk5,
-    radau_iia,
-    ralston_rk3,
-    ralston_rk4,
-    rk4,
-    rk_order_cond,
-    rk_symbolic_weight,
-    trees_up_to_order,
-)
+from kauri import *
 from kauri import Tree as T
 
-sample_trees = [
-    T(None),
-    T([]),
-    T([[]]),
-    T([[], []]),
-    T([[[]]]),
-    T([[], [], []]),
-    T([[], [[]]]),
-    T([[[], []]]),
-    T([[[[]]]]),
-]
-
+trees = [T(None),
+         T([]),
+         T([[]]),
+         T([[],[]]),
+         T([[[]]]),
+         T([[],[],[]]),
+         T([[],[[]]]),
+         T([[[],[]]]),
+         T([[[[]]]])]
 
 class RKTests(unittest.TestCase):
     def test_elementary_weights(self):
@@ -61,27 +33,13 @@ class RKTests(unittest.TestCase):
         scheme = rk4
         rk_weights = scheme.elementary_weights_map()
 
-        for t in sample_trees:
+        for t in trees:
             self.assertAlmostEqual(exact_weights(t), rk_weights(t))
 
     def test_order(self):
-        methods = [
-            euler,
-            heun_rk2,
-            midpoint,
-            kutta_rk3,
-            heun_rk3,
-            ralston_rk3,
-            rk4,
-            ralston_rk4,
-            nystrom_rk5,
-            backward_euler,
-            implicit_midpoint,
-            crank_nicolson,
-            gauss6,
-            radau_iia,
-            lobatto6,
-        ]
+        methods = [euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
+                   ralston_rk3, rk4, ralston_rk4, nystrom_rk5, backward_euler,
+                   implicit_midpoint, crank_nicolson, gauss6, radau_iia, lobatto6]
         orders = [1, 2, 2, 3, 3, 3, 4, 4, 5, 1, 2, 2, 6, 5, 6]
 
         for m, ord in zip(methods, orders):
@@ -103,7 +61,6 @@ class RKTests(unittest.TestCase):
 
         for t in trees_up_to_order(5):
             self.assertAlmostEqual(bck.counit(t), m(t))
-
     #
     # def test_add(self):
     #     method1 = rk4

@@ -16,45 +16,41 @@
 """
 Runge-Kutta Schemes
 """
-
 import copy
+from typing import Union, Callable, Tuple
 import warnings
-from collections.abc import Callable
 
-import matplotlib.pyplot as plt
 import numpy as np
 import sympy
 from scipy.optimize import root
+import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from .bck import counit
 from .gentrees import trees_of_order
-from .maps import Map, exact_weights, sign
-from .trees import Forest, ForestSum, Tree
-
+from .trees import Tree, Forest, ForestSum
+from .maps import Map, sign
+from .generic_algebra import _apply
+from .bck import counit
 
 def _internal_symbolic(i, t_rep, a, b, s):
-    return sum(a[i, j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
-
+    return sum(a[i,j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
 
 def _derivative_symbolic(i, t_rep, a, b, s):
-    if t_rep in (None, []):  # Empty and singleton tree
+    if t_rep in (None, []): # Empty and singleton tree
         return 1
     out = 1
     for subtree in t_rep[:-1]:
         out *= _internal_symbolic(i, subtree, a, b, s)
     return out
 
-
 def _elementary_symbolic(t_rep, a, b, s):
-    if t_rep is None:  # Empty tree
+    if t_rep is None: # Empty tree
         return 1
-    if len(t_rep) == 1:  # Singleton tree
+    if len(t_rep) == 1: # Singleton tree
         return sum(b)
     return sum(b[i] * _derivative_symbolic(i, t_rep, a, b, s) for i in range(s))
 
-
-def _rk_symbolic_weight(t, s, explicit=False, a_mask=None, b_mask=None):
+def _rk_symbolic_weight(t, s, explicit = False, a_mask = None, b_mask = None):
     if a_mask is None:
         a_mask = [[1 for _ in range(s)] for _ in range(s)]
     if b_mask is None:
@@ -64,14 +60,14 @@ def _rk_symbolic_weight(t, s, explicit=False, a_mask=None, b_mask=None):
             for j in range(i, s):
                 a_mask[i][j] = 0
 
-    a = sympy.Matrix(s, s, lambda i, j: sympy.symbols(f"a{i}{j}"))
-    b = sympy.Matrix(1, s, lambda i, j: sympy.symbols(f"b{j}"))
+    a = sympy.Matrix(s, s, lambda i, j: sympy.symbols(f'a{i}{j}'))
+    b = sympy.Matrix(1, s, lambda i, j: sympy.symbols(f'b{j}'))
 
     # Zero terms according to mask
     for i in range(s):
         for j in range(s):
             if not a_mask[i][j]:
-                a[i, j] = 0
+                a[i,j] = 0
 
     for i in range(s):
         if not b_mask[i]:
@@ -79,28 +75,17 @@ def _rk_symbolic_weight(t, s, explicit=False, a_mask=None, b_mask=None):
 
     return _elementary_symbolic(t.list_repr, a, b, s)
 
-
-_EXACT_SUBSTITUTION_LOG_MAP = exact_weights.log()
-
-
-def _rk_symbolic_weights_map(
-    s: int, explicit: bool = False, a_mask: list | None = None, b_mask: list | None = None
-) -> Map:
-    return Map(lambda x: _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
-
-
 def rk_symbolic_weight(
-    t: Tree | Forest | ForestSum,
-    s: int,
-    explicit: bool = False,
-    a_mask: list | None = None,
-    b_mask: list | None = None,
-    mathematica_code: bool = False,
-    rationalise: bool = True,
-) -> sympy.core.basic.Basic | str | tuple:
+        t : Union[Tree, Forest, ForestSum],
+        s : int,
+        explicit : bool = False,
+        a_mask : list = None,
+        b_mask : list = None,
+        mathematica_code : bool = False,
+        rationalise : bool = True
+) -> Union[sympy.core.add.Add, str]:
     """
     Returns the elementary weight of a Tree, Forest or ForestSum :math:`t` as a SymPy symbolic expression.
-    Internally this is evaluated through a Map backend shared with substitution-based order-condition tools.
 
     :param t: A Tree, Forest or ForestSum
     :param s: The number of Runge--Kutta stages
@@ -168,11 +153,10 @@ def rk_symbolic_weight(
     if isinstance(t, (int, float)):
         t_ = t * Tree(None).as_forest_sum()
 
-    weights_map = _rk_symbolic_weights_map(s, explicit, a_mask, b_mask)
-    out = sympy.sympify(weights_map(t_))
+    out = _apply(t_, lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
 
     if rationalise:
-        out = sympy.nsimplify(out, tolerance=1e-10, rational=True)
+        out = sympy.nsimplify(out, tolerance=1e-10, rational = True)
 
     if mathematica_code:
         out = sympy.mathematica_code(out)
@@ -180,17 +164,16 @@ def rk_symbolic_weight(
 
 
 def rk_order_cond(
-    t: Tree | Forest | ForestSum,
-    s: int,
-    explicit: bool = False,
-    a_mask: list | None = None,
-    b_mask: list | None = None,
-    mathematica_code: bool = False,
-    rationalise: bool = True,
-) -> sympy.core.basic.Basic | str | tuple:
+        t : Union[Tree, Forest, ForestSum],
+        s : int,
+        explicit : bool = False,
+        a_mask : list = None,
+        b_mask : list = None,
+        mathematica_code : bool = False,
+        rationalise : bool = True
+) -> Union[sympy.core.add.Add, str]:
     """
     Returns the Runge--Kutta order condition associated with tree :math:`t` as a SymPy symbolic expression.
-    This function uses the shared RK symbolic backend, which also exposes substitution-log conditions.
 
     :param t: A Tree
     :param s: The number of Runge--Kutta stages
@@ -237,33 +220,8 @@ def rk_order_cond(
     """
     if not isinstance(t, (int, float, Tree, Forest, ForestSum)):
         raise TypeError("t must be a Tree, Forest, ForestSum, int or float, not " + str(type(t)))
-    if not isinstance(s, int):
-        raise TypeError("Number of stages s must be an int, not " + str(type(s)))
-    if not isinstance(explicit, bool):
-        raise TypeError("explicit must be a bool, not " + str(type(explicit)))
-    if not (isinstance(a_mask, list) or a_mask is None):
-        raise TypeError("a_mask must be a list, not " + str(type(a_mask)))
-    if not (isinstance(b_mask, list) or b_mask is None):
-        raise TypeError("b_mask must be a list, not " + str(type(a_mask)))
-    if not isinstance(mathematica_code, bool):
-        raise TypeError("mathematica_code must be a bool, not " + str(type(mathematica_code)))
-    if not isinstance(rationalise, bool):
-        raise TypeError("rationalise must be a bool, not " + str(type(rationalise)))
 
-    t_ = t
-    if isinstance(t, (int, float)):
-        t_ = t * Tree(None).as_forest_sum()
-
-    weights_map = _rk_symbolic_weights_map(s, explicit, a_mask, b_mask)
-    out = sympy.sympify((weights_map - exact_weights)(t_))
-
-    if rationalise:
-        out = sympy.nsimplify(out, tolerance=1e-10, rational=True)
-
-    if mathematica_code:
-        out = sympy.mathematica_code(out)
-    return out
-
+    return rk_symbolic_weight(t - 1. / t.factorial(), s, explicit, a_mask, b_mask, mathematica_code, rationalise)
 
 class RK:
     """
@@ -282,8 +240,7 @@ class RK:
     :param a: The Runge--Kutta parameter matrix :math:`A`.
     :param b: The Runge--Kutta parameter vector :math:`b`.
     """
-
-    def __init__(self, a, b, name=None):
+    def __init__(self, a, b, name = None):
         if not isinstance(a, (list, np.ndarray)):
             raise TypeError("a must be a list or array, not " + str(type(a)))
         if not isinstance(b, (list, np.ndarray)):
@@ -292,9 +249,7 @@ class RK:
         self.name = name
         self.s = len(b)
         if len(a) != self.s or len(a[0]) != self.s:
-            raise ValueError(
-                "Parameter 'a' must be a square s x s matrix and b a vector of length s"
-            )
+            raise ValueError("Parameter 'a' must be a square s x s matrix and b a vector of length s")
 
         self.a = a
         self.b = b
@@ -329,7 +284,7 @@ class RK:
         a_inv = [[self.a[i][j] - self.b[j] for j in range(self.s)] for i in range(self.s)]
         return RK(a_inv, b_inv)
 
-    def reverse(self) -> "RK":
+    def reverse(self) -> 'RK':
         """
         Returns the RK scheme given by reversing the step size h to -h, with Butcher tableau:
 
@@ -343,12 +298,9 @@ class RK:
 
         :rtype: RK
         """
-        return RK(
-            [[-self.a[i][j] for j in range(self.s)] for i in range(self.s)],
-            [-self.b[i] for i in range(self.s)],
-        )
+        return RK([[-self.a[i][j] for j in range(self.s)] for i in range(self.s)], [-self.b[i] for i in range(self.s)])
 
-    def adjoint(self) -> "RK":
+    def adjoint(self) -> 'RK':
         """
         Returns the adjoint Runge--Kutta method, given by the Butcher tableau:
 
@@ -366,10 +318,7 @@ class RK:
         :rtype: RK
         """
         b_adj = [self.b[self.s - 1 - j] for j in range(self.s)]
-        a_adj = [
-            [self.b[self.s - 1 - j] - self.a[self.s - 1 - i][self.s - j - 1] for j in range(self.s)]
-            for i in range(self.s)
-        ]
+        a_adj = [[self.b[self.s - 1 - j] - self.a[self.s - 1 - i][self.s - j - 1] for j in range(self.s)] for i in range(self.s)]
         return RK(a_adj, b_adj)
 
     def _explicit_step(self, y0, t0, f, h):
@@ -382,7 +331,7 @@ class RK:
         y_next = y0 + h * sum(self.b[i] * k[i] for i in range(self.s))
         return y_next
 
-    def _implicit_step(self, y0, t0, f, h, tol=1e-10, max_iter=100):
+    def _implicit_step(self, y0, t0, f, h, tol = 1e-10, max_iter = 100):
         y0 = np.array(y0)
         dim = len(y0)
 
@@ -401,7 +350,7 @@ class RK:
 
             return np.concatenate(G_vec)
 
-        sol = root(G, k0, method="hybr", tol=tol, options={"maxfev": max_iter})
+        sol = root(G, k0, method='hybr', tol=tol, options={'maxfev': max_iter})
 
         if not sol.success:
             warnings.warn(f"Implicit RK solver failed: {sol.message}")
@@ -410,15 +359,14 @@ class RK:
         y_next = y0 + h * sum(self.b[i] * K[i] for i in range(self.s))
         return y_next
 
-    def step(
-        self,
-        y0: list | np.ndarray,
-        t0: float,
-        f: Callable[[float, float], list | np.ndarray],
-        h: float,
-        tol: float = 1e-10,
-        max_iter: int = 100,
-    ) -> list | np.ndarray:
+    def step(self,
+             y0 : Union[list, np.ndarray],
+             t0 : float,
+             f : Callable[[float, float], Union[list, np.ndarray]],
+             h : float,
+             tol : float = 1e-10,
+             max_iter : int = 100
+             ) -> Union[list, np.ndarray]:
         """
         Runs one step of the Runge--Kutta method.
 
@@ -452,8 +400,7 @@ class RK:
             raise TypeError("max_iter must be an int, not " + str(type(max_iter)))
 
         def f_(t_, y_):
-            return np.array(f(t_, y_))
-
+            return np.array(f(t_,y_))
         y0_ = np.array(y0).copy()
 
         if self.explicit:
@@ -461,19 +408,18 @@ class RK:
 
         return self._implicit_step(y0_, t0, f_, h, tol, max_iter)
 
-    def run(
-        self,
-        y0: list | np.ndarray,
-        t0: float,
-        t_end: float,
-        f: Callable[[float, float], list | np.ndarray],
-        n: int,
-        tol: float = 1e-10,
-        max_iter: int = 100,
-        plot: bool = False,
-        plot_dims: list | np.ndarray | None = None,
-        plot_kwargs: dict | None = None,
-    ) -> tuple[list, list]:
+    def run(self,
+            y0 : Union[list, np.ndarray],
+            t0 : float,
+            t_end : float,
+            f : Callable[[float, float], Union[list, np.ndarray]],
+            n : int,
+            tol : float = 1e-10,
+            max_iter : int = 100,
+            plot : bool = False,
+            plot_dims : Union[list, np.ndarray] = None,
+            plot_kwargs : dict = None
+            ) -> Tuple[list, list]:
         """
         Runs the Runge--Kutta method.
 
@@ -530,7 +476,6 @@ class RK:
 
         def f_(t_, y_):
             return np.array(f(t_, y_))
-
         y0_ = np.array(y0).copy()
 
         t_vals = [t0]
@@ -540,11 +485,7 @@ class RK:
         y = y0_.copy()
         h = (t_end - t0) / n
 
-        step_func = (
-            (lambda y_, t_: self._explicit_step(y_, t_, f_, h))
-            if self.explicit
-            else (lambda y_, t_: self._implicit_step(y_, t_, f_, h, tol, max_iter))
-        )
+        step_func = (lambda y_, t_ : self._explicit_step(y_, t_, f_, h)) if self.explicit else (lambda y_, t_ : self._implicit_step(y_, t_, f_, h, tol, max_iter))
 
         for _ in tqdm(range(n)):
             y = step_func(y, t)
@@ -557,7 +498,45 @@ class RK:
 
         return t_vals, y_vals
 
-    def __mul__(self, other: "RK") -> "RK":
+    # def __add__(self, other : 'RK') -> 'RK':
+    #     """
+    #     Returns the sum of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
+    #
+    #     .. math::
+    #
+    #         \\begin{array}{c|cc}
+    #             c_1 & A_1 & 0 \\\\
+    #             c_2 & 0 & A_2\\\\
+    #             \\hline
+    #              & b_1 & b_2
+    #         \\end{array}
+    #
+    #     :rtype: RK
+    #     """
+    #     if not isinstance(other, RK):
+    #         raise TypeError("Cannot add RK and object of type " + str(type(other)))
+    #
+    #     s1 = other.s
+    #     a1 = other.a
+    #     b1 = other.b
+    #
+    #     s2 = self.s
+    #     a2 = self.a
+    #     b2 = self.b
+    #
+    #     a = [[a1[i][j] for j in range(s1)] + [0 for _ in range(s2)] for i in range(s1)]
+    #     a += [[0 for _ in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
+    #     b = b1 + b2
+    #
+    #     return RK(a, b)
+    #
+    # def __neg__(self):
+    #     return RK(self.a, [-self.b[i] for i in range(self.s)])
+    #
+    # def __sub__(self, other):
+    #     return self + other.__neg__()
+
+    def __mul__(self, other : 'RK') -> 'RK':
         """
         Returns the composition of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
 
@@ -589,9 +568,9 @@ class RK:
         a += [[b1[j] for j in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
         b = list(b1) + list(b2)
 
-        return RK(a, b)
+        return RK(a,b)
 
-    def __pow__(self, exponent: int) -> "RK":
+    def __pow__(self, exponent : int) -> 'RK':
         """
         Returns the compositional power of the Runge--Kutta scheme. In particular, ``self ** (-1)`` returns the scheme
         with Butcher tableau:
@@ -611,9 +590,7 @@ class RK:
         :rtype: RK
         """
         if not isinstance(exponent, int):
-            raise TypeError(
-                "Exponent in RK power must be int, got " + str(type(exponent)) + " instead."
-            )
+            raise TypeError("Exponent in RK power must be int, got " + str(type(exponent)) + " instead.")
 
         if exponent == 0:
             return RK([[0]], [0])
@@ -625,7 +602,7 @@ class RK:
         else:
             out = copy.deepcopy(self)
 
-        for _ in range(expn_ - 1):
+        for _ in range(expn_-1):
             out = out * self
         return out
 
@@ -653,10 +630,8 @@ class RK:
 
         :rtype: Map
         """
-
         def f_(x):
             return self._elementary_weights(x.list_repr)
-
         return Map(f_)
 
     def modified_equation_map(self) -> Map:
@@ -681,14 +656,9 @@ class RK:
         """
         return self.elementary_weights_map().modified_equation()
 
-    def order(self, tol: float = 1e-10, limit: int = 10) -> int:
+    def order(self, tol : float = 1e-10, limit : int = 10) -> int:
         """
         Returns the order of the RK scheme.
-
-        This is evaluated using substitution-algebra coefficients by comparing
-        :math:`\\log(\\phi)` against :math:`\\log(e)` on rooted trees, where
-        :math:`\\phi` is the scheme's elementary-weights character and
-        :math:`e(t)=1/t!` are exact B-series weights.
 
         :param tol: Tolerance for evaluating order conditions. An order condition of the form ``self.elementary_weights(t) = 1./t.factorial()``
             is considered to be satisfied if ``abs( self.elementary_weights(t) - 1./t.factorial() ) > tol``
@@ -701,17 +671,16 @@ class RK:
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))
 
-        theta = self.elementary_weights_map().log()
         n = 0
         while True:
             for t in trees_of_order(n):
-                if abs(theta(t) - _EXACT_SUBSTITUTION_LOG_MAP(t)) > tol:
-                    return n - 1
+                if abs(self._elementary_weights(t.list_repr) - 1. / t.factorial()) > tol:
+                    return n-1
             if n >= limit:
                 raise RuntimeError("Order equals or exceeds limit of " + str(limit))
             n += 1
 
-    def antisymmetric_order(self, tol: float = 1e-10, limit: int = 10) -> int:
+    def antisymmetric_order(self, tol : float = 1e-10, limit : int = 10) -> int:
         """
         Returns the antisymmetric order of the RK scheme. See :cite:`shmelev2025ees`
         for details.
