@@ -14,7 +14,7 @@
 # =========================================================================
 
 import unittest
-from kauri import *
+from kauri import Tree, Map, ident, omega, cem
 from kauri import Tree as T
 
 trees = [T(None),

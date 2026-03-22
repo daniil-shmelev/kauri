@@ -14,7 +14,7 @@
 # =========================================================================
 
 import unittest
-from kauri import *
+from kauri import Tree, elementary_differential, exact_weights, BSeries, bck
 from kauri import Tree as T
 import sympy as sp
 import math

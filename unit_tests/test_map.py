@@ -14,7 +14,7 @@
 # =========================================================================
 
 import unittest
-from kauri import *
+from kauri import Tree, Map, ident, exact_weights, bck
 from kauri import Tree as T
 
 trees = [T(None),
@@ -34,7 +34,7 @@ class MapTests(unittest.TestCase):
         h = f * g
 
         for t in trees:
-            self.assertEqual(kauri.bck.bck.counit(t), h(t))
+            self.assertEqual(bck.counit(t), h(t))
 
     def test_add(self):
         f = bck.antipode
@@ -48,7 +48,7 @@ class MapTests(unittest.TestCase):
 
         g = f * (f**(-1))
         for t in trees:
-            self.assertEqual(kauri.bck.bck.counit(t), g(t))
+            self.assertEqual(bck.counit(t), g(t))
 
     def test_exact_weights(self):
         for t in trees:

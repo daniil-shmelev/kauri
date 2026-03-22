@@ -14,7 +14,7 @@
 # =========================================================================
 
 import unittest
-from kauri import *
+from kauri import Tree, Forest, ForestSum, trees_of_order, trees_up_to_order
 from kauri import Tree as T
 
 trees = [T(None),

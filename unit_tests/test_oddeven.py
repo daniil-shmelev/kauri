@@ -14,7 +14,7 @@
 # =========================================================================
 
 import unittest
-from kauri import *
+from kauri import Tree, id_sqrt, minus, plus, trees_up_to_order, exact_weights, bck
 from kauri import Tree as T
 
 trees = [T([]),
