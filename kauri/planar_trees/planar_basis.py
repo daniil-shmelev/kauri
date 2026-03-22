@@ -125,22 +125,8 @@ class OrderedForestSum:
         return OrderedForestSum(tuple(terms))
 
 
-@dataclass(frozen=True)
-class TensorOrderedSum:
-    """Linear combination of tensor products of ordered forests."""
-
-    term_list: tuple[tuple[sympy.core.basic.Basic, OrderedForest, OrderedForest], ...]
-
-    def __iter__(self) -> Iterator[tuple]:
-        yield from self.term_list
-
-    def __len__(self) -> int:
-        return len(self.term_list)
-
-
 EMPTY_PLANAR_TREE = PlanarTree(None)
 EMPTY_ORDERED_FOREST = OrderedForest((EMPTY_PLANAR_TREE,))
-EMPTY_ORDERED_FOREST_SUM = OrderedForestSum(((sympy.Integer(1), EMPTY_ORDERED_FOREST),))
 ZERO_ORDERED_FOREST_SUM = OrderedForestSum(((sympy.Integer(0), EMPTY_ORDERED_FOREST),))
 
 

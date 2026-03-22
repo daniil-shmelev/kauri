@@ -123,10 +123,6 @@ class MKWMap:
         return MKWMap(twisted)
 
 
-def counit_map() -> MKWMap:
-    return MKWMap(counit_planar)
-
-
 def verify_mkw_ees(phi: MKWMap, order: int) -> bool:
     from kauri.gentrees import planar_trees_up_to_order
     from kauri.planar_trees.planar_basis import validate_order

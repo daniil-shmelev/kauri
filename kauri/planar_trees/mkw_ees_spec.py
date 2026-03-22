@@ -4,22 +4,9 @@ Specification helpers for truncated MKW-style EES verification.
 
 from __future__ import annotations
 
-from dataclasses import dataclass
-
 import sympy
 
 from kauri.planar_trees.planar_basis import PlanarTree
-
-
-@dataclass(frozen=True)
-class MKWEESSpecification:
-    """
-    Minimal specification for the truncated EES residual.
-    """
-
-    truncation_order: int
-    identity_name: str = "mkw_truncated_ees"
-    residual_name: str = "(phi_sign ⋆ phi) - counit"
 
 
 def counit_planar(tree: PlanarTree) -> sympy.core.basic.Basic:

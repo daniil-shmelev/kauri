@@ -20,12 +20,6 @@ import math
 from functools import cache
 import sympy as sp
 
-def _to_tuple(obj):
-    # Convert a list representation to a tuple representation (for immutability)
-    if isinstance(obj, list):
-        return tuple(_to_tuple(el) for el in obj)
-    return obj
-
 def _to_list(obj):
     # Convert a tuple representation to a list representation
     if isinstance(obj, tuple):
