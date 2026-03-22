@@ -25,13 +25,6 @@ from typing import Union, Callable
 from .trees import Tree, Forest, ForestSum, _is_simplifiable, EMPTY_TREE, _is_tree_like
 from .generic_algebra import _apply, _func_power, _func_product
 
-from .bck_impl import _coproduct as bck_coproduct
-from .bck_impl import _antipode as bck_antipode
-from .bck_impl import _counit as bck_counit
-
-from .cem_impl import _coproduct as cem_coproduct
-from .cem_impl import _antipode as cem_antipode
-
 class Map:
     """
     A multiplicative linear map over the Hopf algebra of non-planar rooted trees.
@@ -79,6 +72,7 @@ class Map:
         if not isinstance(exponent, int):
             raise TypeError("Error in BCK power: exponent must be an integer, got " + str(type(exponent)) + " instead")
 
+        from .bck.bck import _coproduct as bck_coproduct, _counit as bck_counit, _antipode as bck_antipode
         return Map(lambda x : _func_power(x, self.func, exponent, bck_coproduct, bck_counit, bck_antipode))
 
     def __imul__(self, other : Union[int, float, 'Map']):
@@ -86,6 +80,7 @@ class Map:
         if isinstance(other, (int, float)):
             self.func = lambda x : other * func_(x)
         elif isinstance(other, Map):
+            from .bck.bck import _coproduct as bck_coproduct
             self.func = lambda x : _func_product(x, func_, other.func, bck_coproduct)
         else:
             raise TypeError("Error in BCK product: Cannot multiply Map by object of type " + str(type(other)))
@@ -96,6 +91,7 @@ class Map:
         if isinstance(other, (int, float)):
             self.func = lambda x: other * func_(x)
         elif isinstance(other, Map):
+            from .cem.cem import _coproduct as cem_coproduct
             def f_(x):
                 if x.list_repr is None:
                     out = other.func(EMPTY_TREE)
@@ -281,6 +277,7 @@ class Map:
 
         :return: Map corresponding to the modified vector field
         """
+        from .cem.cem import _antipode as cem_antipode
         return exact_weights ^ (self & Map(cem_antipode))
 
     def exp(self) -> 'Map':
@@ -314,6 +311,7 @@ class Map:
         :return: Exponential map
         :rtype: Map
         """
+        from .cem.cem import _antipode as cem_antipode
         return self ^ (exact_weights & Map(cem_antipode))
 
 
