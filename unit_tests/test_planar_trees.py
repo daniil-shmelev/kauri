@@ -16,7 +16,8 @@
 import unittest
 
 from kauri.gentrees import planar_trees_of_order, planar_trees_up_to_order
-from kauri.planar_trees.mkw_truncated import MKWMap, coproduct_terms, verify_mkw_ees
+from kauri.maps import Map
+from kauri.planar_trees.mkw_truncated import coproduct_terms, verify_mkw_ees
 from kauri.planar_trees.planar_basis import EMPTY_PLANAR_TREE, PlanarTree
 
 
@@ -44,6 +45,6 @@ class PlanarTreeTests(unittest.TestCase):
         self.assertEqual(terms[1].right, EMPTY_PLANAR_TREE)
 
     def test_mkw_verification(self):
-        counit = MKWMap(lambda tree: 1 if tree == EMPTY_PLANAR_TREE else 0)
+        counit = Map(lambda tree: 1 if tree == EMPTY_PLANAR_TREE else 0)
         self.assertTrue(verify_mkw_ees(counit, 4))
-        self.assertFalse(verify_mkw_ees(MKWMap(lambda tree: 1), 3))
+        self.assertFalse(verify_mkw_ees(Map(lambda tree: 1), 3))

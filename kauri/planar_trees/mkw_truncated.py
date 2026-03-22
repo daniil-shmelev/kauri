@@ -4,18 +4,17 @@ Truncated ordered-tree Hopf-algebra utilities for symbolic verification.
 
 from __future__ import annotations
 
-from collections.abc import Callable
 from dataclasses import dataclass
 from itertools import product
 
 import sympy
 
+from kauri.maps import Map
 from kauri.planar_trees.mkw_ees_spec import counit_planar, sign_for_tree
 from kauri.planar_trees.planar_basis import (
     EMPTY_ORDERED_FOREST,
     EMPTY_PLANAR_TREE,
     OrderedForest,
-    OrderedForestSum,
     PlanarTree,
 )
 
@@ -71,64 +70,31 @@ def _coproduct_helper(tree: PlanarTree) -> tuple[tuple[OrderedForest, PlanarTree
     return tuple(out_terms)
 
 
-class MKWMap:
-    """
-    Minimal multiplicative linear map on ordered trees/forests.
-    """
+def planar_convolution(f: Map, g: Map) -> Map:
+    """Function product of two maps using the planar BCK-style coproduct."""
 
-    def __init__(self, func: Callable[[PlanarTree], sympy.core.basic.Basic]) -> None:
-        self._func = func
-        self._cache: dict[PlanarTree, sympy.core.basic.Basic] = {}
+    def conv(tree: PlanarTree) -> sympy.core.basic.Basic:
+        out: sympy.core.basic.Basic = sympy.Integer(0)
+        for term in coproduct_terms(tree):
+            left_val = sympy.sympify(f(term.left))
+            right_val = sympy.sympify(g(term.right))
+            out = sympy.expand(out + sympy.sympify(term.coeff) * left_val * right_val)
+        return _simplify_expanded(out)
 
-    def _call_tree(self, tree: PlanarTree) -> sympy.core.basic.Basic:
-        if tree not in self._cache:
-            self._cache[tree] = sympy.sympify(self._func(tree))
-        return self._cache[tree]
-
-    def __call__(
-        self, value: PlanarTree | OrderedForest | OrderedForestSum
-    ) -> sympy.core.basic.Basic:
-        if isinstance(value, PlanarTree):
-            return self._call_tree(value)
-        if isinstance(value, OrderedForest):
-            out: sympy.core.basic.Basic = sympy.Integer(1)
-            for tree in value.tree_list:
-                out = sympy.expand(sympy.sympify(out) * sympy.sympify(self._call_tree(tree)))
-            return _simplify_expanded(out)
-        if isinstance(value, OrderedForestSum):
-            out_sum: sympy.core.basic.Basic = sympy.Integer(0)
-            for coeff, forest in value.term_list:
-                out_sum = sympy.expand(
-                    sympy.sympify(out_sum) + sympy.sympify(coeff) * sympy.sympify(self(forest))
-                )
-            return _simplify_expanded(out_sum)
-        raise TypeError(f"Unsupported value type for MKWMap: {type(value)}")
-
-    def convolution(self, other: MKWMap) -> MKWMap:
-        def conv(tree: PlanarTree) -> sympy.core.basic.Basic:
-            out: sympy.core.basic.Basic = sympy.Integer(0)
-            for term in coproduct_terms(tree):
-                coeff_expr = sympy.sympify(term.coeff)
-                left_expr = sympy.sympify(self(term.left))
-                right_expr = sympy.sympify(other(term.right))
-                out = sympy.expand(sympy.sympify(out) + coeff_expr * left_expr * right_expr)
-            return _simplify_expanded(out)
-
-        return MKWMap(conv)
-
-    def sign_twisted(self) -> MKWMap:
-        def twisted(tree: PlanarTree) -> sympy.core.basic.Basic:
-            return sympy.expand(sympy.sympify(sign_for_tree(tree)) * sympy.sympify(self(tree)))
-
-        return MKWMap(twisted)
+    return Map(conv)
 
 
-def verify_mkw_ees(phi: MKWMap, order: int) -> bool:
+def verify_mkw_ees(phi: Map, order: int) -> bool:
     from kauri.gentrees import planar_trees_up_to_order
     from kauri.planar_trees.planar_basis import validate_order
 
     validate_order(order, allow_zero=False)
-    residual_map = phi.sign_twisted().convolution(phi)
+    phi_sign = Map(
+        lambda tree: sympy.expand(
+            sympy.sympify(sign_for_tree(tree)) * sympy.sympify(phi(tree))
+        )
+    )
+    residual_map = planar_convolution(phi_sign, phi)
     return all(
         _simplify_expanded(sympy.sympify(residual_map(tree)) - sympy.sympify(counit_planar(tree)))
         == 0
