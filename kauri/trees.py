@@ -1268,12 +1268,6 @@ def _is_scalar(obj):
 def _is_tree_or_forest(obj):
     return isinstance(obj, (Tree, Forest))
 
-def _is_simplifiable(obj):
-    return isinstance(obj, (Forest, ForestSum))
-
-def _is_tree_like(obj):
-    return isinstance(obj, (Tree, Forest, ForestSum))
-
 EMPTY_TREE = Tree(None)
 EMPTY_FOREST = Forest((EMPTY_TREE,))
 EMPTY_FOREST_SUM = ForestSum( ( (1, EMPTY_FOREST), ) )

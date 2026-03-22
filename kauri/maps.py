@@ -22,9 +22,9 @@ import copy
 from functools import lru_cache
 from typing import Union, Callable
 
-from .trees import Tree, Forest, ForestSum, _is_simplifiable, EMPTY_TREE
+from .trees import Tree, Forest, ForestSum, EMPTY_TREE
 from ._protocols import TreeLike, ForestLike, ForestSumLike
-from .generic_algebra import _apply, _func_power, _func_product
+from .generic_algebra import apply_map, func_power, func_product
 
 class Map:
     """
@@ -44,7 +44,7 @@ class Map:
     def __call__(self, t : Union[Tree, Forest, ForestSum]) -> Union[int, float, Tree, Forest, ForestSum]:
         if not isinstance(t, (TreeLike, ForestLike, ForestSumLike)):
             raise TypeError("Argument to Map must be Tree, Forest or ForestSum, not " + str(type(t)))
-        return _apply(t, self.func)
+        return apply_map(t, self.func)
 
     def __pow__(self, exponent : int) -> 'Map':
         """
@@ -73,16 +73,16 @@ class Map:
         if not isinstance(exponent, int):
             raise TypeError("Error in BCK power: exponent must be an integer, got " + str(type(exponent)) + " instead")
 
-        from .bck.bck import _coproduct as bck_coproduct, _counit as bck_counit, _antipode as bck_antipode
-        return Map(lambda x : _func_power(x, self.func, exponent, bck_coproduct, bck_counit, bck_antipode))
+        from .bck.bck import coproduct_impl as bck_coproduct, counit_impl as bck_counit, antipode_impl as bck_antipode
+        return Map(lambda x : func_power(x, self.func, exponent, bck_coproduct, bck_counit, bck_antipode))
 
     def __imul__(self, other : Union[int, float, 'Map']):
         func_ = self.func
         if isinstance(other, (int, float)):
             self.func = lambda x : other * func_(x)
         elif isinstance(other, Map):
-            from .bck.bck import _coproduct as bck_coproduct
-            self.func = lambda x : _func_product(x, func_, other.func, bck_coproduct)
+            from .bck.bck import coproduct_impl as bck_coproduct
+            self.func = lambda x : func_product(x, func_, other.func, bck_coproduct)
         else:
             raise TypeError("Error in BCK product: Cannot multiply Map by object of type " + str(type(other)))
         return self
@@ -92,13 +92,13 @@ class Map:
         if isinstance(other, (int, float)):
             self.func = lambda x: other * func_(x)
         elif isinstance(other, Map):
-            from .cem.cem import _coproduct as cem_coproduct
+            from .cem.cem import coproduct_impl as cem_coproduct
             def f_(x):
                 if x.list_repr is None:
                     out = other.func(EMPTY_TREE)
                 else:
-                    out = _func_product(x, func_, other.func, cem_coproduct)
-                if _is_simplifiable(out):
+                    out = func_product(x, func_, other.func, cem_coproduct)
+                if isinstance(out, (ForestLike, ForestSumLike)):
                     out = out.singleton_reduced()
                 return out
             self.func = f_
@@ -278,7 +278,7 @@ class Map:
 
         :return: Map corresponding to the modified vector field
         """
-        from .cem.cem import _antipode as cem_antipode
+        from .cem.cem import antipode_impl as cem_antipode
         return exact_weights ^ (self & Map(cem_antipode))
 
     def exp(self) -> 'Map':
@@ -312,7 +312,7 @@ class Map:
         :return: Exponential map
         :rtype: Map
         """
-        from .cem.cem import _antipode as cem_antipode
+        from .cem.cem import antipode_impl as cem_antipode
         return self ^ (exact_weights & Map(cem_antipode))
 
 

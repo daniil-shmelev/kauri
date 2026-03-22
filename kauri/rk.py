@@ -29,7 +29,7 @@ from tqdm import tqdm
 from .gentrees import trees_of_order
 from .trees import Tree, Forest, ForestSum
 from .maps import Map, sign
-from .generic_algebra import _apply
+from .generic_algebra import apply_map
 from .bck import counit
 
 def _internal_symbolic(i, t_rep, a, b, s):
@@ -153,7 +153,7 @@ def rk_symbolic_weight(
     if isinstance(t, (int, float)):
         t_ = t * Tree(None).as_forest_sum()
 
-    out = _apply(t_, lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
+    out = apply_map(t_, lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
 
     if rationalise:
         out = sympy.nsimplify(out, tolerance=1e-10, rational = True)

@@ -20,15 +20,15 @@ from functools import cache
 import itertools
 from ..maps import Map
 from ..trees import (Tree, Forest, TensorProductSum)
-from ..generic_algebra import _func_power
+from ..generic_algebra import func_power
 
 
-def _counit(t):
+def counit_impl(t):
     # Return 1 if t is the tree with one node, otherwise 0
     return 1 if len(t.list_repr) == 1 else 0
 
 @cache
-def _antipode(t):
+def antipode_impl(t):
 
     # Consider the empty tree and the single node tree to be equal, since the latter is the unit
     if t.list_repr is None:
@@ -36,13 +36,13 @@ def _antipode(t):
     if len(t.list_repr) == 1:
         return t.as_forest_sum()
 
-    cp = _coproduct(t)
+    cp = coproduct_impl(t)
     out = -t.as_forest_sum() # First term, -t
     for c, branches, subtree_ in cp: # Remaining terms
         subtree = subtree_[0] # Convert from Forest to Tree
         if branches.equals(t.as_forest()) or subtree.equals(t):
             continue # We've already included the -t term at the start, so move on
-        out = out - c * _antipode(subtree) * branches
+        out = out - c * antipode_impl(subtree) * branches
 
     return out.singleton_reduced().simplify() # Single node tree is the unit, so can apply .singleton_reduced() here
 
@@ -117,12 +117,12 @@ def _coproduct_helper(t):
 
     return t_coproduct_forests, t_coproduct_trees
 
-def _coproduct(t):
+def coproduct_impl(t):
     f, s = _coproduct_helper(t)
     cp = zip([x.simplify().singleton_reduced() for x in f], s)
     return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).simplify()
 
-counit = Map(_counit)
+counit = Map(counit_impl)
 counit.__doc__ = """
 The counit :math:`\\varepsilon_{CEM}` of the CEM Hopf algebra.
 
@@ -140,7 +140,7 @@ Example usage::
 def _safe_antipode(t):
     if t.colors() > 1:
         raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
-    return _antipode(t)
+    return antipode_impl(t)
 
 antipode = Map(_safe_antipode)
 antipode.__doc__ = """
@@ -177,7 +177,7 @@ def coproduct(t : Tree) -> TensorProductSum:
         raise TypeError("Argument to cem.coproduct must be a Tree, not " + str(type(t)))
     if t.colors() > 1:
         raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
-    return _coproduct(t)
+    return coproduct_impl(t)
 
 def map_product(f : Map, g : Map) -> Map:
     """
@@ -239,4 +239,4 @@ def map_power(f : Map, exponent : int) -> Map:
     if not isinstance(exponent, int):
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
 
-    return Map(lambda x: _func_power(x, f.func, exponent, _coproduct, _counit, _antipode))
+    return Map(lambda x: func_power(x, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))

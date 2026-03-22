@@ -20,32 +20,32 @@ from functools import cache
 from ..maps import Map
 from ..trees import (Tree, TensorProductSum,
                      EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM)
-from ..generic_algebra import _forest_apply
+from ..generic_algebra import forest_apply
 
 
-def _counit(t):
+def counit_impl(t):
     # Return 1 if t is the empty tree, otherwise 0
     return 1 if t.list_repr is None else 0
 
 @cache
-def _antipode(t):
+def antipode_impl(t):
     if t.list_repr is None:
         return EMPTY_FOREST_SUM # Antipode of empty tree is the empty tree
     if t.list_repr == tuple():
         return -t # Antipode of singleton is the negative singleton
 
-    cp = _coproduct(t)
+    cp = coproduct_impl(t)
     out = -t.as_forest_sum() # First term, -t
     for c, branches, subtree_ in cp: # Remaining terms
         subtree = subtree_[0] # Convert from Forest to Tree
         if subtree.equals(t) or subtree.equals(EMPTY_TREE):
             continue # We've already included the -t term at the start, so move on
-        out = out - c * _forest_apply(branches, _antipode) * subtree
+        out = out - c * forest_apply(branches, antipode_impl) * subtree
 
     return out.simplify()
 
 @cache
-def _coproduct(t):
+def coproduct_impl(t):
     # This follows the recursive definition of https://arxiv.org/pdf/hep-th/9808042
     # using B_- and B_+
     if t == Tree(None):
@@ -58,14 +58,14 @@ def _coproduct(t):
 
     cp_prod = 1
     for subtree in branches:
-        cp = _coproduct(subtree)
+        cp = coproduct_impl(subtree)
         cp_prod = cp_prod * cp
 
     # Return t \otimes \emptyset + (id \otimes B_+)[\Delta(B_-(t))]
     out = t @ Tree(None) + TensorProductSum(tuple((c, f1, f2.join(root_color)) for c, f1, f2 in cp_prod))
     return out.simplify()
 
-counit = Map(_counit)
+counit = Map(counit_impl)
 counit.__doc__ = """
 The counit :math:`\\varepsilon_{BCK}` of the BCK Hopf algebra.
 
@@ -80,7 +80,7 @@ Example usage::
     bck.counit(kr.Tree([])) # Returns 0
 """
 
-antipode = Map(_antipode)
+antipode = Map(antipode_impl)
 antipode.__doc__ = """
 The antipode :math:`S_{BCK}` of the BCK Hopf algebra.
 
@@ -113,7 +113,7 @@ def coproduct(t : Tree) -> TensorProductSum:
     """
     if not isinstance(t, Tree):
         raise TypeError("Argument to bck.coproduct must be a Tree, not " + str(type(t)))
-    return _coproduct(t)
+    return coproduct_impl(t)
 
 def map_product(f : Map, g : Map) -> Map:
     """

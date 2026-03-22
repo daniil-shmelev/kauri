@@ -19,7 +19,7 @@ decomposition applied to the BCK Hopf algebra :cite:`shmelev2025ees, aguiar2006c
 
 from .trees import Tree
 from .bck import antipode
-from .generic_algebra import _apply
+from .generic_algebra import apply_map
 from .maps import Map, ident, sign
 from functools import cache
 
@@ -31,7 +31,7 @@ def _id_sqrt(self): #Id^{1/2}
         return Tree([]) * 0.5
     else:
         out = (ident ** 2)(self) - 2 * self
-        out = _apply(out, _id_sqrt)
+        out = apply_map(out, _id_sqrt)
         out = (self - out) * 0.5
         out = out.simplify()
         return out
