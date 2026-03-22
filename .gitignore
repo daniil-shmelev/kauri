@@ -5,5 +5,4 @@ build/
 /.ipynb_checkpoints
 /docs/_build
 *.pyc
-.specstory/
-*-info
+*.egg-info
