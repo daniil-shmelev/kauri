@@ -16,15 +16,16 @@
 """
 Utility functions for dealing with generic Hopf algebras on trees
 """
-from .trees import Forest, ForestSum, _is_simplifiable
+from ._protocols import ForestLike, ForestSumLike
 
 def _forest_apply(f, func):
     # Apply a function func multiplicatively to a forest f
-    out = 1
-    for t in f.tree_list:
+    it = iter(f.tree_list)
+    out = func(next(it))
+    for t in it:
         out = out * func(t)
 
-    if _is_simplifiable(out):
+    if isinstance(out, (ForestLike, ForestSumLike)):
         out = out.simplify()
     return out
 
@@ -32,20 +33,21 @@ def _forest_sum_apply(fs, func):
     # Applies a function func linearly and multiplicatively to a forest sum fs
     out = 0
     for c, f in fs.term_list:
-        term = 1
-        for t in f.tree_list:
+        it = iter(f.tree_list)
+        term = func(next(it))
+        for t in it:
             term = term * func(t)
         out += c * term
 
-    if _is_simplifiable(out):
+    if isinstance(out, (ForestLike, ForestSumLike)):
         out = out.simplify()
     return out
 
 def _apply(t, func):
     # Applies a function func as a linear multiplicative map to a Forest or ForestSum t
-    if isinstance(t, Forest):
+    if isinstance(t, ForestLike):
         return _forest_apply(t, func)
-    if isinstance(t, ForestSum):
+    if isinstance(t, ForestSumLike):
         return _forest_sum_apply(t, func)
     return func(t)
 
@@ -65,7 +67,7 @@ def _func_product(t, func1, func2, coproduct):
         subtree = subtree_[0] # subtree_ is a forest with one tree, which is subtree_[0]
         out += c * _forest_apply(branches, func1) * func2(subtree)
 
-    if _is_simplifiable(out):
+    if isinstance(out, (ForestLike, ForestSumLike)):
         out = out.simplify()
 
     return out
@@ -88,6 +90,6 @@ def _func_power(t, func, exponent, coproduct, counit, antipode):
             return _func_power(x, func, exponent - 1, coproduct, counit, antipode)
         res = _func_product(t, func, m, coproduct)
 
-    if _is_simplifiable(res):
+    if isinstance(res, (ForestLike, ForestSumLike)):
         res = res.simplify()
     return res

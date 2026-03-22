@@ -22,7 +22,8 @@ import copy
 from functools import lru_cache
 from typing import Union, Callable
 
-from .trees import Tree, Forest, ForestSum, _is_simplifiable, EMPTY_TREE, _is_tree_like
+from .trees import Tree, Forest, ForestSum, _is_simplifiable, EMPTY_TREE
+from ._protocols import TreeLike, ForestLike, ForestSumLike
 from .generic_algebra import _apply, _func_power, _func_product
 
 class Map:
@@ -41,7 +42,7 @@ class Map:
 
     @lru_cache(maxsize = 128) # maxsize here since caching prevents the object being garbage collected
     def __call__(self, t : Union[Tree, Forest, ForestSum]) -> Union[int, float, Tree, Forest, ForestSum]:
-        if not _is_tree_like(t):
+        if not isinstance(t, (TreeLike, ForestLike, ForestSumLike)):
             raise TypeError("Argument to Map must be Tree, Forest or ForestSum, not " + str(type(t)))
         return _apply(t, self.func)
 
