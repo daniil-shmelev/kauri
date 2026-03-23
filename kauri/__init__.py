@@ -40,7 +40,7 @@ __all__ = [
     # Odd-even decomposition
     "id_sqrt", "minus", "plus",
     # Submodules
-    "bck", "cem", "mkw",
+    "bck", "cem", "gl", "mkw",
 ]
 
 from .trees import (Tree, Forest, CommutativeForest, ForestSum, TensorProductSum,
@@ -61,6 +61,7 @@ from .trees import EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM, ZERO_FOREST_SUM
 
 import kauri.bck
 import kauri.cem
+import kauri.gl
 import kauri.mkw
 
 from .oddeven import id_sqrt, minus, plus
