@@ -7,8 +7,9 @@ from dataclasses import dataclass
 
 import sympy
 
-from kauri.trees import Tree
+from kauri.trees import Tree, ForestSum
 from kauri.utils import _check_valid, _nodes, _to_labelled_tuple, _to_unlabelled_tuple
+from kauri._protocols import TreeLike
 
 
 @dataclass(frozen=True)
@@ -41,7 +42,7 @@ class PlanarTree:
 
 
 @dataclass(frozen=True)
-class OrderedForest:
+class NoncommutativeForest:
     """Noncommutative forest (word) of planar trees."""
 
     tree_list: tuple[PlanarTree, ...] = tuple()
@@ -58,7 +59,7 @@ class OrderedForest:
     def __getitem__(self, index: int) -> PlanarTree:
         return self.tree_list[index]
 
-    def simplify(self) -> OrderedForest:
+    def simplify(self) -> NoncommutativeForest:
         if len(self.tree_list) <= 1:
             return self
         filtered = tuple(tree for tree in self.tree_list if tree.list_repr is not None)
@@ -66,83 +67,53 @@ class OrderedForest:
             return EMPTY_ORDERED_FOREST
         if len(filtered) == len(self.tree_list):
             return self
-        return OrderedForest(filtered)
+        return NoncommutativeForest(filtered)
 
     def nodes(self) -> int:
         return sum(tree.nodes() for tree in self.tree_list)
 
     def __mul__(
-        self, other: int | float | PlanarTree | OrderedForest | OrderedForestSum
-    ) -> OrderedForest | OrderedForestSum:
+        self, other: int | float | PlanarTree | NoncommutativeForest | ForestSum
+    ) -> NoncommutativeForest | ForestSum:
         if isinstance(other, (int, float)):
-            return OrderedForestSum(((sympy.sympify(other), self),))
-        if isinstance(other, PlanarTree):
-            return OrderedForest(self.tree_list + (other,)).simplify()
-        if isinstance(other, OrderedForest):
-            return OrderedForest(self.tree_list + other.tree_list).simplify()
-        if isinstance(other, OrderedForestSum):
+            return ForestSum(((sympy.sympify(other), self),))
+        if isinstance(other, TreeLike):
+            return NoncommutativeForest(self.tree_list + (other,)).simplify()
+        if isinstance(other, NoncommutativeForest):
+            return NoncommutativeForest(self.tree_list + other.tree_list).simplify()
+        if isinstance(other, ForestSum):
             terms = tuple(
-                (coeff, OrderedForest(self.tree_list + forest.tree_list).simplify())
+                (coeff, NoncommutativeForest(self.tree_list + forest.tree_list).simplify())
                 for coeff, forest in other.term_list
             )
-            return OrderedForestSum(terms).simplify()
-        raise TypeError(f"Cannot multiply OrderedForest and {type(other)}")
+            return ForestSum(terms).simplify()
+        raise TypeError(f"Cannot multiply NoncommutativeForest and {type(other)}")
 
     def __rmul__(
-        self, other: int | float | PlanarTree | OrderedForest | OrderedForestSum
-    ) -> OrderedForest | OrderedForestSum:
+        self, other: int | float | PlanarTree | NoncommutativeForest | ForestSum
+    ) -> NoncommutativeForest | ForestSum:
         if isinstance(other, (int, float)):
-            return OrderedForestSum(((sympy.sympify(other), self),))
-        if isinstance(other, PlanarTree):
-            return OrderedForest((other,) + self.tree_list).simplify()
-        if isinstance(other, OrderedForest):
-            return OrderedForest(other.tree_list + self.tree_list).simplify()
-        if isinstance(other, OrderedForestSum):
+            return ForestSum(((sympy.sympify(other), self),))
+        if isinstance(other, TreeLike):
+            return NoncommutativeForest((other,) + self.tree_list).simplify()
+        if isinstance(other, NoncommutativeForest):
+            return NoncommutativeForest(other.tree_list + self.tree_list).simplify()
+        if isinstance(other, ForestSum):
             terms = tuple(
-                (coeff, OrderedForest(forest.tree_list + self.tree_list).simplify())
+                (coeff, NoncommutativeForest(forest.tree_list + self.tree_list).simplify())
                 for coeff, forest in other.term_list
             )
-            return OrderedForestSum(terms).simplify()
-        raise TypeError(f"Cannot multiply {type(other)} and OrderedForest")
+            return ForestSum(terms).simplify()
+        raise TypeError(f"Cannot multiply {type(other)} and NoncommutativeForest")
 
 
-@dataclass(frozen=True)
-class OrderedForestSum:
-    """Linear combination of ordered forests."""
-
-    term_list: tuple[tuple[sympy.core.basic.Basic, OrderedForest], ...] = tuple()
-
-    def __post_init__(self) -> None:
-        object.__setattr__(
-            self,
-            "term_list",
-            tuple((sympy.sympify(c), f) for c, f in self.term_list),
-        )
-
-    def __iter__(self) -> Iterator[tuple[sympy.core.basic.Basic, OrderedForest]]:
-        yield from self.term_list
-
-    def simplify(self) -> OrderedForestSum:
-        if len(self.term_list) == 0:
-            return ZERO_ORDERED_FOREST_SUM
-        merged: dict[tuple[PlanarTree, ...], sympy.core.basic.Basic] = {}
-        forest_by_key: dict[tuple[PlanarTree, ...], OrderedForest] = {}
-        for coeff, forest in self.term_list:
-            key = forest.simplify().tree_list
-            merged[key] = sympy.simplify(merged.get(key, sympy.Integer(0)) + sympy.sympify(coeff))
-            forest_by_key[key] = forest.simplify()
-        terms: list[tuple[sympy.core.basic.Basic, OrderedForest]] = []
-        for key, coeff in merged.items():
-            if sympy.simplify(coeff) != 0:
-                terms.append((sympy.simplify(coeff), forest_by_key[key]))
-        if len(terms) == 0:
-            return ZERO_ORDERED_FOREST_SUM
-        return OrderedForestSum(tuple(terms))
+OrderedForest = NoncommutativeForest
+OrderedForestSum = ForestSum
 
 
 EMPTY_PLANAR_TREE = PlanarTree(None)
-EMPTY_ORDERED_FOREST = OrderedForest((EMPTY_PLANAR_TREE,))
-ZERO_ORDERED_FOREST_SUM = OrderedForestSum(((sympy.Integer(0), EMPTY_ORDERED_FOREST),))
+EMPTY_ORDERED_FOREST = NoncommutativeForest((EMPTY_PLANAR_TREE,))
+ZERO_ORDERED_FOREST_SUM = ForestSum(((0, EMPTY_ORDERED_FOREST),))
 
 
 def validate_order(order: int, *, allow_zero: bool = True) -> None:

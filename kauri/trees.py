@@ -40,6 +40,7 @@ from .utils import (_nodes, _height, _factorial, _sigma,
                     _to_list, _next_layout, _level_sequence_to_list_repr,
                     _check_valid, _to_labelled_tuple, _get_max_color, _to_unlabelled_tuple,
                     _list_repr_to_color_sequence, LabelledReprComparison)
+from ._protocols import ForestLike, TreeLike
 
 ######################################
 @dataclass(frozen=True)
@@ -518,7 +519,7 @@ class Tree:
 
 ######################################
 @dataclass(frozen=True)
-class Forest:
+class CommutativeForest:
     """
     A commutative product of trees.
 
@@ -530,7 +531,7 @@ class Forest:
             t2 = Tree([[]])
             t3 = Tree([[[]],[]])
 
-            f = Forest([t1,t2,t3])
+            f = CommutativeForest([t1,t2,t3])
     """
 ######################################
     tree_list : Union[tuple, list] = tuple()
@@ -813,11 +814,11 @@ class Forest:
             return self.as_forest_sum() == other * EMPTY_TREE
         if isinstance(other, Tree):
             return self.equals(other.as_forest())
-        if isinstance(other, Forest):
+        if isinstance(other, CommutativeForest):
             return self.equals(other)
         if isinstance(other, ForestSum):
             return self.as_forest_sum() == other
-        raise TypeError("Cannot check equality of Forest and " + str(type(other)))
+        return NotImplemented
 
     def as_forest(self):
         return self
@@ -890,6 +891,9 @@ class Forest:
         return self.tree_list[i]
 
 
+Forest = CommutativeForest
+
+
 ######################################
 @dataclass(frozen=True)
 class ForestSum:
@@ -918,15 +922,14 @@ class ForestSum:
         new_term_list = []
 
         for term in self.term_list:
-            if isinstance(term[1], Forest):
+            if isinstance(term[1], ForestLike):
                 new_term_list.append(term)
             elif isinstance(term[1], Tree):
                 new_term_list.append((term[0], term[1].as_forest()))
+            elif isinstance(term[1], TreeLike):
+                new_term_list.append((term[0], CommutativeForest((term[1],))))
             else:
-                raise TypeError("Terms must be tuples of type (int | float, Tree | Forest)")
-
-            if not isinstance(term[0], (int, float)):
-                raise TypeError("Terms must be tuples of type (int | float, Tree | Forest)")
+                raise TypeError("Terms must be tuples of (coefficient, ForestLike | TreeLike)")
 
         new_term_list = tuple(new_term_list)
         object.__setattr__(self, 'term_list', new_term_list)
@@ -1048,22 +1051,14 @@ class ForestSum:
             s = Tree([[],[[]]]) * Tree(None) + Tree([]) + Tree([[]]) - Tree([[]])
             s.simplify() #Returns Tree([[],[[]]]) + Tree([])
         """
-        new_forest_list = []
-        new_coeff_list = []
-
+        merged = {}
         for c, f in self.term_list:
-            f_reduced = f.simplify()
-
-            for i, f2 in enumerate(new_forest_list):
-                if f_reduced.equals(f2):
-                    new_coeff_list[i] += c
-                    break
+            f_simplified = f.simplify()
+            if f_simplified in merged:
+                merged[f_simplified] = merged[f_simplified] + c
             else:
-                new_forest_list.append(f_reduced)
-                new_coeff_list.append(c)
-
-        result = tuple((c, f) for c, f in zip(new_coeff_list, new_forest_list) if c != 0)
-
+                merged[f_simplified] = c
+        result = tuple((c, f) for f, c in merged.items() if c != 0)
         if not result:
             return ZERO_FOREST_SUM
         return ForestSum(result)
@@ -1214,7 +1209,7 @@ class ForestSum:
             return self.equals(other.as_forest_sum())
         if isinstance(other, ForestSum):
             return self.equals(other)
-        raise TypeError("Cannot check equality of ForestSum and " + str(type(other)))
+        return NotImplemented
 
     def singleton_reduced(self) -> 'ForestSum':
         """

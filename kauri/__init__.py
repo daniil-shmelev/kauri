@@ -19,7 +19,8 @@ Algebraic manipulation of rooted trees for the analysis of B-series and Runge-Ku
 
 __all__ = [
     # Core types
-    "Tree", "Forest", "ForestSum", "TensorProductSum",
+    "Tree", "Forest", "CommutativeForest", "NoncommutativeForest",
+    "ForestSum", "TensorProductSum",
     "EMPTY_TREE", "EMPTY_FOREST", "EMPTY_FOREST_SUM", "ZERO_FOREST_SUM",
     # Maps
     "Map", "ident", "sign", "exact_weights", "omega",
@@ -41,7 +42,8 @@ __all__ = [
     "bck", "cem",
 ]
 
-from .trees import Tree, Forest, ForestSum, TensorProductSum
+from .trees import Tree, Forest, CommutativeForest, ForestSum, TensorProductSum
+from .planar_trees.planar_basis import NoncommutativeForest
 from .maps import Map, ident, sign, exact_weights, omega
 from .display import display
 from .gentrees import trees_of_order, trees_up_to_order
