@@ -17,8 +17,8 @@ import unittest
 
 from kauri.gentrees import planar_trees_of_order, planar_trees_up_to_order
 from kauri.maps import Map
-from kauri.planar_trees.mkw_truncated import coproduct_terms, verify_mkw_ees
-from kauri.planar_trees.planar_basis import EMPTY_PLANAR_TREE, OrderedForest, PlanarTree
+from kauri.mkw import coproduct_terms, verify_mkw_ees
+from kauri.trees import EMPTY_PLANAR_TREE, OrderedForest, PlanarTree
 
 
 class PlanarTreeTests(unittest.TestCase):

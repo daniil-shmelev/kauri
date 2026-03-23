@@ -109,7 +109,7 @@ def planar_trees_of_order(order: int):
 
     Order 0 contains only the empty planar tree.
     """
-    from .planar_trees.planar_basis import EMPTY_PLANAR_TREE, PlanarTree, validate_order
+    from .trees import EMPTY_PLANAR_TREE, PlanarTree, validate_order
 
     validate_order(order)
     if order == 0:
@@ -122,7 +122,7 @@ def planar_trees_of_order(order: int):
 
 def planar_trees_up_to_order(order: int):
     """Yields planar rooted trees of all orders from 0 through order."""
-    from .planar_trees.planar_basis import validate_order
+    from .trees import validate_order
 
     validate_order(order)
     for current_order in range(order + 1):

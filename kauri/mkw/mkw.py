@@ -1,5 +1,5 @@
 """
-Truncated ordered-tree Hopf-algebra utilities for symbolic verification.
+Truncated ordered-tree Hopf-algebra utilities for symbolic MKW-style EES verification.
 """
 
 from __future__ import annotations
@@ -9,14 +9,23 @@ from itertools import product
 
 import sympy
 
-from kauri.maps import Map
-from kauri.planar_trees.mkw_ees_spec import counit_planar, sign_for_tree
-from kauri.planar_trees.planar_basis import (
+from ..maps import Map
+from ..trees import (
     EMPTY_ORDERED_FOREST,
     EMPTY_PLANAR_TREE,
     OrderedForest,
     PlanarTree,
 )
+
+
+def counit_impl(tree: PlanarTree) -> sympy.core.basic.Basic:
+    """Counit used by the truncated verifier."""
+    return sympy.Integer(1) if tree.list_repr is None else sympy.Integer(0)
+
+
+def sign_for_tree(tree: PlanarTree) -> int:
+    """Tree sign for involution: (-1)^|t|."""
+    return 1 if tree.nodes() % 2 == 0 else -1
 
 
 def _simplify_expanded(value: sympy.core.basic.Basic | int | float) -> sympy.core.basic.Basic:
@@ -28,16 +37,6 @@ class CoproductTerm:
     coeff: sympy.core.basic.Basic
     left: OrderedForest
     right: PlanarTree
-
-
-def coproduct_terms(tree: PlanarTree) -> tuple[CoproductTerm, ...]:
-    """
-    Ordered-tree BCK-style coproduct terms, preserving sibling order.
-    """
-    return tuple(
-        CoproductTerm(coeff=sympy.Integer(1), left=left, right=right)
-        for left, right in _coproduct_helper(tree)
-    )
 
 
 def _coproduct_helper(tree: PlanarTree) -> tuple[tuple[OrderedForest, PlanarTree], ...]:
@@ -70,6 +69,17 @@ def _coproduct_helper(tree: PlanarTree) -> tuple[tuple[OrderedForest, PlanarTree
     return tuple(out_terms)
 
 
+def coproduct_terms(tree: PlanarTree) -> tuple[CoproductTerm, ...]:
+    """Ordered-tree BCK-style coproduct terms, preserving sibling order."""
+    return tuple(
+        CoproductTerm(coeff=sympy.Integer(1), left=left, right=right)
+        for left, right in _coproduct_helper(tree)
+    )
+
+
+counit = Map(counit_impl)
+
+
 def planar_convolution(f: Map, g: Map) -> Map:
     """Function product of two maps using the planar BCK-style coproduct."""
 
@@ -85,8 +95,8 @@ def planar_convolution(f: Map, g: Map) -> Map:
 
 
 def verify_mkw_ees(phi: Map, order: int) -> bool:
-    from kauri.gentrees import planar_trees_up_to_order
-    from kauri.planar_trees.planar_basis import validate_order
+    from ..gentrees import planar_trees_up_to_order
+    from ..trees import validate_order
 
     validate_order(order, allow_zero=False)
     phi_sign = Map(
@@ -96,7 +106,7 @@ def verify_mkw_ees(phi: Map, order: int) -> bool:
     )
     residual_map = planar_convolution(phi_sign, phi)
     return all(
-        _simplify_expanded(sympy.sympify(residual_map(tree)) - sympy.sympify(counit_planar(tree)))
+        _simplify_expanded(sympy.sympify(residual_map(tree)) - sympy.sympify(counit_impl(tree)))
         == 0
         for tree in planar_trees_up_to_order(order)
     )
