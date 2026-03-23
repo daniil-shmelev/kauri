@@ -45,6 +45,29 @@ from .utils import (_nodes, _height, _factorial, _sigma,
                     _list_repr_to_color_sequence, LabelledReprComparison)
 from ._protocols import ForestLike, TreeLike
 
+
+def _frozen_copy(self):
+    return self
+
+
+def _frozen_deepcopy(self, memodict=None):
+    if memodict is None:
+        memodict = {}
+    memodict[id(self)] = self
+    return self
+
+
+def _lazy_count(self, items_attr):
+    if self.count is None:
+        object.__setattr__(self, 'count', Counter(getattr(self.simplify(), items_attr)))
+
+
+def _lazy_hash(self, items_attr):
+    _lazy_count(self, items_attr)
+    if self.hash_ is None:
+        object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
+    return self.hash_
+
 ######################################
 @dataclass(frozen=True)
 @total_ordering
@@ -80,14 +103,8 @@ class Tree:
             object.__setattr__(self, 'unlabelled_repr', unlabelled_repr)
             object.__setattr__(self, '_max_color', _get_max_color(tuple_repr))
 
-    def __copy__(self):
-        return self
-
-    def __deepcopy__(self, memodict=None):
-        if memodict is None:
-            memodict = {}
-        memodict[id(self)] = self
-        return self
+    __copy__ = _frozen_copy
+    __deepcopy__ = _frozen_deepcopy
 
     def __repr__(self):
         if self.list_repr is None:
@@ -343,8 +360,7 @@ class Tree:
     __rsub__ = __sub__
 
     def __neg__(self):
-        temp = self * (-1)
-        return temp
+        return self * (-1)
 
     def __eq__(self, other : Union['Tree', 'Forest', 'ForestSum']) -> bool:
         """
@@ -547,27 +563,11 @@ class CommutativeForest:
             tuple_repr = (Tree(None),)
         object.__setattr__(self, 'tree_list', tuple_repr)
 
-    def __copy__(self):
-        return self
-
-    def __deepcopy__(self, memodict=None):
-        if memodict is None:
-            memodict = {}
-        memodict[id(self)] = self
-        return self
-
-    def _set_counter(self):
-        if self.count is None:
-            object.__setattr__(self, 'count', Counter(self.simplify().tree_list))
-
-    def _set_hash(self):
-        self._set_counter()
-        if self.hash_ is None:
-            object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
+    __copy__ = _frozen_copy
+    __deepcopy__ = _frozen_deepcopy
 
     def __hash__(self):
-        self._set_hash()
-        return self.hash_
+        return _lazy_hash(self, 'tree_list')
 
     def simplify(self) -> 'Forest':  # Remove redundant empty trees
         """
@@ -789,8 +789,8 @@ class CommutativeForest:
         return self * (-1)
 
     def equals(self, other_forest):
-        self._set_counter()
-        other_forest._set_counter()
+        _lazy_count(self, 'tree_list')
+        _lazy_count(other_forest, 'tree_list')
         return self.count == other_forest.count
 
     def __eq__(self, other : Union['Forest', 'ForestSum']) -> bool:
@@ -937,27 +937,11 @@ class ForestSum:
         new_term_list = tuple(new_term_list)
         object.__setattr__(self, 'term_list', new_term_list)
 
-    def __copy__(self):
-        return self
-
-    def __deepcopy__(self, memodict=None):
-        if memodict is None:
-            memodict = {}
-        memodict[id(self)] = self
-        return self
-
-    def _set_counter(self):
-        if self.count is None:
-            object.__setattr__(self, 'count', Counter(self.simplify().term_list))
-
-    def _set_hash(self):
-        self._set_counter()
-        if self.hash_ is None:
-            object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
+    __copy__ = _frozen_copy
+    __deepcopy__ = _frozen_deepcopy
 
     def __hash__(self):
-        self._set_hash()
-        return self.hash_
+        return _lazy_hash(self, 'term_list')
 
     def __repr__(self):
         if len(self.term_list) == 0:
@@ -1115,7 +1099,7 @@ class ForestSum:
         elif isinstance(other, ForestSum):
             new_term_list = tuple( (c1 * c2, f1 * f2) for c1, f1 in self.term_list for c2, f2 in other.term_list)
         else:
-            raise TypeError("Cannot multiply ForestSum and " + str(type(object)))
+            raise TypeError("Cannot multiply ForestSum and " + str(type(other)))
 
         out = ForestSum(new_term_list)
         return out.simplify()
@@ -1180,8 +1164,8 @@ class ForestSum:
         return self * (-1)
 
     def equals(self, other):
-        self._set_counter()
-        other._set_counter()
+        _lazy_count(self, 'term_list')
+        _lazy_count(other, 'term_list')
         return self.count == other.count
 
 
@@ -1313,14 +1297,8 @@ class TensorProductSum:
         tuple_list = tuple(tuple_list)
         object.__setattr__(self, 'term_list', tuple_list)
 
-    def __copy__(self):
-        return self
-
-    def __deepcopy__(self, memodict=None):
-        if memodict is None:
-            memodict = {}
-        memodict[id(self)] = self
-        return self
+    __copy__ = _frozen_copy
+    __deepcopy__ = _frozen_deepcopy
 
     def __repr__(self):
         if self.term_list is None or self.term_list == tuple():
@@ -1386,15 +1364,6 @@ class TensorProductSum:
         """
         return TensorProductSum(tuple((c, f1.singleton_reduced(), f2.singleton_reduced()) for c, f1, f2 in self.term_list))
 
-    def _set_counter(self):
-        if self.count is None:
-            object.__setattr__(self, 'count', Counter(self.simplify().term_list))
-
-    def _set_hash(self):
-        self._set_counter()
-        if self.hash_ is None:
-            object.__setattr__(self, 'hash_', hash(frozenset(self.count.items())))
-
     def __eq__(self, other : 'TensorProductSum') -> bool:
         """
         Compares the tensor product sum with another tensor product sum and returns true if
@@ -1417,13 +1386,12 @@ class TensorProductSum:
         """
         if not isinstance(other, TensorProductSum):
             raise TypeError("Cannot check equality of TensorSum and " + str(type(other)))
-        self._set_counter()
-        other._set_counter()
+        _lazy_count(self, 'term_list')
+        _lazy_count(other, 'term_list')
         return self.count == other.count
 
     def __hash__(self):
-        self._set_hash()
-        return self.hash_
+        return _lazy_hash(self, 'term_list')
 
     def __add__(self, other : 'TensorProductSum') -> 'TensorProductSum':
         """
@@ -1496,17 +1464,15 @@ class PlanarTree:
     """Ordered rooted tree; sibling order is part of identity."""
 
     list_repr: Union[tuple, list, None] = None
-    unlabelled_repr: Union[tuple, None] = None
+    unlabelled_repr = None
 
     def __post_init__(self) -> None:
-        if self.list_repr is None:
-            object.__setattr__(self, "unlabelled_repr", None)
-            return
-        if not _check_valid(self.list_repr):
-            raise ValueError(f"{self.list_repr!r} is not a valid planar tree representation.")
-        tuple_repr: tuple = _to_labelled_tuple(self.list_repr)
-        object.__setattr__(self, "list_repr", tuple_repr)
-        object.__setattr__(self, "unlabelled_repr", _to_unlabelled_tuple(tuple_repr))
+        if self.list_repr is not None:
+            if not _check_valid(self.list_repr):
+                raise ValueError(f"{self.list_repr!r} is not a valid planar tree representation.")
+            tuple_repr: tuple = _to_labelled_tuple(self.list_repr)
+            object.__setattr__(self, "list_repr", tuple_repr)
+            object.__setattr__(self, "unlabelled_repr", _to_unlabelled_tuple(tuple_repr))
 
     def nodes(self) -> int:
         return _nodes(self.unlabelled_repr)
@@ -1551,39 +1517,34 @@ class NoncommutativeForest:
     def nodes(self) -> int:
         return sum(tree.nodes() for tree in self.tree_list)
 
-    def __mul__(
-        self, other: Union[int, float, PlanarTree, 'NoncommutativeForest', ForestSum]
-    ) -> Union['NoncommutativeForest', ForestSum]:
+    def _forest_mul(self, other, *, prepend):
         if isinstance(other, (int, float)):
             return ForestSum(((sympy.sympify(other), self),))
         if isinstance(other, TreeLike):
-            return NoncommutativeForest(self.tree_list + (other,)).simplify()
-        if isinstance(other, NoncommutativeForest):
-            return NoncommutativeForest(self.tree_list + other.tree_list).simplify()
-        if isinstance(other, ForestSum):
+            other_trees = (other,)
+        elif isinstance(other, NoncommutativeForest):
+            other_trees = other.tree_list
+        elif isinstance(other, ForestSum):
             terms = tuple(
-                (coeff, NoncommutativeForest(self.tree_list + forest.tree_list).simplify())
+                (coeff, NoncommutativeForest(
+                    (forest.tree_list + self.tree_list) if prepend
+                    else (self.tree_list + forest.tree_list)
+                ).simplify())
                 for coeff, forest in other.term_list
             )
             return ForestSum(terms).simplify()
-        raise TypeError(f"Cannot multiply NoncommutativeForest and {type(other)}")
+        else:
+            side = (f"{type(other)} and NoncommutativeForest" if prepend
+                    else f"NoncommutativeForest and {type(other)}")
+            raise TypeError(f"Cannot multiply {side}")
+        trees = (other_trees + self.tree_list) if prepend else (self.tree_list + other_trees)
+        return NoncommutativeForest(trees).simplify()
 
-    def __rmul__(
-        self, other: Union[int, float, PlanarTree, 'NoncommutativeForest', ForestSum]
-    ) -> Union['NoncommutativeForest', ForestSum]:
-        if isinstance(other, (int, float)):
-            return ForestSum(((sympy.sympify(other), self),))
-        if isinstance(other, TreeLike):
-            return NoncommutativeForest((other,) + self.tree_list).simplify()
-        if isinstance(other, NoncommutativeForest):
-            return NoncommutativeForest(other.tree_list + self.tree_list).simplify()
-        if isinstance(other, ForestSum):
-            terms = tuple(
-                (coeff, NoncommutativeForest(forest.tree_list + self.tree_list).simplify())
-                for coeff, forest in other.term_list
-            )
-            return ForestSum(terms).simplify()
-        raise TypeError(f"Cannot multiply {type(other)} and NoncommutativeForest")
+    def __mul__(self, other):
+        return self._forest_mul(other, prepend=False)
+
+    def __rmul__(self, other):
+        return self._forest_mul(other, prepend=True)
 
 
 OrderedForest = NoncommutativeForest
