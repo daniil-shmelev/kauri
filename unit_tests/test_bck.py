@@ -134,3 +134,104 @@ class BCKTests(unittest.TestCase):
             bck.antipode('s')
         with self.assertRaises(TypeError):
             bck.counit('s')
+
+    # --- Literature-derived tests ---
+    # [CHV] P. Chartier, E. Hairer, G. Vilmart,
+    #       "Algebraic Structures of B-series",
+    #       Found. Comput. Math. 10 (2010), pp. 407-427.
+    #       https://doi.org/10.1007/s10208-010-9065-1
+    # [F]   L. Foissy, "An introduction to Hopf algebras of trees",
+    #       Preprint, Universite de Reims.
+    #       https://www2.mathematik.hu-berlin.de/~kreimer/wp-content/uploads/Foissy.pdf
+
+    def test_coproduct_order_4_trident(self):
+        """Δ_CK for [[],[],[]] (root with 3 children).
+        Reference: [F] §1.2, Definition p. 4.
+        """
+        expected = (
+            T([[],[],[]]) @ T()
+            + T() @ T([[],[],[]])
+            + 3 * T([]) @ T([[],[]])
+            + 3 * T([]) * T([]) @ T([[]])
+            + T([]) * T([]) * T([]) @ T([])
+        )
+        self.assertEqual(expected, bck.coproduct(T([[],[],[]])))
+
+    def test_coproduct_order_4_asymmetric(self):
+        """Δ_CK for [[],[[]]] (root with leaf and 2-chain subtree).
+        Reference: [F] §1.2.
+        """
+        expected = (
+            T([[],[[]]]) @ T()
+            + T() @ T([[],[[]]])
+            + T([]) @ T([[[]]])
+            + T([]) @ T([[],[]])
+            + T([[]]) @ T([[]])
+            + T([]) * T([[]]) @ T([])
+            + T([]) * T([]) @ T([[]])
+        )
+        self.assertEqual(expected, bck.coproduct(T([[],[[]]])))
+
+    def test_coproduct_order_4_cherry(self):
+        """Δ_CK for [[[],[]]] (root -> child -> two grandchildren).
+        Reference: [F] §1.2.
+        """
+        expected = (
+            T([[[],[]]]) @ T()
+            + T() @ T([[[],[]]])
+            + T([[],[]]) @ T([])
+            + 2 * T([]) @ T([[[]]])
+            + T([]) * T([]) @ T([[]])
+        )
+        self.assertEqual(expected, bck.coproduct(T([[[],[]]]))  )
+
+    def test_coproduct_order_4_tall_ladder(self):
+        """Δ_CK for the 4-node ladder [[[[]]]].
+        Reference: [F] §3.2, p. 20.
+        """
+        expected = (
+            T([[[[]]]]) @ T()
+            + T([[[]]]) @ T([])
+            + T([[]]) @ T([[]])
+            + T([]) @ T([[[]]])
+            + T() @ T([[[[]]]])
+        )
+        self.assertEqual(expected, bck.coproduct(T([[[[]]]])))
+
+    def test_ladder_coproduct(self):
+        """Δ(l_n) = Σ_{i=0}^{n} l_i ⊗ l_{n-i} for ladder trees.
+        Reference: [F] §3.2, p. 20.
+        """
+        ladders = [T(None), T([]), T([[]]), T([[[]]]), T([[[[]]]])]
+        for n in range(1, len(ladders)):
+            terms = [ladders[i] @ ladders[n - i] for i in range(n + 1)]
+            expected = terms[0]
+            for t in terms[1:]:
+                expected = expected + t
+            self.assertEqual(expected, bck.coproduct(ladders[n]),
+                             msg=f"Ladder l_{n}")
+
+    def test_antipode_foissy_order_4_trident(self):
+        """S([[],[],[]]) = ●⁴ - 3●²/ + 3●Y - trident.
+        Reference: [F] Theorem 2, p. 7.
+        """
+        expected = (
+            T([]) ** 4
+            - 3 * T([[]]) * T([]) * T([])
+            + 3 * T([[],[]]) * T([])
+            - T([[],[],[]])
+        )
+        self.assertEqual(expected, bck.antipode(T([[],[],[]])))
+
+    def test_antipode_foissy_order_3(self):
+        """S(Y) = -Y + 2●/ - ●³ and S(chain₃) = -chain₃ + 2●/ - ●³.
+        Reference: [F] Theorem 2, p. 7.
+        """
+        self.assertEqual(
+            -T([[],[]]) + 2 * T([[]]) * T([]) - T([]) ** 3,
+            bck.antipode(T([[],[]]))
+        )
+        self.assertEqual(
+            -T([[[]]]) + 2 * T([[]]) * T([]) - T([]) ** 3,
+            bck.antipode(T([[[]]]))
+        )

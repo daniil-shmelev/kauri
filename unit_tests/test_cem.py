@@ -138,3 +138,94 @@ class CEMTests(unittest.TestCase):
             cem.antipode('s')
         with self.assertRaises(TypeError):
             cem.counit('s')
+
+    # --- Literature-derived tests ---
+    # [CHV] P. Chartier, E. Hairer, G. Vilmart,
+    #       "Algebraic Structures of B-series",
+    #       Found. Comput. Math. 10 (2010), pp. 407-427.
+    #       https://doi.org/10.1007/s10208-010-9065-1
+    # [CEM] D. Calaque, K. Ebrahimi-Fard, D. Manchon,
+    #       "Two interacting Hopf algebras of trees:
+    #       A Hopf-algebraic approach to composition and substitution of B-series",
+    #       Adv. Appl. Math. 47 (2011), pp. 282-308.
+    #       https://arxiv.org/abs/0806.2238
+
+    def test_coproduct_chv_order_3_fork(self):
+        """Δ_CEM(Y) = Y⊗● + 2/⊗/ + ●⊗Y  (singleton-reduced).
+        Reference: [CHV] eq. (11), line 3.
+        """
+        expected = (
+            T([[],[]]) @ T([])
+            + T([]) @ T([[],[]])
+            + 2 * T([[]]) @ T([[]])
+        )
+        self.assertEqual(expected, cem.coproduct(T([[],[]])))
+
+    def test_coproduct_chv_order_4_trident(self):
+        """Δ_CEM for [[],[],[]].
+        Reference: [CHV] eq. (17), [CEM] §3.
+        """
+        expected = (
+            T([[],[],[]]) @ T([])
+            + T([]) @ T([[],[],[]])
+            + 3 * T([[],[]]) @ T([[]])
+            + 3 * T([[]]) @ T([[],[]])
+        )
+        self.assertEqual(expected, cem.coproduct(T([[],[],[]])))
+
+    def test_antipode_cem(self):
+        """CEM antipode S satisfying m(S ⊗ id) ∘ Δ = η ∘ ε.
+        Reference: [CEM] §4, [CHV] §5.
+        """
+        self.assertEqual(T([]), cem.antipode(T([])))
+        self.assertEqual(-1 * T([[]]), cem.antipode(T([[]])))
+        self.assertEqual(
+            -T([[],[]]) + 2 * T([[]]) ** 2,
+            cem.antipode(T([[],[]]))
+        )
+        self.assertEqual(
+            -T([[[]]]) + 2 * T([[]]) ** 2,
+            cem.antipode(T([[[]]]))
+        )
+
+    def test_substitution_associativity(self):
+        """(a ★ b) ★ c = a ★ (b ★ c).
+        Reference: [CHV] discussion after eq. (17).
+        """
+        a = Map(lambda x: x.nodes())
+        b = Map(lambda x: x.factorial())
+        c = Map(lambda x: x.nodes() ** 2)
+
+        trees_ = [T([]), T([[]]), T([[],[]]), T([[[]]]), T([[],[],[]])]
+        for t in trees_:
+            self.assertAlmostEqual(
+                ((a ^ b) ^ c)(t), (a ^ (b ^ c))(t), msg=repr(t))
+
+    def test_substitution_explicit(self):
+        """Explicit substitution law for trees up to order 3.
+        Reference: [CHV] eq. (6).
+        """
+        a = Map(lambda x: x.nodes() if x.list_repr is not None else 0)
+        b = Map(lambda x: x.factorial() if x.list_repr is not None else 0)
+
+        dot = T([])
+        line = T([[]])
+        fork = T([[],[]])
+
+        # (b ★ a)(●) = a(●)b(●)
+        self.assertAlmostEqual(
+            (b ^ a)(dot),
+            a(dot) * b(dot)
+        )
+
+        # (b ★ a)(/) = a(●)b(/) + a(/)b(●)²
+        self.assertAlmostEqual(
+            (b ^ a)(line),
+            a(dot) * b(line) + a(line) * b(dot) ** 2
+        )
+
+        # (b ★ a)(Y) = a(●)b(Y) + 2a(/)b(●)b(/) + a(Y)b(●)³
+        self.assertAlmostEqual(
+            (b ^ a)(fork),
+            a(dot) * b(fork) + 2 * a(line) * b(dot) * b(line) + a(fork) * b(dot) ** 3
+        )
