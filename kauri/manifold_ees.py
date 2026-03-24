@@ -60,7 +60,8 @@ def symbolic_cf_params(s: int, J: int, explicit: bool = True):
 # ---------------------------------------------------------------------------
 
 def _sym_coproduct_eval(tree, left_func, right_func):
-    """Evaluate ``sum_Delta c * left_func(forest) * right_func(tree)`` symbolically."""
+    """Evaluate ``sum_Delta c * prod(left_func(t_i)) * right_func(tree')`` symbolically,
+    where the product is over trees ``t_i`` in the left forest of each coproduct term."""
     if tree.list_repr is None:
         return sympy.Integer(1)
     cp = coproduct_impl(tree)

@@ -3,7 +3,7 @@ Commutator-free (CF) methods for Lie group integration.
 
 A CF method with *s* stages and *J* exponentials per step is specified by:
 
-- An explicit *s* x *s* coefficient matrix *A* (strictly lower triangular).
+- An *s* x *s* coefficient matrix *A* (typically strictly lower triangular for explicit methods).
 - *J* weight vectors beta_1, ..., beta_J, each of length *s*.
 
 Update rule (applied right-to-left on the manifold)::

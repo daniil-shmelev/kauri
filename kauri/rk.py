@@ -756,7 +756,7 @@ class RK:
         Returns the antisymmetric order of the RK scheme on ordered (planar)
         trees, using the planar BCK Hopf algebra.
 
-        Checks ``D(tau) = (sign(Phi) *_pbck Phi)(tau) - epsilon(tau) = 0``
+        Checks ``D(tau) = ((sign . Phi) *_pbck Phi)(tau) - epsilon(tau) = 0``
         for all ordered trees tau.
 
         :param tol: Tolerance for evaluating order conditions.
