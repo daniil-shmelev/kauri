@@ -266,6 +266,20 @@ class Tree:
         """
         return math.factorial(self.nodes()) // self.sigma()
 
+    def density(self) -> float:
+        """
+        Density of the tree, :math:`\\gamma(t) = t! / |t|!`.
+
+        :return: Density, :math:`\\gamma(t)`
+        :rtype: float
+
+        Example usage::
+
+            t = Tree([[[]],[]])
+            t.density() #Returns 1/3
+        """
+        return self.factorial() / math.factorial(self.nodes())
+
     def sign(self) -> 'ForestSum':
         """
         Returns the tree signed by the number of nodes, :math:`(-1)^{|t|} t`.
@@ -1520,9 +1534,31 @@ class PlanarTree:
         """Symmetry factor of an ordered tree — always 1 (sibling order is part of identity)."""
         return 1
 
+    def height(self) -> int:
+        """Returns the height of the tree (longest root-to-leaf path length)."""
+        return _height(self.unlabelled_repr)
+
     def density(self) -> float:
         """Density of the tree, ``factorial() / nodes()!``."""
         return self.factorial() / math.factorial(self.nodes())
+
+    def alpha(self) -> int:
+        """Number of monotone labellings (up to symmetry). Since sigma=1 for planar trees, equals ``beta() / factorial()``."""
+        return self.beta() // self.factorial()
+
+    def beta(self) -> int:
+        """Number of distinct labellings (up to symmetry). Since sigma=1 for planar trees, equals ``nodes()!``."""
+        return math.factorial(self.nodes())
+
+    def unjoin(self) -> 'NoncommutativeForest':
+        """For a tree t = [t_1, ..., t_k], returns the forest t_1 ... t_k (the B- map)."""
+        if self.list_repr is None:
+            return EMPTY_ORDERED_FOREST
+        return NoncommutativeForest(tuple(PlanarTree(rep) for rep in self.list_repr[:-1]))
+
+    def unlabelled(self) -> 'PlanarTree':
+        """Returns the unlabelled version of the tree."""
+        return PlanarTree(self.unlabelled_repr)
 
     def as_ordered_forest(self) -> 'OrderedForest':
         return OrderedForest((self,))
