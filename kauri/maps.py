@@ -202,10 +202,12 @@ class Map:
         temp -= other
         return temp
 
+    def __rsub__(self, other):
+        return (-self) + other
+
     __rmul__ = __mul__
     __rxor__ = __xor__
     __radd__ = __add__
-    __rsub__ = __sub__
 
     def __and__(self, other : 'Map') -> 'Map':
         """

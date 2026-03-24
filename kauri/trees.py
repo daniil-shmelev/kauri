@@ -356,8 +356,10 @@ class Tree:
     def __sub__(self, other):
         return self + (-other)
 
+    def __rsub__(self, other):
+        return (-self) + other
+
     __radd__ = __add__
-    __rsub__ = __sub__
 
     def __neg__(self):
         return self * (-1)
@@ -782,8 +784,10 @@ class CommutativeForest:
     def __sub__(self, other):
         return self + (-other)
 
+    def __rsub__(self, other):
+        return (-self) + other
+
     __radd__ = __add__
-    __rsub__ = __sub__
 
     def __neg__(self):
         return self * (-1)
@@ -930,7 +934,10 @@ class ForestSum:
             elif isinstance(term[1], Tree):
                 new_term_list.append((term[0], term[1].as_forest()))
             elif isinstance(term[1], TreeLike):
-                new_term_list.append((term[0], CommutativeForest((term[1],))))
+                if hasattr(term[1], 'as_ordered_forest'):
+                    new_term_list.append((term[0], term[1].as_ordered_forest()))
+                else:
+                    new_term_list.append((term[0], CommutativeForest((term[1],))))
             else:
                 raise TypeError("Terms must be tuples of (coefficient, ForestLike | TreeLike)")
 
@@ -1092,19 +1099,27 @@ class ForestSum:
 
             t = 2 * Tree([[]]) * ForestSum([Tree([]), Tree([[],[]])], [1, -2])
         """
+        return self._mul_impl(other, reverse=False)
+
+    def __rmul__(self, other):
+        return self._mul_impl(other, reverse=True)
+
+    def _mul_impl(self, other, *, reverse):
         if isinstance(other, (int, float)):
             new_term_list = tuple( (c * other, f) for c, f in self.term_list )
-        elif isinstance(other, (Tree, Forest)):
-            new_term_list = tuple( (c, f * other) for c, f in self.term_list )
+        elif isinstance(other, (TreeLike, ForestLike)):
+            if reverse:
+                new_term_list = tuple( (c, other * f) for c, f in self.term_list )
+            else:
+                new_term_list = tuple( (c, f * other) for c, f in self.term_list )
         elif isinstance(other, ForestSum):
-            new_term_list = tuple( (c1 * c2, f1 * f2) for c1, f1 in self.term_list for c2, f2 in other.term_list)
+            left, right = (other.term_list, self.term_list) if reverse else (self.term_list, other.term_list)
+            new_term_list = tuple( (c1 * c2, f1 * f2) for c1, f1 in left for c2, f2 in right if c1 != 0 and c2 != 0)
         else:
             raise TypeError("Cannot multiply ForestSum and " + str(type(other)))
 
-        out = ForestSum(new_term_list)
+        out = ForestSum(new_term_list) if new_term_list else ZERO_FOREST_SUM
         return out.simplify()
-
-    __rmul__ = __mul__
 
 
     def __pow__(self, n : int) -> 'ForestSum':
@@ -1144,7 +1159,7 @@ class ForestSum:
         """
         if isinstance(other, (int, float)):
             new_term_list = self.term_list + ((other, EMPTY_FOREST),)
-        elif isinstance(other, (Tree, Forest)):
+        elif isinstance(other, (TreeLike, ForestLike)):
             new_term_list = self.term_list + ((1, other),)
         elif isinstance(other, ForestSum):
             new_term_list = self.term_list + other.term_list
@@ -1157,11 +1172,13 @@ class ForestSum:
     def __sub__(self, other):
         return self + (- other)
 
+    def __rsub__(self, other):
+        return (-self) + other
+
     __radd__ = __add__
-    __rsub__ = __sub__
 
     def __neg__(self):
-        return self * (-1)
+        return ForestSum(tuple((-c, f) for c, f in self.term_list))
 
     def equals(self, other):
         _lazy_count(self, 'term_list')
@@ -1196,6 +1213,10 @@ class ForestSum:
             return self.equals(other.as_forest_sum())
         if isinstance(other, ForestSum):
             return self.equals(other)
+        if isinstance(other, TreeLike) and hasattr(other, 'as_forest_sum'):
+            return self.equals(other.as_forest_sum())
+        if isinstance(other, ForestLike) and hasattr(other, 'as_forest_sum'):
+            return self.equals(other.as_forest_sum())
         return NotImplemented
 
     def singleton_reduced(self) -> 'ForestSum':
@@ -1276,7 +1297,7 @@ def _coerce_to_forest(obj):
 EMPTY_TREE = Tree(None)
 EMPTY_FOREST = Forest((EMPTY_TREE,))
 EMPTY_FOREST_SUM = ForestSum( ( (1, EMPTY_FOREST), ) )
-ZERO_FOREST_SUM = ForestSum( ( (0, EMPTY_FOREST), ) )
+ZERO_FOREST_SUM = ForestSum(())
 
 ##############################################
 ##############################################
@@ -1440,8 +1461,10 @@ class TensorProductSum:
             return TensorProductSum(tuple((other * x[0], x[1], x[2]) for x in self.term_list))
         raise TypeError("Cannot multiply TensorSum by " + str(type(other)))
 
+    def __rsub__(self, other):
+        return (-self) + other
+
     __radd__ = __add__
-    __rsub__ = __sub__
     __rmul__ = __mul__
 
     def __iter__(self):
@@ -1495,6 +1518,57 @@ class PlanarTree:
         if self.list_repr is None:
             return Tree(None)
         return Tree(self.list_repr)
+
+    def __hash__(self):
+        return hash(self.list_repr)
+
+    def __eq__(self, other):
+        if isinstance(other, PlanarTree):
+            return self.list_repr == other.list_repr
+        if isinstance(other, (NoncommutativeForest, ForestSum)):
+            return self.as_forest_sum() == other
+        return NotImplemented
+
+    def __mul__(self, other):
+        return self.as_ordered_forest().__mul__(other)
+
+    def __rmul__(self, other):
+        return self.as_ordered_forest().__rmul__(other)
+
+    def __pow__(self, n):
+        if not isinstance(n, int):
+            raise TypeError("Exponent must be an int, not " + str(type(n)))
+        if n < 0:
+            raise ValueError("Cannot raise PlanarTree to a negative power")
+        if n == 0:
+            return EMPTY_ORDERED_FOREST
+        return NoncommutativeForest((self,) * n).simplify()
+
+    def __add__(self, other):
+        if isinstance(other, (int, float)):
+            return ForestSum(((1, self.as_ordered_forest()), (other, EMPTY_ORDERED_FOREST)))
+        if isinstance(other, (PlanarTree, NoncommutativeForest)):
+            return ForestSum(((1, self), (1, other)))
+        if isinstance(other, ForestSum):
+            return ForestSum(((1, self),) + other.term_list)
+        raise TypeError("Cannot add PlanarTree and " + str(type(other)))
+
+    __radd__ = __add__
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __rsub__(self, other):
+        return (-self) + other
+
+    def __neg__(self):
+        return ForestSum(((-1, self.as_ordered_forest()),))
+
+    def sign(self):
+        return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
+
+    def as_forest_sum(self):
+        return ForestSum(((1, self.as_ordered_forest()),))
 
 
 @dataclass(frozen=True)
@@ -1562,6 +1636,55 @@ class NoncommutativeForest:
     def __rmul__(self, other):
         return self._forest_mul(other, prepend=True)
 
+    def __pow__(self, n):
+        if not isinstance(n, int):
+            raise TypeError("Exponent must be an int, not " + str(type(n)))
+        if n < 0:
+            raise ValueError("Cannot raise NoncommutativeForest to a negative power")
+        if n == 0:
+            return EMPTY_ORDERED_FOREST
+        return NoncommutativeForest(self.tree_list * n).simplify()
+
+    def __add__(self, other):
+        if isinstance(other, (int, float)):
+            return ForestSum(((1, self), (other, EMPTY_ORDERED_FOREST)))
+        if isinstance(other, (PlanarTree, NoncommutativeForest)):
+            return ForestSum(((1, self), (1, other)))
+        if isinstance(other, ForestSum):
+            return ForestSum(((1, self),) + other.term_list)
+        raise TypeError("Cannot add NoncommutativeForest and " + str(type(other)))
+
+    __radd__ = __add__
+
+    def __sub__(self, other):
+        return self + (-other)
+
+    def __rsub__(self, other):
+        return (-self) + other
+
+    def __neg__(self):
+        return ForestSum(((-1, self),))
+
+    def __eq__(self, other):
+        if isinstance(other, NoncommutativeForest):
+            return self.tree_list == other.tree_list
+        if isinstance(other, (PlanarTree, ForestSum)):
+            return self.as_forest_sum() == other
+        return NotImplemented
+
+    def __hash__(self):
+        return hash(self.tree_list)
+
+    def sign(self):
+        return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
+
+    def as_forest_sum(self):
+        return ForestSum(((1, self),))
+
+    def join(self, root_color=0):
+        children = tuple(t.list_repr for t in self.tree_list if t.list_repr is not None)
+        return PlanarTree(children + (root_color,))
+
 
 OrderedForest = NoncommutativeForest
 OrderedForestSum = ForestSum
@@ -1569,7 +1692,6 @@ OrderedForestSum = ForestSum
 
 EMPTY_PLANAR_TREE = PlanarTree(None)
 EMPTY_ORDERED_FOREST = NoncommutativeForest((EMPTY_PLANAR_TREE,))
-ZERO_ORDERED_FOREST_SUM = ForestSum(((0, EMPTY_ORDERED_FOREST),))
 
 
 def validate_order(order: int, *, allow_zero: bool = True) -> None:
