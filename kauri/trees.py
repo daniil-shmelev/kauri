@@ -1260,7 +1260,18 @@ def _is_scalar(obj):
     return isinstance(obj, (int, float))
 
 def _is_tree_or_forest(obj):
-    return isinstance(obj, (Tree, Forest))
+    return isinstance(obj, (TreeLike, ForestLike))
+
+
+def _coerce_to_forest(obj):
+    """Coerce a tree-like object to its corresponding forest type."""
+    if isinstance(obj, ForestLike):
+        return obj
+    if isinstance(obj, Tree):
+        return obj.as_forest()
+    if isinstance(obj, PlanarTree):
+        return obj.as_ordered_forest()
+    raise TypeError(f"Cannot coerce {type(obj)} to forest")
 
 EMPTY_TREE = Tree(None)
 EMPTY_FOREST = Forest((EMPTY_TREE,))
@@ -1292,8 +1303,8 @@ class TensorProductSum:
         tuple_list = []
         for x in self.term_list:
             if not (_is_scalar(x[0]) and _is_tree_or_forest(x[1]) and _is_tree_or_forest(x[2])):
-                raise TypeError("Terms must be tuples of type (int | float, Tree | Forest, Tree | Forest)")
-            tuple_list.append((x[0], x[1].as_forest(), x[2].as_forest()))
+                raise TypeError("Terms must be tuples of type (scalar, TreeLike | ForestLike, TreeLike | ForestLike)")
+            tuple_list.append((x[0], _coerce_to_forest(x[1]), _coerce_to_forest(x[2])))
         tuple_list = tuple(tuple_list)
         object.__setattr__(self, 'term_list', tuple_list)
 
@@ -1516,6 +1527,11 @@ class NoncommutativeForest:
 
     def nodes(self) -> int:
         return sum(tree.nodes() for tree in self.tree_list)
+
+    def equals(self, other):
+        if not isinstance(other, NoncommutativeForest):
+            return False
+        return self.tree_list == other.tree_list
 
     def _forest_mul(self, other, *, prepend):
         if isinstance(other, (int, float)):
