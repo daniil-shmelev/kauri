@@ -27,7 +27,8 @@ import unittest
 from kauri.trees import PlanarTree, NoncommutativeForest, OrderedForest, ForestSum, EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST
 from kauri.maps import Map
 import kauri.pbck as pbck
-from kauri.pbck.pbck import _forest_sum_mul_tree, _anti_forest_apply
+from kauri.pbck.pbck import _forest_sum_mul_tree
+from kauri.generic_algebra import anti_forest_apply
 
 PT = PlanarTree
 
@@ -171,7 +172,7 @@ class TestAntipodeProperty(unittest.TestCase):
             result = 0
             for c, left_forest, right_tree in cp:
                 # S is an anti-homomorphism: S(t1*t2) = S(t2)*S(t1)
-                s_left = _anti_forest_apply(left_forest, pbck.antipode.func)
+                s_left = anti_forest_apply(left_forest, pbck.antipode.func)
                 if right_tree.list_repr is not None:
                     term = _forest_sum_mul_tree(s_left, right_tree)
                 else:
@@ -217,24 +218,19 @@ class TestAntipodeInvolution(unittest.TestCase):
     """S^2 = id holds for commutative or cocommutative Hopf algebras.
     The planar BCK is neither, so S^2 != id in general."""
 
-    def test_involution_small_trees(self):
-        """S^2 = id for trees up to order 3 (where there's only one planar ordering)."""
-        for t in [PT([]), PT([[]]), PT([[],[]]), PT([[[]]])]:
+    def test_involution_single_child_trees(self):
+        """S^2 = id for trees where S(t) contains only single-tree forests."""
+        for t in [PT([]), PT([[]]), PT([[[]]])]:
             s2 = pbck.antipode(pbck.antipode(t))
             self.assertEqual(_as_fs(t), s2,
                              msg=f"S^2({t.list_repr}) should equal t for this tree")
 
     def test_not_involution(self):
-        """S^2 != id for trees with asymmetric planar structure."""
-        t1 = PT([[[]],[]])
-        s2 = pbck.antipode(pbck.antipode(t1))
-        self.assertNotEqual(_as_fs(t1), s2,
-                            msg="S^2 should NOT be id for [[[]],[]]")
-
-        t2 = PT([[],[[]]])
-        s2 = pbck.antipode(pbck.antipode(t2))
-        self.assertNotEqual(_as_fs(t2), s2,
-                            msg="S^2 should NOT be id for [[],[[]]]")
+        """S^2 != id for trees whose antipode involves multi-tree forests."""
+        for t in [PT([[],[]]), PT([[[]],[]]), PT([[],[[]]])]:
+            s2 = pbck.antipode(pbck.antipode(t))
+            self.assertNotEqual(_as_fs(t), s2,
+                                msg=f"S^2 should NOT be id for {t.list_repr}")
 
 
 class TestConvolution(unittest.TestCase):

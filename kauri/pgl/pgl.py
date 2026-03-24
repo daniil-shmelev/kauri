@@ -304,9 +304,13 @@ Example usage::
     pgl.counit(PlanarTree([[]]))  # Returns 0
 """
 
-antipode = Map(antipode_impl)
+antipode = Map(antipode_impl, anti=True)
 antipode.__doc__ = """
 The antipode :math:`S_{PGL}` of the planar Grossman-Larson Hopf algebra.
+
+Since the planar GL algebra is noncommutative, the antipode is an
+anti-homomorphism: :math:`S(t_1 t_2) = S(t_2) S(t_1)`. This map uses
+``anti=True`` to ensure forests are processed in reversed order.
 
 :type: Map
 

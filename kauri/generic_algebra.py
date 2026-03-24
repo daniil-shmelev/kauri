@@ -34,6 +34,17 @@ def forest_apply(f, func):
         out = out.simplify()
     return out
 
+def anti_forest_apply(f, func):
+    # Apply func to each tree in forest f in reversed order (anti-homomorphism).
+    # S(t1 * t2 * ... * tk) = S(tk) * ... * S(t2) * S(t1)
+    it = reversed(f.tree_list)
+    out = func(next(it))
+    for t in it:
+        out = out * func(t)
+    if isinstance(out, (ForestLike, ForestSumLike)):
+        out = out.simplify()
+    return out
+
 def forest_sum_apply(fs, func):
     # Applies a function func linearly and multiplicatively to a forest sum fs
     out = 0
@@ -48,12 +59,26 @@ def forest_sum_apply(fs, func):
         out = out.simplify()
     return out
 
-def apply_map(t, func):
+def anti_forest_sum_apply(fs, func):
+    # Same as forest_sum_apply but with reversed tree order (anti-homomorphism)
+    out = 0
+    for c, f in fs.term_list:
+        it = reversed(f.tree_list)
+        term = func(next(it))
+        for t in it:
+            term = term * func(t)
+        out += c * term
+
+    if isinstance(out, (ForestLike, ForestSumLike)):
+        out = out.simplify()
+    return out
+
+def apply_map(t, func, anti=False):
     # Applies a function func as a linear multiplicative map to a Forest or ForestSum t
     if isinstance(t, ForestLike):
-        return forest_apply(t, func)
+        return anti_forest_apply(t, func) if anti else forest_apply(t, func)
     if isinstance(t, ForestSumLike):
-        return forest_sum_apply(t, func)
+        return anti_forest_sum_apply(t, func) if anti else forest_sum_apply(t, func)
     return func(t)
 
 def func_product(t, func1, func2, coproduct):

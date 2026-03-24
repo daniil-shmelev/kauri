@@ -22,7 +22,7 @@ from itertools import product as iter_product
 from ..maps import Map
 from ..trees import (Tree, PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
                      EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST)
-from ..generic_algebra import forest_apply, forest_sum_apply
+from ..generic_algebra import forest_apply, forest_sum_apply, anti_forest_apply
 from .._protocols import ForestLike, ForestSumLike
 
 
@@ -93,22 +93,6 @@ def _forest_sum_mul_tree(fs, tree):
     return ForestSum(tuple(new_terms)).simplify()
 
 
-def _anti_forest_apply(f, func):
-    """Apply func to each tree in forest f in reversed order (anti-homomorphism).
-
-    In a noncommutative Hopf algebra the antipode is an anti-algebra-homomorphism:
-    S(t1 * t2 * ... * tk) = S(tk) * ... * S(t2) * S(t1).
-    """
-    trees = list(reversed(f.tree_list))
-    it = iter(trees)
-    out = func(next(it))
-    for t in it:
-        out = out * func(t)
-    if isinstance(out, (ForestLike, ForestSumLike)):
-        out = out.simplify()
-    return out
-
-
 @cache
 def antipode_impl(t):
     if t.list_repr is None:
@@ -124,7 +108,7 @@ def antipode_impl(t):
         if right_tree.list_repr is None or right_tree == t:
             continue
 
-        s_left = _anti_forest_apply(left_forest, antipode_impl)
+        s_left = anti_forest_apply(left_forest, antipode_impl)
         term = _forest_sum_mul_tree(s_left, right_tree)
         out = out - c * term
 
@@ -188,9 +172,13 @@ Example usage::
     pbck.counit(PlanarTree([]))    # Returns 0
 """
 
-antipode = Map(antipode_impl)
+antipode = Map(antipode_impl, anti=True)
 antipode.__doc__ = """
 The antipode :math:`S` of the planar BCK Hopf algebra.
+
+Since the planar BCK algebra is noncommutative, the antipode is an
+anti-homomorphism: :math:`S(t_1 t_2) = S(t_2) S(t_1)`. This map uses
+``anti=True`` to ensure forests are processed in reversed order.
 
 :type: Map
 

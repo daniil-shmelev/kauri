@@ -28,23 +28,33 @@ from .generic_algebra import apply_map, func_power, func_product
 
 class Map:
     """
-    A multiplicative linear map over the Hopf algebra of non-planar rooted trees.
-    This class is callable.
+    A multiplicative linear map on rooted trees. This class is callable.
+
+    When applied to a forest, the map is extended multiplicatively:
+    ``f(t1 * t2 * ... * tk) = f(t1) * f(t2) * ... * f(tk)``.
+
+    If ``anti=True``, the map is extended as an anti-homomorphism instead:
+    ``f(t1 * t2 * ... * tk) = f(tk) * ... * f(t2) * f(t1)``.
+    This is required for antipodes of noncommutative Hopf algebras (e.g. PBCK, PGL).
 
     :param func: A function taking as input a single tree and returning a scalar,
         Tree, Forest or ForestSum.
     :type func: Callable[[Tree], int | float | Tree | Forest | ForestSum]
+    :param anti: If True, extend to forests as an anti-homomorphism (reversed order).
+        Default is False.
+    :type anti: bool
     """
-    def __init__(self, func : Callable[[Tree], Union[int, float, Tree, Forest, ForestSum]]):
+    def __init__(self, func : Callable[[Tree], Union[int, float, Tree, Forest, ForestSum]], anti=False):
         if not callable(func):
             raise TypeError("func parameter must be callable")
         self.func = func
+        self.anti = anti
 
     @lru_cache(maxsize = 128) # maxsize here since caching prevents the object being garbage collected
     def __call__(self, t : Union[Tree, Forest, ForestSum]) -> Union[int, float, Tree, Forest, ForestSum]:
         if not isinstance(t, (TreeLike, ForestLike, ForestSumLike)):
             raise TypeError("Argument to Map must be Tree, Forest or ForestSum, not " + str(type(t)))
-        return apply_map(t, self.func)
+        return apply_map(t, self.func, anti=self.anti)
 
     def __pow__(self, exponent : int) -> 'Map':
         """
