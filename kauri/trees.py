@@ -1683,6 +1683,26 @@ class NoncommutativeForest:
     def nodes(self) -> int:
         return sum(tree.nodes() for tree in self.tree_list)
 
+    def num_trees(self) -> int:
+        """Returns the number of trees in the forest."""
+        return len(self.tree_list)
+
+    def singleton_reduced(self) -> 'NoncommutativeForest':
+        """Remove single-node trees from the forest, preserving order."""
+        if self.colors() > 1:
+            warnings.warn("Singleton reduced representation will not respect colorings")
+        out = self.simplify()
+        if len(out.tree_list) > 1:
+            new_tree_list = tuple(t for t in out.tree_list if len(t.list_repr) != 1)
+            if len(new_tree_list) == 0:
+                new_tree_list = (PlanarTree([]),)
+            out = NoncommutativeForest(new_tree_list)
+        return out
+
+    def as_forest(self):
+        """Return self (protocol compatibility)."""
+        return self
+
     def factorial(self) -> int:
         """Product of tree factorials: ``prod(t.factorial() for t in self.tree_list)``."""
         return math.prod(t.factorial() for t in self.tree_list)
