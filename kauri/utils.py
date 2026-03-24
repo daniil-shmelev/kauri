@@ -176,6 +176,13 @@ def _list_repr_to_color_sequence(rep):
         layout += lay
     return layout
 
+def _apply_color_sequence(unlabelled_rep, color_iter):
+    # Inverse of _list_repr_to_color_sequence: takes an unlabelled tuple repr
+    # and an iterator of colors, returns a labelled tuple repr.
+    color = next(color_iter)
+    children = tuple(_apply_color_sequence(child, color_iter) for child in unlabelled_rep)
+    return children + (color,)
+
 def _level_sequence_to_list_repr(level_seq):
     # Convert a level sequence to a list representation
     if len(level_seq) == 0:

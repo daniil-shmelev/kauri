@@ -21,7 +21,7 @@ from functools import lru_cache
 from itertools import product
 
 from .trees import Tree
-from .utils import _level_sequence_to_list_repr
+from .utils import _level_sequence_to_list_repr, _apply_color_sequence
 
 def trees_up_to_order(order : int) -> Generator[Tree, None, None]:
     """
@@ -127,3 +127,100 @@ def planar_trees_up_to_order(order: int):
     validate_order(order)
     for current_order in range(order + 1):
         yield from planar_trees_of_order(current_order)
+
+
+def _all_colorings(unlabelled, d: int, n: int, cls=Tree):
+    """Yields a tree (of type *cls*) for every coloring of an unlabelled shape."""
+    for coloring in product(range(d), repeat=n):
+        yield cls(_apply_color_sequence(unlabelled, iter(coloring)))
+
+
+def _color_all_variants(shape: Tree, d: int):
+    """Yields all distinct colorings of an unlabelled tree shape with d colors."""
+    n = shape.nodes()
+    if n == 0:
+        yield shape
+        return
+    unlabelled = shape.unlabelled_repr
+    if shape.sigma() == 1:
+        yield from _all_colorings(unlabelled, d, n)
+    else:
+        seen = set()
+        for t in _all_colorings(unlabelled, d, n):
+            if t not in seen:
+                seen.add(t)
+                yield t
+
+
+def colored_trees_of_order(order: int, d: int):
+    """
+    Yields all distinct colored rooted trees of a given order with *d* colors.
+
+    Each node is decorated with a color from {0, ..., d-1}.
+
+    :param order: Number of nodes
+    :type order: int
+    :param d: Number of colors
+    :type d: int
+    :yields: Colored trees
+    :rtype: Tree
+    """
+    for shape in trees_of_order(order):
+        yield from _color_all_variants(shape, d)
+
+
+def colored_trees_up_to_order(order: int, d: int):
+    """
+    Yields all distinct colored rooted trees up to and including a given order with *d* colors.
+
+    :param order: Maximum number of nodes
+    :type order: int
+    :param d: Number of colors
+    :type d: int
+    :yields: Colored trees
+    :rtype: Tree
+    """
+    for shape in trees_up_to_order(order):
+        yield from _color_all_variants(shape, d)
+
+
+def colored_planar_trees_of_order(order: int, d: int):
+    """
+    Yields all colored planar rooted trees of a given order with *d* colors.
+
+    Each node is decorated with a color from {0, ..., d-1}.
+    Planar trees have no symmetry, so every coloring is distinct.
+
+    :param order: Number of nodes
+    :type order: int
+    :param d: Number of colors
+    :type d: int
+    :yields: Colored planar trees
+    :rtype: PlanarTree
+    """
+    from .trees import PlanarTree, EMPTY_PLANAR_TREE, validate_order
+
+    validate_order(order)
+    if order == 0:
+        yield EMPTY_PLANAR_TREE
+        return
+    for shape in planar_trees_of_order(order):
+        yield from _all_colorings(shape.unlabelled_repr, d, order, PlanarTree)
+
+
+def colored_planar_trees_up_to_order(order: int, d: int):
+    """
+    Yields all colored planar rooted trees up to and including a given order with *d* colors.
+
+    :param order: Maximum number of nodes
+    :type order: int
+    :param d: Number of colors
+    :type d: int
+    :yields: Colored planar trees
+    :rtype: PlanarTree
+    """
+    from .trees import validate_order
+
+    validate_order(order)
+    for current_order in range(order + 1):
+        yield from colored_planar_trees_of_order(current_order, d)

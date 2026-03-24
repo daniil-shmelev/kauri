@@ -27,7 +27,9 @@ __all__ = [
     "Map", "ident", "sign", "exact_weights", "omega",
     # Tree generation
     "trees_of_order", "trees_up_to_order",
+    "colored_trees_of_order", "colored_trees_up_to_order",
     "planar_trees_of_order", "planar_trees_up_to_order",
+    "colored_planar_trees_of_order", "colored_planar_trees_up_to_order",
     # Display
     "display",
     # Runge-Kutta
@@ -51,7 +53,10 @@ from .trees import (Tree, Forest, CommutativeForest, ForestSum, TensorProductSum
                     NoncommutativeForest, PlanarTree, OrderedForest, EMPTY_PLANAR_TREE)
 from .maps import Map, ident, sign, exact_weights, omega
 from .display import display
-from .gentrees import trees_of_order, trees_up_to_order, planar_trees_of_order, planar_trees_up_to_order
+from .gentrees import (trees_of_order, trees_up_to_order,
+                       colored_trees_of_order, colored_trees_up_to_order,
+                       planar_trees_of_order, planar_trees_up_to_order,
+                       colored_planar_trees_of_order, colored_planar_trees_up_to_order)
 from .rk import RK, rk_symbolic_weight, rk_order_cond
 from .cf import CFMethod
 
