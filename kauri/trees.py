@@ -318,6 +318,7 @@ class Tree:
         elif isinstance(other, ForestSum):
             out = ForestSum(tuple((c, self * f) for c,f in other.term_list))
         else:
+            _check_compatible(self, other)
             raise TypeError("Cannot multiply Tree by object of type " + str(type(other)))
 
         return out.simplify()
@@ -361,8 +362,10 @@ class Tree:
         elif isinstance(other, (Tree, Forest)):
             out = ForestSum((  (1, self), (1, other)  ))
         elif isinstance(other, ForestSum):
+            _check_compatible(self, other)
             out = ForestSum( ((1, self),) + other.term_list )
         else:
+            _check_compatible(self, other)
             raise TypeError("Cannot add Tree and " + str(type(other)))
 
         return out.simplify()
@@ -747,6 +750,7 @@ class CommutativeForest:
         elif isinstance(other, ForestSum):
             out = ForestSum(tuple( (c, self * f) for c, f in other.term_list ))
         else:
+            _check_compatible(self, other)
             raise TypeError("Cannot multiply Forest and " + str(type(other)))
 
         return out.simplify()
@@ -789,8 +793,10 @@ class CommutativeForest:
         elif isinstance(other, (Tree, Forest)):
             out = ForestSum(( (1, self), (1, other) ))
         elif isinstance(other, ForestSum):
+            _check_compatible(self, other)
             out = ForestSum( ((1, self),) + other.term_list )
         else:
+            _check_compatible(self, other)
             raise TypeError("Cannot add Forest and " + str(type(other)))
 
         return out.simplify()
@@ -1122,11 +1128,13 @@ class ForestSum:
         if isinstance(other, (int, float)):
             new_term_list = tuple( (c * other, f) for c, f in self.term_list )
         elif isinstance(other, (TreeLike, ForestLike)):
+            _check_compatible(self, other)
             if reverse:
                 new_term_list = tuple( (c, other * f) for c, f in self.term_list )
             else:
                 new_term_list = tuple( (c, f * other) for c, f in self.term_list )
         elif isinstance(other, ForestSum):
+            _check_compatible(self, other)
             left, right = (other.term_list, self.term_list) if reverse else (self.term_list, other.term_list)
             new_term_list = tuple( (c1 * c2, f1 * f2) for c1, f1 in left for c2, f2 in right if c1 != 0 and c2 != 0)
         else:
@@ -1174,8 +1182,10 @@ class ForestSum:
         if isinstance(other, (int, float)):
             new_term_list = self.term_list + ((other, EMPTY_FOREST),)
         elif isinstance(other, (TreeLike, ForestLike)):
+            _check_compatible(self, other)
             new_term_list = self.term_list + ((1, other),)
         elif isinstance(other, ForestSum):
+            _check_compatible(self, other)
             new_term_list = self.term_list + other.term_list
         else:
             raise TypeError("Cannot add ForestSum and " + str(type(other)))
@@ -1599,7 +1609,9 @@ class PlanarTree:
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
             return ForestSum(((1, self), (1, other)))
         if isinstance(other, ForestSum):
+            _check_compatible(self, other)
             return ForestSum(((1, self),) + other.term_list)
+        _check_compatible(self, other)
         raise TypeError("Cannot add PlanarTree and " + str(type(other)))
 
     __radd__ = __add__
@@ -1729,11 +1741,12 @@ class NoncommutativeForest:
     def _forest_mul(self, other, *, prepend):
         if isinstance(other, (int, float)):
             return ForestSum(((sympy.sympify(other), self),))
-        if isinstance(other, TreeLike):
+        if isinstance(other, PlanarTree):
             other_trees = (other,)
         elif isinstance(other, NoncommutativeForest):
             other_trees = other.tree_list
         elif isinstance(other, ForestSum):
+            _check_compatible(self, other)
             terms = tuple(
                 (coeff, NoncommutativeForest(
                     (forest.tree_list + self.tree_list) if prepend
@@ -1743,6 +1756,7 @@ class NoncommutativeForest:
             )
             return ForestSum(terms).simplify()
         else:
+            _check_compatible(self, other)
             side = (f"{type(other)} and NoncommutativeForest" if prepend
                     else f"NoncommutativeForest and {type(other)}")
             raise TypeError(f"Cannot multiply {side}")
@@ -1770,7 +1784,9 @@ class NoncommutativeForest:
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
             return ForestSum(((1, self), (1, other)))
         if isinstance(other, ForestSum):
+            _check_compatible(self, other)
             return ForestSum(((1, self),) + other.term_list)
+        _check_compatible(self, other)
         raise TypeError("Cannot add NoncommutativeForest and " + str(type(other)))
 
     __radd__ = __add__
@@ -1820,6 +1836,33 @@ OrderedForestSum = ForestSum
 
 EMPTY_PLANAR_TREE = PlanarTree(None)
 EMPTY_ORDERED_FOREST = NoncommutativeForest((EMPTY_PLANAR_TREE,))
+
+_CROSS_TYPE_HINT = (
+    "Cannot combine planar and non-planar tree types. "
+    "Use PlanarTree/OrderedForest with planar algebras (pgl, pbck), "
+    "or Tree/Forest with non-planar algebras (gl, bck, cem)."
+)
+
+def _is_planar_obj(obj):
+    """Return True if obj is planar, False if non-planar, None if unknown."""
+    if isinstance(obj, (PlanarTree, NoncommutativeForest)):
+        return True
+    if isinstance(obj, (Tree, CommutativeForest)):
+        return False
+    if isinstance(obj, ForestSum):
+        for c, f in obj.term_list:
+            if isinstance(f, NoncommutativeForest):
+                return True
+            if isinstance(f, CommutativeForest):
+                return False
+        return None
+    return None
+
+def _check_compatible(a, b):
+    """Raise TypeError if a and b mix planar and non-planar types."""
+    pa, pb = _is_planar_obj(a), _is_planar_obj(b)
+    if pa is not None and pb is not None and pa != pb:
+        raise TypeError(_CROSS_TYPE_HINT)
 
 
 def validate_order(order: int, *, allow_zero: bool = True) -> None:
