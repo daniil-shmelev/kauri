@@ -19,7 +19,8 @@ SVG rendering for Tree, Forest, ForestSum and TensorProductSum objects.
 import warnings
 from typing import Union
 
-from .trees import Tree, ForestSum, Forest, TensorProductSum
+from .trees import (Tree, ForestSum, Forest, TensorProductSum,
+                    PlanarTree, NoncommutativeForest)
 from .utils import _branch_level_sequences, _str
 
 # ── Configuration constants ──────────────────────────────────────────────
@@ -334,9 +335,9 @@ def _to_svg(obj, scale=1.0, rationalise=False):
         items, w, h = _layout_tensor_sum(obj, scale, rationalise)
     elif isinstance(obj, ForestSum):
         items, w, h = _layout_forest_sum(obj, scale, rationalise)
-    elif isinstance(obj, Forest):
+    elif isinstance(obj, (Forest, NoncommutativeForest)):
         items, w, h = _layout_forest(obj, 0, 0, scale)
-    elif isinstance(obj, Tree):
+    elif isinstance(obj, (Tree, PlanarTree)):
         if obj.list_repr is None:
             fs = FONT_SIZE * scale
             cw = CHAR_WIDTH_FACTOR
@@ -366,7 +367,8 @@ def _in_jupyter():
 
 # ── Public API ───────────────────────────────────────────────────────────
 
-def display(obj: Union[Tree, Forest, ForestSum, TensorProductSum],
+def display(obj: Union[Tree, Forest, ForestSum, TensorProductSum,
+                       PlanarTree, NoncommutativeForest],
             *,
             scale: float = 1.0,
             fig_size: tuple = None,
@@ -374,7 +376,7 @@ def display(obj: Union[Tree, Forest, ForestSum, TensorProductSum],
             use_plt: bool = None,
             rationalise: bool = False) -> None:
     """
-    Display a Tree, Forest, ForestSum or TensorProductSum.
+    Display a Tree, Forest, ForestSum, TensorProductSum, PlanarTree, or NoncommutativeForest.
 
     In Jupyter, renders inline SVG.
 
@@ -383,9 +385,11 @@ def display(obj: Union[Tree, Forest, ForestSum, TensorProductSum],
     :param file_name: If provided, saves SVG to ``file_name.svg``
     :param rationalise: If True, rationalise float coefficients
     """
-    if not isinstance(obj, (Tree, Forest, ForestSum, TensorProductSum)):
+    if not isinstance(obj, (Tree, Forest, ForestSum, TensorProductSum,
+                            PlanarTree, NoncommutativeForest)):
         raise TypeError("Cannot display object of type " + str(type(obj))
-                        + ". Object must be Tree, Forest, ForestSum or TensorProductSum.")
+                        + ". Object must be Tree, Forest, ForestSum, TensorProductSum,"
+                        + " PlanarTree, or NoncommutativeForest.")
 
     if isinstance(obj, ForestSum) and len(obj.term_list) == 0:
         pass  # zero — no colors to check

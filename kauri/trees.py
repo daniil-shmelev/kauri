@@ -1507,6 +1507,7 @@ class PlanarTree:
             tuple_repr: tuple = _to_labelled_tuple(self.list_repr)
             object.__setattr__(self, "list_repr", tuple_repr)
             object.__setattr__(self, "unlabelled_repr", _to_unlabelled_tuple(tuple_repr))
+            object.__setattr__(self, "_max_color", _get_max_color(tuple_repr))
 
     def nodes(self) -> int:
         return _nodes(self.unlabelled_repr)
@@ -1579,6 +1580,38 @@ class PlanarTree:
     def sign(self):
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
+    def colors(self) -> int:
+        """Returns the number of colors/labels in a labelled planar tree."""
+        if self.list_repr is None:
+            return 0
+        return self._max_color + 1
+
+    def __repr__(self):
+        if self.list_repr is None:
+            return "\u2205"
+        if self._max_color == 0:
+            return repr(_to_list(self.unlabelled_repr))
+        return repr(_to_list(self.list_repr))
+
+    def _repr_svg_(self):
+        from .display import _to_svg
+        return _to_svg(self)
+
+    def level_sequence(self) -> list:
+        return _list_repr_to_level_sequence(self.unlabelled_repr)
+
+    def color_sequence(self):
+        return _list_repr_to_color_sequence(self.list_repr)
+
+    def __matmul__(self, other):
+        if isinstance(other, (int, float)):
+            return TensorProductSum(((other, self.as_ordered_forest(), EMPTY_ORDERED_FOREST),))
+        if isinstance(other, (PlanarTree, NoncommutativeForest)):
+            return TensorProductSum(((1, self.as_ordered_forest(), _coerce_to_forest(other)),))
+        if isinstance(other, ForestSum):
+            return TensorProductSum(tuple((c, self, f) for c, f in other))
+        raise TypeError("Cannot take tensor product of PlanarTree and " + str(type(other)))
+
     def as_forest_sum(self):
         return ForestSum(((1, self.as_ordered_forest()),))
 
@@ -1617,6 +1650,20 @@ class NoncommutativeForest:
     def factorial(self) -> int:
         """Product of tree factorials: ``prod(t.factorial() for t in self.tree_list)``."""
         return math.prod(t.factorial() for t in self.tree_list)
+
+    def __repr__(self):
+        if len(self.tree_list) == 0:
+            return "\u2205"
+        return " ".join(repr(t) for t in self.tree_list)
+
+    def _repr_svg_(self):
+        from .display import _to_svg
+        return _to_svg(self)
+
+    def colors(self) -> int:
+        if len(self.tree_list) == 0:
+            return 0
+        return max(t.colors() for t in self.tree_list)
 
     def equals(self, other):
         if not isinstance(other, NoncommutativeForest):
@@ -1693,6 +1740,15 @@ class NoncommutativeForest:
 
     def sign(self):
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
+
+    def __matmul__(self, other):
+        if isinstance(other, (int, float)):
+            return TensorProductSum(((other, self, EMPTY_ORDERED_FOREST),))
+        if isinstance(other, (PlanarTree, NoncommutativeForest)):
+            return TensorProductSum(((1, self, _coerce_to_forest(other)),))
+        if isinstance(other, ForestSum):
+            return TensorProductSum(tuple((c, self, f) for c, f in other))
+        raise TypeError("Cannot take tensor product of NoncommutativeForest and " + str(type(other)))
 
     def as_forest_sum(self):
         return ForestSum(((1, self),))

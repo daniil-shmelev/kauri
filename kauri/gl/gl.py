@@ -22,7 +22,7 @@ from collections import defaultdict
 
 from ..maps import Map
 from ..trees import (Tree, Forest, ForestSum, TensorProductSum,
-                     EMPTY_FOREST, ZERO_FOREST_SUM)
+                     PlanarTree, EMPTY_FOREST, ZERO_FOREST_SUM)
 from ..generic_algebra import func_product, func_power
 
 
@@ -117,6 +117,8 @@ def counit_impl(t):
 
 @cache
 def coproduct_impl(t):
+    if t.list_repr is None:
+        raise TypeError("GL coproduct is not defined for the empty tree")
     # GL coproduct: enumerate all 2^k subsets of children of the root.
     # For t with children c_1, ..., c_k and root color r:
     #   Delta(t) = sum_{S subset {1..k}} B+(c_i : i in S) tensor B+(c_j : j not in S)
@@ -273,7 +275,8 @@ def coproduct(t: Tree) -> TensorProductSum:
         gl.coproduct(kr.Tree([[]])) # Returns 1 [] tensor [[]]+1 [[]] tensor []
     """
     if not isinstance(t, Tree):
-        raise TypeError("Argument to gl.coproduct must be a Tree, not " + str(type(t)))
+        hint = " For planar trees, use pgl.coproduct instead." if isinstance(t, PlanarTree) else ""
+        raise TypeError("Argument to gl.coproduct must be a Tree, not " + str(type(t)) + "." + hint)
     if t.list_repr is None:
         raise TypeError("GL coproduct is not defined for the empty tree")
     return coproduct_impl(t)
@@ -315,9 +318,10 @@ def product(s, t):
         result_trees = _gl_product_trees(s, t)
         terms = tuple((1, tree) for tree in result_trees)
         return ForestSum(terms).simplify()
+    hint = " For planar trees, use pgl.product instead." if isinstance(s, PlanarTree) or isinstance(t, PlanarTree) else ""
     raise TypeError(
         "GL product expects (Tree, Tree) or (ForestSum, Tree), got ("
-        + str(type(s)) + ", " + str(type(t)) + ")"
+        + str(type(s)) + ", " + str(type(t)) + ")." + hint
     )
 
 

@@ -21,7 +21,7 @@ from itertools import product as iter_product, combinations
 from collections import defaultdict
 
 from ..maps import Map
-from ..trees import (PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
+from ..trees import (Tree, PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
                      EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST)
 from ..generic_algebra import forest_apply, forest_sum_apply
 from .._protocols import ForestLike, ForestSumLike
@@ -167,6 +167,8 @@ def _simplify_coproduct(terms):
 
 @cache
 def coproduct_impl(t):
+    if t.list_repr is None:
+        raise TypeError("PGL coproduct is not defined for the empty tree")
     root_color = t.list_repr[-1]
     children = t.list_repr[:-1]
     k = len(children)
@@ -343,7 +345,8 @@ def coproduct(t: PlanarTree) -> tuple:
         pgl.coproduct(PlanarTree([[]]))  # bullet tensor / + / tensor bullet
     """
     if not isinstance(t, PlanarTree):
-        raise TypeError("Argument to pgl.coproduct must be a PlanarTree, not " + str(type(t)))
+        hint = " For non-planar trees, use gl.coproduct instead." if isinstance(t, Tree) else ""
+        raise TypeError("Argument to pgl.coproduct must be a PlanarTree, not " + str(type(t)) + "." + hint)
     if t.list_repr is None:
         raise TypeError("PGL coproduct is not defined for the empty tree")
     return coproduct_impl(t)
@@ -382,9 +385,10 @@ def product(s, t):
         result_trees = _pgl_product_trees(s, t)
         terms = tuple((1, tree.as_ordered_forest()) for tree in result_trees)
         return ForestSum(terms).simplify()
+    hint = " For non-planar trees, use gl.product instead." if isinstance(s, Tree) or isinstance(t, Tree) else ""
     raise TypeError(
         "PGL product expects (PlanarTree, PlanarTree) or (ForestSum, PlanarTree), got ("
-        + str(type(s)) + ", " + str(type(t)) + ")"
+        + str(type(s)) + ", " + str(type(t)) + ")." + hint
     )
 
 

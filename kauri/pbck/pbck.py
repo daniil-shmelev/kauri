@@ -20,7 +20,7 @@ from functools import cache
 from itertools import product as iter_product
 
 from ..maps import Map
-from ..trees import (PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
+from ..trees import (Tree, PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
                      EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST)
 from ..generic_algebra import forest_apply, forest_sum_apply
 from .._protocols import ForestLike, ForestSumLike
@@ -224,7 +224,8 @@ def coproduct(t: PlanarTree) -> tuple:
         pbck.coproduct(PlanarTree([]))    # Returns unit coproduct terms
     """
     if not isinstance(t, PlanarTree):
-        raise TypeError("Argument to pbck.coproduct must be a PlanarTree, not " + str(type(t)))
+        hint = " For non-planar trees, use bck.coproduct instead." if isinstance(t, Tree) else ""
+        raise TypeError("Argument to pbck.coproduct must be a PlanarTree, not " + str(type(t)) + "." + hint)
     return coproduct_impl(t)
 
 

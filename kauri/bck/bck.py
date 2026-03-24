@@ -18,7 +18,7 @@ The BCK Hopf algebra module
 """
 from functools import cache
 from ..maps import Map
-from ..trees import (Tree, TensorProductSum,
+from ..trees import (Tree, PlanarTree, TensorProductSum,
                      EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM)
 from ..generic_algebra import forest_apply
 
@@ -112,7 +112,8 @@ def coproduct(t : Tree) -> TensorProductSum:
         bck.coproduct(kr.Tree([[]])) # Returns 1 [[]] ⊗ ∅+1 ∅ ⊗ [[]]+1 [] ⊗ []
     """
     if not isinstance(t, Tree):
-        raise TypeError("Argument to bck.coproduct must be a Tree, not " + str(type(t)))
+        hint = " For planar trees, use pbck.coproduct instead." if isinstance(t, PlanarTree) else ""
+        raise TypeError("Argument to bck.coproduct must be a Tree, not " + str(type(t)) + "." + hint)
     return coproduct_impl(t)
 
 def map_product(f : Map, g : Map) -> Map:

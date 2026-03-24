@@ -19,7 +19,7 @@ The CEM Hopf algebra module
 from functools import cache
 import itertools
 from ..maps import Map
-from ..trees import (Tree, Forest, TensorProductSum)
+from ..trees import (Tree, PlanarTree, Forest, TensorProductSum)
 from ..generic_algebra import func_power
 
 
@@ -174,7 +174,8 @@ def coproduct(t : Tree) -> TensorProductSum:
         cem.coproduct(Tree([[]])) # Returns 1 [] ⊗ [[]]+1 [[]] ⊗ []
     """
     if not isinstance(t, Tree):
-        raise TypeError("Argument to cem.coproduct must be a Tree, not " + str(type(t)))
+        hint = " The CEM algebra is only defined for non-planar trees." if isinstance(t, PlanarTree) else ""
+        raise TypeError("Argument to cem.coproduct must be a Tree, not " + str(type(t)) + "." + hint)
     if t.colors() > 1:
         raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
     return coproduct_impl(t)
