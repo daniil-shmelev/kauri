@@ -27,6 +27,7 @@ __all__ = [
     "Map", "ident", "sign", "exact_weights", "omega",
     # Tree generation
     "trees_of_order", "trees_up_to_order",
+    "planar_trees_of_order", "planar_trees_up_to_order",
     # Display
     "display",
     # Runge-Kutta
@@ -37,6 +38,8 @@ __all__ = [
     "gauss6", "radau_iia", "lobatto6", "EES25", "EES27",
     # B-series
     "BSeries", "elementary_differential",
+    # Commutator-free methods
+    "CFMethod",
     # Odd-even decomposition
     "id_sqrt", "minus", "plus",
     # Submodules
@@ -48,8 +51,9 @@ from .trees import (Tree, Forest, CommutativeForest, ForestSum, TensorProductSum
                     NoncommutativeForest, PlanarTree, OrderedForest, EMPTY_PLANAR_TREE)
 from .maps import Map, ident, sign, exact_weights, omega
 from .display import display
-from .gentrees import trees_of_order, trees_up_to_order
+from .gentrees import trees_of_order, trees_up_to_order, planar_trees_of_order, planar_trees_up_to_order
 from .rk import RK, rk_symbolic_weight, rk_order_cond
+from .cf import CFMethod
 
 from .rk_methods import (euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
                          ralston_rk3, rk4, ralston_rk4, nystrom_rk5, backward_euler,

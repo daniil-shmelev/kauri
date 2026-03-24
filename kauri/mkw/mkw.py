@@ -16,16 +16,12 @@ from ..trees import (
     OrderedForest,
     PlanarTree,
 )
+from ..generic_algebra import sign_factor
 
 
 def counit_impl(tree: PlanarTree) -> sympy.core.basic.Basic:
     """Counit used by the truncated verifier."""
     return sympy.Integer(1) if tree.list_repr is None else sympy.Integer(0)
-
-
-def sign_for_tree(tree: PlanarTree) -> int:
-    """Tree sign for involution: (-1)^|t|."""
-    return 1 if tree.nodes() % 2 == 0 else -1
 
 
 def _simplify_expanded(value: sympy.core.basic.Basic | int | float) -> sympy.core.basic.Basic:
@@ -101,7 +97,7 @@ def verify_mkw_ees(phi: Map, order: int) -> bool:
     validate_order(order, allow_zero=False)
     phi_sign = Map(
         lambda tree: sympy.expand(
-            sympy.sympify(sign_for_tree(tree)) * sympy.sympify(phi(tree))
+            sympy.sympify(sign_factor(tree)) * sympy.sympify(phi(tree))
         )
     )
     residual_map = planar_convolution(phi_sign, phi)

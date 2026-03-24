@@ -1511,6 +1511,18 @@ class PlanarTree:
     def nodes(self) -> int:
         return _nodes(self.unlabelled_repr)
 
+    def factorial(self) -> int:
+        """Compute the tree factorial for a planar tree. Uses the same recursion as ``Tree.factorial()``."""
+        return _factorial(self.unlabelled_repr)[0]
+
+    def sigma(self) -> int:
+        """Symmetry factor of an ordered tree — always 1 (sibling order is part of identity)."""
+        return 1
+
+    def density(self) -> float:
+        """Density of the tree, ``factorial() / nodes()!``."""
+        return self.factorial() / math.factorial(self.nodes())
+
     def as_ordered_forest(self) -> 'OrderedForest':
         return OrderedForest((self,))
 
@@ -1601,6 +1613,10 @@ class NoncommutativeForest:
 
     def nodes(self) -> int:
         return sum(tree.nodes() for tree in self.tree_list)
+
+    def factorial(self) -> int:
+        """Product of tree factorials: ``prod(t.factorial() for t in self.tree_list)``."""
+        return math.prod(t.factorial() for t in self.tree_list)
 
     def equals(self, other):
         if not isinstance(other, NoncommutativeForest):

@@ -18,6 +18,11 @@ Utility functions for dealing with generic Hopf algebras on trees
 """
 from ._protocols import ForestLike, ForestSumLike
 
+
+def sign_factor(t) -> int:
+    """Return the scalar sign ``(-1)^|t|``."""
+    return 1 if t.nodes() % 2 == 0 else -1
+
 def forest_apply(f, func):
     # Apply a function func multiplicatively to a forest f
     it = iter(f.tree_list)

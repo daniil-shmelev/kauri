@@ -26,11 +26,37 @@ from scipy.optimize import root
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from .gentrees import trees_of_order
-from .trees import Tree, Forest, ForestSum
+from .gentrees import trees_of_order, planar_trees_of_order
+from .trees import Tree, Forest, ForestSum, PlanarTree, NoncommutativeForest
+from ._protocols import TreeLike, ForestLike, ForestSumLike
 from .maps import Map, sign
-from .generic_algebra import apply_map
+from .generic_algebra import apply_map, sign_factor
 from .bck import counit
+
+
+def _check_planar_order(char_func, tol, limit):
+    """Check classical order of *char_func* on ordered trees."""
+    n = 0
+    while True:
+        for t in planar_trees_of_order(n):
+            if abs(char_func(t) - 1. / t.factorial()) > tol:
+                return n - 1
+        if n >= limit:
+            raise RuntimeError(f"Order equals or exceeds limit of {limit}")
+        n += 1
+
+
+def _check_planar_antisymmetric_order(defect_func, tol, limit):
+    """Check antisymmetric order of *defect_func* on ordered trees."""
+    n = 0
+    while True:
+        for t in planar_trees_of_order(n):
+            expected = 1 if t.list_repr is None else 0
+            if abs(defect_func(t) - expected) > tol:
+                return n - 1
+        if n >= limit:
+            raise RuntimeError(f"Order equals or exceeds limit of {limit}")
+        n += 1
 
 def _internal_symbolic(i, t_rep, a, b, s):
     return sum(a[i,j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
@@ -134,8 +160,8 @@ def rk_symbolic_weight(
                 text_file.write(s)
 
     """
-    if not isinstance(t, (int, float, Tree, Forest, ForestSum)):
-        raise TypeError("t must be a Tree, Forest, ForestSum, int or float, not " + str(type(t)))
+    if not isinstance(t, (int, float, TreeLike, ForestLike, ForestSumLike)):
+        raise TypeError("t must be a Tree, Forest, ForestSum (or planar equivalent), int or float, not " + str(type(t)))
     if not isinstance(s, int):
         raise TypeError("Number of stages s must be an int, not " + str(type(s)))
     if not isinstance(explicit, bool):
@@ -218,8 +244,8 @@ def rk_order_cond(
                 text_file.write(s)
 
     """
-    if not isinstance(t, (int, float, Tree, Forest, ForestSum)):
-        raise TypeError("t must be a Tree, Forest, ForestSum, int or float, not " + str(type(t)))
+    if not isinstance(t, (int, float, TreeLike, ForestLike, ForestSumLike)):
+        raise TypeError("t must be a Tree, Forest, ForestSum (or planar equivalent), int or float, not " + str(type(t)))
 
     return rk_symbolic_weight(t - 1. / t.factorial(), s, explicit, a_mask, b_mask, mathematica_code, rationalise)
 
@@ -707,3 +733,44 @@ class RK:
             if n >= limit:
                 raise RuntimeError("Order equals or exceeds limit of " + str(limit))
             n += 1
+
+    def planar_order(self, tol: float = 1e-10, limit: int = 10) -> int:
+        """
+        Returns the order of the RK scheme on ordered (planar) trees.
+
+        Checks ``Phi(tau) = 1/gamma(tau)`` for all ordered trees tau.
+
+        :param tol: Tolerance for evaluating order conditions.
+        :type tol: float
+        :param limit: Highest admissible order.
+        :type limit: int
+        :rtype: int
+        """
+        if not isinstance(tol, float):
+            raise TypeError("tol must be a float, not " + str(type(tol)))
+        return _check_planar_order(
+            lambda t: self._elementary_weights(t.list_repr), tol, limit)
+
+    def planar_antisymmetric_order(self, tol: float = 1e-10, limit: int = 10) -> int:
+        """
+        Returns the antisymmetric order of the RK scheme on ordered (planar)
+        trees, using the planar BCK Hopf algebra.
+
+        Checks ``D(tau) = (sign(Phi) *_pbck Phi)(tau) - epsilon(tau) = 0``
+        for all ordered trees tau.
+
+        :param tol: Tolerance for evaluating order conditions.
+        :type tol: float
+        :param limit: Highest admissible order.
+        :type limit: int
+        :rtype: int
+        """
+        if not isinstance(tol, float):
+            raise TypeError("tol must be a float, not " + str(type(tol)))
+
+        from .pbck.pbck import map_product as pbck_map_product
+
+        ew = self.elementary_weights_map()
+        sign_ew = Map(lambda t: sign_factor(t) * ew(t))
+        m = pbck_map_product(sign_ew, ew)
+        return _check_planar_antisymmetric_order(m, tol, limit)
