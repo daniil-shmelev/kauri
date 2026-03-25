@@ -26,7 +26,7 @@ planar BCK convolution algebra.
 
 __all__ = ['id_sqrt', 'minus', 'plus']
 
-from .trees import ForestSum, ZERO_FOREST_SUM, _is_scalar
+from .trees import PlanarTree, ForestSum, ZERO_FOREST_SUM, _is_scalar
 from .pbck.pbck import coproduct_impl
 from .generic_algebra import apply_map, forest_apply, func_product
 from .maps import Map
@@ -44,6 +44,10 @@ def _planar_ident(t):
 
 @cache
 def _planar_id_sqrt(t):
+    if not isinstance(t, PlanarTree):
+        raise TypeError(
+            f"planar_oddeven.id_sqrt expects a PlanarTree, not {type(t)}. "
+            "Use oddeven.id_sqrt for Tree.")
     fs_t = t.as_forest_sum()
     if t.list_repr is None:
         return fs_t

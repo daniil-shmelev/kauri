@@ -39,6 +39,10 @@ def counit_impl(t):
 
 @cache
 def coproduct_impl(t):
+    if not isinstance(t, PlanarTree):
+        raise TypeError(
+            f"Argument to pbck.coproduct must be a PlanarTree, not {type(t)}. "
+            "For non-planar trees, use bck.coproduct instead.")
     if t.list_repr is None:
         return TensorProductSum(((1, EMPTY_ORDERED_FOREST, EMPTY_ORDERED_FOREST),))
 

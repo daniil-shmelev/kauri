@@ -161,15 +161,20 @@ def _layout_forest(forest, x_start, y_base, scale, show_empty=False):
 
 def _format_coeff(c, is_first, rationalise):
     """Format coefficient for display, suppressing trivial '1' coefficients."""
-    abs_c = abs(c)
+    try:
+        abs_c = abs(c)
+        is_neg = bool(c < 0)
+    except TypeError:
+        # Symbolic coefficient (e.g., sympy.Symbol) — treat as non-negative
+        return _str(c, rationalise)
     if abs_c == 1:
         if is_first:
-            return '' if c >= 0 else '\u2212'
+            return '' if not is_neg else '\u2212'
         else:
             return ''  # sign handled by +/- operator
     else:
         s = _str(abs_c, rationalise)
-        if is_first and c < 0:
+        if is_first and is_neg:
             return '\u2212' + s
         return s
 
@@ -185,7 +190,10 @@ def _layout_coeff_op(items, x, c, is_first, scale, rationalise):
     cw = CHAR_WIDTH_FACTOR
 
     if not is_first:
-        op = '+' if c >= 0 else '\u2212'
+        try:
+            op = '+' if bool(c >= 0) else '\u2212'
+        except TypeError:
+            op = '+'  # symbolic coefficient — treat as positive
         items.append(('text', x + term_gap / 2, 0, op, fs))
         x += term_gap
 
@@ -339,6 +347,8 @@ def _render_svg(items, width, height, scale):
 
 def _to_svg(obj, scale=1.0, rationalise=False):
     """Generate an SVG string for a tree-algebra object."""
+    if scale <= 0:
+        raise ValueError("scale must be positive, got " + str(scale))
     if isinstance(obj, TensorProductSum):
         items, w, h = _layout_tensor_sum(obj, scale, rationalise)
     elif isinstance(obj, ForestSum):

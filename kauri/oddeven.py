@@ -27,6 +27,10 @@ from functools import cache
 
 @cache
 def _id_sqrt(self): #Id^{1/2}
+    if not isinstance(self, Tree):
+        raise TypeError(
+            f"oddeven.id_sqrt expects a Tree, not {type(self)}. "
+            "Use planar_oddeven.id_sqrt for PlanarTree.")
     if self.equals(Tree(None)):
         return Tree(None) * 1
     if self.equals(Tree([])):

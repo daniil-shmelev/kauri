@@ -968,6 +968,14 @@ class ForestSum:
                 raise TypeError("Terms must be tuples of (coefficient, ForestLike | TreeLike)")
 
         new_term_list = tuple(new_term_list)
+        # Reject mixed planar/non-planar forest types
+        if len(new_term_list) > 1:
+            first_type = type(new_term_list[0][1])
+            for _, f in new_term_list[1:]:
+                if type(f) is not first_type:
+                    raise TypeError(
+                        f"ForestSum cannot mix forest types: got {first_type.__name__} "
+                        f"and {type(f).__name__}")
         object.__setattr__(self, 'term_list', new_term_list)
 
     __copy__ = _frozen_copy
@@ -1308,7 +1316,7 @@ class ForestSum:
 ##############################################
 
 def _is_scalar(obj):
-    return isinstance(obj, numbers.Real)
+    return isinstance(obj, (numbers.Real, sympy.Expr))
 
 def _is_tree_or_forest(obj):
     return isinstance(obj, (TreeLike, ForestLike))
@@ -1439,6 +1447,10 @@ class TensorProductSum:
             t1 @ (t2 * t3) == t1 @ (t3 * t2) # True
             t1 @ t3 == t1 @ t4 # True
         """
+        if _is_scalar(other):
+            if other == 0:
+                return not self.term_list
+            return NotImplemented
         if not isinstance(other, TensorProductSum):
             return NotImplemented
         _lazy_count(self, 'term_list')
@@ -1577,6 +1589,13 @@ class PlanarTree:
     def as_ordered_forest(self) -> 'OrderedForest':
         """Returns the tree as a single-tree ordered (noncommutative) forest."""
         return OrderedForest((self,))
+
+    def as_forest(self) -> 'OrderedForest':
+        """Returns the tree as a single-tree ordered (noncommutative) forest.
+
+        Alias for :meth:`as_ordered_forest`, provided for API parity with :meth:`Tree.as_forest`.
+        """
+        return self.as_ordered_forest()
 
     def to_nonplanar_tree(self) -> Tree:
         """Converts this planar tree to its non-planar equivalent (forgets sibling order)."""
@@ -1800,7 +1819,7 @@ class NoncommutativeForest:
 
     def _forest_mul(self, other, *, prepend):
         if _is_scalar(other):
-            return ForestSum(((other, self),))
+            return ForestSum(((other, self),)).simplify()
         if isinstance(other, PlanarTree):
             other_trees = (other,)
         elif isinstance(other, NoncommutativeForest):

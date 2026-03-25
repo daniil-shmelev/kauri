@@ -286,7 +286,13 @@ lobatto6 = RK([
                ],
               [1/12, 5/12, 5/12, 1/12], 'Lobatto 6')
 lobatto6.__doc__ = """
-Butcher’s Lobatto formula of order 6
+Butcher’s Lobatto formula of order 6.
+
+.. note::
+    This uses an equivalent but non-standard Butcher tableau where the last column of A
+    is zero. The elementary weights and numerical solution are identical to the standard
+    Lobatto IIIA(4) tableau, but the A matrix does not satisfy the standard Lobatto IIIA
+    property :math:`a_{s,j} = b_j`.
 
 .. math::
 
