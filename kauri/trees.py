@@ -1163,6 +1163,8 @@ class ForestSum:
         if n < 0:
             raise ValueError("Cannot raise ForestSum to a negative power")
         if n == 0:
+            if _is_planar_obj(self):
+                return ForestSum(((1, EMPTY_ORDERED_FOREST),))
             return EMPTY_FOREST_SUM
 
         temp = self
@@ -1183,7 +1185,8 @@ class ForestSum:
             t = 2 + Tree([[]]) + ForestSum([Tree([]), Tree([[],[]])], [1, -2])
         """
         if _is_scalar(other):
-            new_term_list = self.term_list + ((other, EMPTY_FOREST),)
+            empty = EMPTY_ORDERED_FOREST if _is_planar_obj(self) else EMPTY_FOREST
+            new_term_list = self.term_list + ((other, empty),)
         elif isinstance(other, (TreeLike, ForestLike)):
             _check_compatible(self, other)
             new_term_list = self.term_list + ((1, other),)
@@ -1454,21 +1457,23 @@ class TensorProductSum:
 
     def __add__(self, other : 'TensorProductSum') -> 'TensorProductSum':
         """
-        Adds two tensor product sums.
+        Adds two tensor product sums, or adds a scalar (treated as scalar * (empty ⊗ empty)).
 
-        :param other: Other tensor product sum
-        :type other: TensorProductSum
+        :param other: Other tensor product sum or scalar
+        :type other: TensorProductSum | int | float
         """
-        if not isinstance(other, TensorProductSum):
-            raise TypeError("Cannot add TensorSum and " + str(type(other)))
-        return TensorProductSum(self.term_list + other.term_list)
+        if isinstance(other, TensorProductSum):
+            return TensorProductSum(self.term_list + other.term_list)
+        if _is_scalar(other):
+            if other == 0:
+                return self
+            return TensorProductSum(self.term_list + ((other, EMPTY_FOREST, EMPTY_FOREST),))
+        raise TypeError("Cannot add TensorProductSum and " + str(type(other)))
 
     def __neg__(self):
         return TensorProductSum(tuple((-x[0], x[1], x[2]) for x in self.term_list))
 
     def __sub__(self, other):
-        if not isinstance(other, TensorProductSum):
-            raise TypeError("Cannot subtract " + str(type(other)) + " from TensorSum")
         return self + (-other)
 
     def __mul__(self, other : Union[int, float, 'TensorProductSum']) -> 'TensorProductSum':

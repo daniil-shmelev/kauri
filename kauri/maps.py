@@ -22,7 +22,8 @@ import copy
 from functools import lru_cache
 from typing import Union, Callable
 
-from .trees import Tree, Forest, ForestSum, EMPTY_TREE, _is_scalar
+from .trees import (Tree, PlanarTree, Forest, ForestSum, EMPTY_TREE,
+                     _is_scalar, _is_planar_obj)
 from ._protocols import TreeLike, ForestLike, ForestSumLike
 from .generic_algebra import apply_map, func_power, func_product
 
@@ -240,7 +241,11 @@ class Map:
             (bck.antipode & bck.antipode)(t)
             bck.antipode(bck.antipode(t)) #Same as above
         """
-        return Map(lambda x : self(other(x) * Tree(None)))
+        def _composed(x):
+            inner = other(x)
+            empty = PlanarTree(None) if _is_planar_obj(inner) else Tree(None)
+            return self(inner * empty)
+        return Map(_composed)
 
     def modified_equation(self) -> 'Map':
         """
