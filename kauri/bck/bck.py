@@ -80,7 +80,13 @@ Example usage::
     bck.counit(kr.Tree([])) # Returns 0
 """
 
-antipode = Map(antipode_impl)
+def _safe_antipode(t):
+    if not isinstance(t, Tree):
+        hint = " For planar trees, use pbck.antipode instead." if isinstance(t, PlanarTree) else ""
+        raise TypeError("Argument to bck.antipode must be a Tree, not " + str(type(t)) + "." + hint)
+    return antipode_impl(t)
+
+antipode = Map(_safe_antipode)
 antipode.__doc__ = """
 The antipode :math:`S_{BCK}` of the BCK Hopf algebra.
 

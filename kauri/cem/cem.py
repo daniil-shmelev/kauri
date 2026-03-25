@@ -140,6 +140,9 @@ Example usage::
 """
 
 def _safe_antipode(t):
+    if not isinstance(t, Tree):
+        hint = " The CEM algebra is only defined for non-planar trees." if isinstance(t, PlanarTree) else ""
+        raise TypeError("Argument to cem.antipode must be a Tree, not " + str(type(t)) + "." + hint)
     if t.colors() > 1:
         raise ValueError("The CEM Hopf algebra is only defined for unlabelled trees")
     return antipode_impl(t)

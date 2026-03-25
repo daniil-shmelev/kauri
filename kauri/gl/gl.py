@@ -236,7 +236,13 @@ Example usage::
     gl.counit(kr.Tree([[]])) # Returns 0
 """
 
-antipode = Map(antipode_impl)
+def _safe_antipode(t):
+    if not isinstance(t, Tree):
+        hint = " For planar trees, use pgl.antipode instead." if isinstance(t, PlanarTree) else ""
+        raise TypeError("Argument to gl.antipode must be a Tree, not " + str(type(t)) + "." + hint)
+    return antipode_impl(t)
+
+antipode = Map(_safe_antipode)
 antipode.__doc__ = """
 The antipode :math:`S_{GL}` of the Grossman-Larson Hopf algebra.
 
