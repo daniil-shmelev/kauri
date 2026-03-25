@@ -980,20 +980,8 @@ class ForestSum:
         if len(self.term_list) == 0:
             return "0"
 
-        r = ""
-        for c, f in self.term_list:
-            term_str = str(c) + " * " + repr(f)
-            try:
-                non_negative = bool(c >= 0)
-            except TypeError:
-                non_negative = True
-            if non_negative and r:
-                r += " + " + term_str
-            elif r:
-                r += " " + term_str
-            else:
-                r += term_str
-        return r
+        parts = [str(c) + " * " + repr(f) for c, f in self.term_list]
+        return " + ".join(parts) if parts else "0"
 
     def _repr_svg_(self):
         from .display import _to_svg
@@ -1377,21 +1365,8 @@ class TensorProductSum:
     def __repr__(self):
         if self.term_list is None or self.term_list == tuple():
             return "0"
-
-        r = ""
-        for c, f1, f2 in self.term_list:
-            term_str = str(c) + " * " + repr(f1) + " \u2297 " + repr(f2)
-            try:
-                non_negative = bool(c >= 0)
-            except TypeError:
-                non_negative = True
-            if non_negative and r:
-                r += " + " + term_str
-            elif r:
-                r += " " + term_str
-            else:
-                r += term_str
-        return r
+        parts = [str(c) + " * " + repr(f1) + " \u2297 " + repr(f2) for c, f1, f2 in self.term_list]
+        return " + ".join(parts)
 
     def _repr_svg_(self):
         from .display import _to_svg
@@ -1825,7 +1800,7 @@ class NoncommutativeForest:
 
     def _forest_mul(self, other, *, prepend):
         if _is_scalar(other):
-            return ForestSum(((sympy.sympify(other), self),))
+            return ForestSum(((other, self),))
         if isinstance(other, PlanarTree):
             other_trees = (other,)
         elif isinstance(other, NoncommutativeForest):

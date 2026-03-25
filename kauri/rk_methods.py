@@ -182,7 +182,7 @@ Nyström's RK5 method
         1/3 & 1/3 & 0 & 0 & 0 & 0 & 0 \\\\
         2/5 & 4/25 & 6/25 & 0 & 0 & 0 & 0 \\\\
         1 & 1/4 & -3 & 15/4 & 0 & 0 & 0 \\\\
-        2/5 & 2/27 & 10/9 & -50/81 & 8/81 & 0 & 0 \\\\
+        2/3 & 2/27 & 10/9 & -50/81 & 8/81 & 0 & 0 \\\\
         4/5 & 2/25 & 12/25 & 2/15 & 8/75 & 0 & 0 \\\\
         \\hline
         & 23/192 & 0 & 125/192 & 0 & -27/64 & 125/192
@@ -250,7 +250,7 @@ Kuntzmann & Butcher method of order 6, based on Gaussian quadrature
     \\begin{array}{c|ccc}
         \\frac{1}{2} - \\frac{\\sqrt{15}}{10} & \\frac{5}{36} & \\frac{2}{9} - \\frac{\\sqrt{15}}{15} & \\frac{5}{36} - \\frac{\\sqrt{15}}{30} \\\\
         \\frac{1}{2} & \\frac{5}{36} + \\frac{\\sqrt{15}}{24} & \\frac{2}{9} & \\frac{5}{36} - \\frac{\\sqrt{15}}{24} \\\\
-        \\frac{1}{2} - \\frac{\\sqrt{15}}{10} & \\frac{5}{36} + \\frac{\\sqrt{15}}{30} & \\frac{2}{9} + \\frac{\\sqrt{15}}{15} & \\frac{5}{36} \\\\
+        \\frac{1}{2} + \\frac{\\sqrt{15}}{10} & \\frac{5}{36} + \\frac{\\sqrt{15}}{30} & \\frac{2}{9} + \\frac{\\sqrt{15}}{15} & \\frac{5}{36} \\\\
         \\hline
          & \\frac{5}{18} & \\frac{4}{9} & \\frac{5}{18}
     \\end{array}

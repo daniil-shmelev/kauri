@@ -237,13 +237,18 @@ def _layout_tensor_sum(tensor_sum, scale, rationalise=False):
 
     Returns (items, total_width, total_height).
     """
+    fs = FONT_SIZE * scale
+    cw = CHAR_WIDTH_FACTOR
+
+    if not tensor_sum.term_list:
+        items = [('text', 0, 0, '0', fs)]
+        return items, fs * 0.5, fs
+
     items = []
     x = 0
     max_height = 0
     coeff_gap = COEFF_GAP * scale
     tensor_gap = TENSOR_GAP * scale
-    fs = FONT_SIZE * scale
-    cw = CHAR_WIDTH_FACTOR
 
     for i, (c, f1, f2) in enumerate(tensor_sum.term_list):
         x = _layout_coeff_op(items, x, c, i == 0, scale, rationalise)
@@ -339,7 +344,7 @@ def _to_svg(obj, scale=1.0, rationalise=False):
     elif isinstance(obj, ForestSum):
         items, w, h = _layout_forest_sum(obj, scale, rationalise)
     elif isinstance(obj, (Forest, NoncommutativeForest)):
-        items, w, h = _layout_forest(obj, 0, 0, scale)
+        items, w, h = _layout_forest(obj, 0, 0, scale, show_empty=True)
     elif isinstance(obj, (Tree, PlanarTree)):
         if obj.list_repr is None:
             fs = FONT_SIZE * scale
