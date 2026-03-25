@@ -24,7 +24,9 @@ from ..generic_algebra import func_power
 
 
 def counit_impl(t):
-    # Return 1 if t is the tree with one node, otherwise 0
+    # Return 1 if t is the empty tree or the single-node tree (unit in CEM), otherwise 0
+    if t.list_repr is None:
+        return 1
     return 1 if len(t.list_repr) == 1 else 0
 
 @cache

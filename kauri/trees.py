@@ -404,7 +404,7 @@ class Tree:
             return self.as_forest() == other
         if isinstance(other, ForestSum):
             return self.as_forest_sum() == other
-        raise TypeError("Cannot check equality of Tree and " + str(type(other)))
+        return NotImplemented
 
     def __lt__(self, other):
         # Deal with empty trees
@@ -1441,7 +1441,7 @@ class TensorProductSum:
             t1 @ t3 == t1 @ t4 # True
         """
         if not isinstance(other, TensorProductSum):
-            raise TypeError("Cannot check equality of TensorSum and " + str(type(other)))
+            return NotImplemented
         _lazy_count(self, 'term_list')
         _lazy_count(other, 'term_list')
         return self.count == other.count
