@@ -20,7 +20,7 @@ import warnings
 from typing import Union
 
 from .trees import (Tree, ForestSum, Forest, TensorProductSum,
-                    PlanarTree, NoncommutativeForest)
+                    PlanarTree, NoncommutativeForest, _is_scalar)
 from .utils import _branch_level_sequences, _str
 
 # ── Configuration constants ──────────────────────────────────────────────
@@ -200,7 +200,7 @@ def _layout_forest_sum(forest_sum, scale, rationalise=False):
     Returns (items, total_width, total_height).
     """
     if not isinstance(forest_sum, ForestSum):
-        if isinstance(forest_sum, (int, float)):
+        if _is_scalar(forest_sum):
             forest_sum = Tree(None) * forest_sum
         else:
             forest_sum = forest_sum.as_forest_sum()

@@ -24,7 +24,7 @@ splitting that directly constructs the factorisation
 planar BCK convolution algebra.
 """
 
-from .trees import ForestSum, ZERO_FOREST_SUM
+from .trees import ForestSum, ZERO_FOREST_SUM, _is_scalar
 from .pbck.pbck import coproduct_impl
 from .generic_algebra import apply_map, forest_apply, func_product
 from .maps import Map
@@ -106,7 +106,7 @@ def _remainder(t):
         product = c * plus_left * minus_right
         if isinstance(product, ForestSum):
             all_middle_terms.extend(product.term_list)
-        elif isinstance(product, (int, float)):
+        elif _is_scalar(product):
             pass  # zero contribution
         else:
             all_middle_terms.append((1, product))

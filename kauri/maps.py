@@ -22,7 +22,7 @@ import copy
 from functools import lru_cache
 from typing import Union, Callable
 
-from .trees import Tree, Forest, ForestSum, EMPTY_TREE
+from .trees import Tree, Forest, ForestSum, EMPTY_TREE, _is_scalar
 from ._protocols import TreeLike, ForestLike, ForestSumLike
 from .generic_algebra import apply_map, func_power, func_product
 
@@ -88,7 +88,7 @@ class Map:
 
     def __imul__(self, other : Union[int, float, 'Map']):
         func_ = self.func
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             self.func = lambda x : other * func_(x)
         elif isinstance(other, Map):
             from .bck.bck import coproduct_impl as bck_coproduct
@@ -99,7 +99,7 @@ class Map:
 
     def __ixor__(self, other):
         func_ = self.func
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             self.func = lambda x: other * func_(x)
         elif isinstance(other, Map):
             from .cem.cem import coproduct_impl as cem_coproduct
@@ -170,7 +170,7 @@ class Map:
 
     def __iadd__(self, other):
         func_ = self.func
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             self.func = lambda x : func_(x) + other
         elif isinstance(other, Map):
             self.func = lambda x: func_(x) + other.func(x)

@@ -85,6 +85,7 @@ from typing import Union
 import sympy as sp
 
 from kauri import Tree, trees_up_to_order, Map
+from kauri.trees import _is_scalar
 
 def _check_f_y(f, y):
     # Checks that f and y are correctly specified
@@ -262,8 +263,8 @@ class BSeries:
             raise ValueError("y must be a list, not " + str(type(y)))
         if len(y) != self.dim:
             raise ValueError("List of values for y is of incorrect length. Expected " + str(self.dim) + " got " + str(len(y)))
-        if not isinstance(h, (int, float)):
-            raise ValueError("h must be an int or float, not " + str(type(h)))
+        if not _is_scalar(h):
+            raise ValueError("h must be a numeric scalar, not " + str(type(h)))
 
         out = self.symbolic_expr.subs(self.h, h)
         for i in range(self.dim):

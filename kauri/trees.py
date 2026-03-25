@@ -29,6 +29,7 @@ the color of the highest levels of the trees being the primary ordering.
 """
 
 import math
+import numbers
 from collections import Counter
 from collections.abc import Iterator
 from dataclasses import dataclass
@@ -309,7 +310,7 @@ class Tree:
 
             t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             out = ForestSum(( (other,self),  ))
         elif isinstance(other, Tree):
             out = Forest((self, other))
@@ -357,7 +358,7 @@ class Tree:
 
             t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             out = ForestSum((  (1, self), (other, EMPTY_FOREST)  ))
         elif isinstance(other, (Tree, Forest)):
             out = ForestSum((  (1, self), (1, other)  ))
@@ -396,7 +397,7 @@ class Tree:
             Tree([[],[]]) == Tree([[],[]]).as_forest_sum() #True
             Tree([[[]],[]]) == Tree([[],[[]]]) #True
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return self.as_forest_sum() == other * EMPTY_TREE
         if isinstance(other, Tree):
             return self.equals(other)
@@ -531,7 +532,7 @@ class Tree:
 
             Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return TensorProductSum(( (other, self.as_forest(), EMPTY_FOREST), ))
         if isinstance(other, (Tree, Forest)):
             return TensorProductSum(( (1, self.as_forest(), other.as_forest()), ))
@@ -741,7 +742,7 @@ class CommutativeForest:
 
             t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             out = ForestSum(( (other, self), ))
         elif isinstance(other, Tree):
             out = Forest(self.tree_list + (other,))
@@ -788,7 +789,7 @@ class CommutativeForest:
 
             t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             out = ForestSum((  (1, self), (other, EMPTY_FOREST)  ))
         elif isinstance(other, (Tree, Forest)):
             out = ForestSum(( (1, self), (1, other) ))
@@ -837,7 +838,7 @@ class CommutativeForest:
             t1 * t2 == (t1 * t2).as_forest_sum() #True
             t1 * t3 == t1 * t4 #True
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return self.as_forest_sum() == other * EMPTY_TREE
         if isinstance(other, Tree):
             return self.equals(other.as_forest())
@@ -903,7 +904,7 @@ class CommutativeForest:
 
             Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return TensorProductSum(( (other, self, EMPTY_FOREST), ))
         if isinstance(other, (Tree, Forest)):
             return TensorProductSum(( (1, self, other.as_forest()), ))
@@ -1125,7 +1126,7 @@ class ForestSum:
         return self._mul_impl(other, reverse=True)
 
     def _mul_impl(self, other, *, reverse):
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             new_term_list = tuple( (c * other, f) for c, f in self.term_list )
         elif isinstance(other, (TreeLike, ForestLike)):
             _check_compatible(self, other)
@@ -1179,7 +1180,7 @@ class ForestSum:
 
             t = 2 + Tree([[]]) + ForestSum([Tree([]), Tree([[],[]])], [1, -2])
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             new_term_list = self.term_list + ((other, EMPTY_FOREST),)
         elif isinstance(other, (TreeLike, ForestLike)):
             _check_compatible(self, other)
@@ -1229,7 +1230,7 @@ class ForestSum:
             t1 * t2 + t3 == t3 + t2 * t1 # True
             t1 * t2 + t3 == t1 * t2 + t4 # True
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return self.equals(other * EMPTY_TREE)
         if isinstance(other, Tree):
             return self.equals(other.as_forest_sum())
@@ -1276,7 +1277,7 @@ class ForestSum:
 
             Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
         """
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             term_list = []
             for c, f in self:
                 term_list.append((other * c, f, EMPTY_FOREST))
@@ -1302,7 +1303,7 @@ class ForestSum:
 ##############################################
 
 def _is_scalar(obj):
-    return isinstance(obj, (int, float))
+    return isinstance(obj, numbers.Real)
 
 def _is_tree_or_forest(obj):
     return isinstance(obj, (TreeLike, ForestLike))
@@ -1481,7 +1482,7 @@ class TensorProductSum:
                 for c2, f21, f22 in other:
                     new_term_list.append((c1 * c2, f11 * f21, f12 * f22))
             return TensorProductSum(tuple(new_term_list))
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return TensorProductSum(tuple((other * x[0], x[1], x[2]) for x in self.term_list))
         raise TypeError("Cannot multiply TensorSum by " + str(type(other)))
 
@@ -1604,7 +1605,7 @@ class PlanarTree:
         return NoncommutativeForest((self,) * n).simplify()
 
     def __add__(self, other):
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return ForestSum(((1, self.as_ordered_forest()), (other, EMPTY_ORDERED_FOREST)))
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
             return ForestSum(((1, self), (1, other)))
@@ -1652,7 +1653,7 @@ class PlanarTree:
         return _list_repr_to_color_sequence(self.list_repr)
 
     def __matmul__(self, other):
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return TensorProductSum(((other, self.as_ordered_forest(), EMPTY_ORDERED_FOREST),))
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
             return TensorProductSum(((1, self.as_ordered_forest(), _coerce_to_forest(other)),))
@@ -1768,7 +1769,7 @@ class NoncommutativeForest:
         return self.tree_list == other.tree_list
 
     def _forest_mul(self, other, *, prepend):
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return ForestSum(((sympy.sympify(other), self),))
         if isinstance(other, PlanarTree):
             other_trees = (other,)
@@ -1808,7 +1809,7 @@ class NoncommutativeForest:
         return NoncommutativeForest(self.tree_list * n).simplify()
 
     def __add__(self, other):
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return ForestSum(((1, self), (other, EMPTY_ORDERED_FOREST)))
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
             return ForestSum(((1, self), (1, other)))
@@ -1843,7 +1844,7 @@ class NoncommutativeForest:
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
     def __matmul__(self, other):
-        if isinstance(other, (int, float)):
+        if _is_scalar(other):
             return TensorProductSum(((other, self, EMPTY_ORDERED_FOREST),))
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
             return TensorProductSum(((1, self, _coerce_to_forest(other)),))

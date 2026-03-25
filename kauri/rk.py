@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from .gentrees import trees_of_order, planar_trees_of_order
-from .trees import Tree, Forest, ForestSum, PlanarTree, NoncommutativeForest
+from .trees import Tree, Forest, ForestSum, PlanarTree, NoncommutativeForest, _is_scalar
 from ._protocols import TreeLike, ForestLike, ForestSumLike
 from .maps import Map, sign
 from .generic_algebra import apply_map, sign_factor
@@ -176,7 +176,7 @@ def rk_symbolic_weight(
         raise TypeError("rationalise must be a bool, not " + str(type(rationalise)))
 
     t_ = t
-    if isinstance(t, (int, float)):
+    if _is_scalar(t):
         t_ = t * Tree(None).as_forest_sum()
 
     out = apply_map(t_, lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
