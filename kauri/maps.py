@@ -53,6 +53,7 @@ class Map:
 
     @lru_cache(maxsize = 128) # maxsize here since caching prevents the object being garbage collected
     def __call__(self, t : Union[Tree, Forest, ForestSum]) -> Union[int, float, Tree, Forest, ForestSum]:
+        """Applies the map to a tree, forest, or forest sum (extends linearly and multiplicatively)."""
         if isinstance(t, TensorProductSum):
             raise TypeError("Cannot apply Map to TensorProductSum. "
                             "Apply the map to each tensor factor separately.")
@@ -212,6 +213,7 @@ class Map:
         return self
 
     def __sub__(self, other):
+        """Returns the pointwise difference of two maps: ``(f - g)(t) = f(t) - g(t)``."""
         temp = copy.deepcopy(self)
         temp -= other
         return temp

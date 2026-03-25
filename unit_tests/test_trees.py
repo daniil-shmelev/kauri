@@ -32,7 +32,7 @@ class TreeTests(unittest.TestCase):
     def test_repr(self):
         self.assertEqual(repr(T([[[]], []])), '[[[]], []]')
         self.assertEqual(repr(T([[[]], []]).as_forest()), '[[[]], []]')
-        self.assertEqual(repr(T([[[]], []]).as_forest_sum()), ' 1 * [[[]], []]')
+        self.assertEqual(repr(T([[[]], []]).as_forest_sum()), '1 * [[[]], []]')
         self.assertEqual(repr(T(None)), "∅")
         self.assertEqual(repr(Forest([])), "∅")
         self.assertEqual(repr(ForestSum([])), "0")
@@ -40,7 +40,7 @@ class TreeTests(unittest.TestCase):
     def test_conversion(self):
         for t in trees:
             self.assertEqual(repr(t), repr(t.as_forest()), repr(t) + " " + repr(t.as_forest()))
-            self.assertEqual(" 1 * " + repr(t), repr(t.as_forest_sum()), repr(t) + " " + repr(t.as_forest_sum()))
+            self.assertEqual("1 * " + repr(t), repr(t.as_forest_sum()), repr(t) + " " + repr(t.as_forest_sum()))
 
     def test_add(self):
         t1 = T([]) + T([[],[]])

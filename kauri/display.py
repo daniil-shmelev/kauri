@@ -396,7 +396,7 @@ def display(obj: Union[Tree, Forest, ForestSum, TensorProductSum,
     elif isinstance(obj, TensorProductSum) and (obj.term_list is None or len(obj.term_list) == 0):
         pass
     elif obj.colors() > 9:
-        raise ValueError("Cannot display labelled trees with over 10 different colors.")
+        raise ValueError("Cannot display labelled trees with more than 9 different colors.")
 
     if use_plt is not None:
         warnings.warn("use_plt is deprecated and ignored. Output is now SVG.",

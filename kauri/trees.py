@@ -469,6 +469,7 @@ class Tree:
         return Tree(self.sorted_list_repr())
 
     def equals(self, other_tree):
+        """Two trees are equal iff their sorted (canonical) list representations match."""
         return self.sorted_list_repr() == other_tree.sorted_list_repr()
 
     def as_forest(self) -> 'Forest':
@@ -556,6 +557,7 @@ class Tree:
         return Tree(self.unlabelled_repr)
 
     def color_sequence(self):
+        """Returns the color (label) sequence of the tree in pre-order."""
         return _list_repr_to_color_sequence(self.list_repr)
 
 ######################################
@@ -816,6 +818,7 @@ class CommutativeForest:
         return self * (-1)
 
     def equals(self, other_forest):
+        """Two forests are equal iff they contain the same trees with the same multiplicities."""
         _lazy_count(self, 'tree_list')
         _lazy_count(other_forest, 'tree_list')
         return self.count == other_forest.count
@@ -982,8 +985,10 @@ class ForestSum:
             term_str = str(c) + " * " + repr(f)
             if c >= 0 and r:
                 r += " + " + term_str
-            else:
+            elif r:
                 r += " " + term_str
+            else:
+                r += term_str
         return r
 
     def _repr_svg_(self):
@@ -1374,8 +1379,10 @@ class TensorProductSum:
             term_str = str(c) + " * " + repr(f1) + " \u2297 " + repr(f2)
             if c >= 0 and r:
                 r += " + " + term_str
-            else:
+            elif r:
                 r += " " + term_str
+            else:
+                r += term_str
         return r
 
     def _repr_svg_(self):
@@ -1547,6 +1554,7 @@ class PlanarTree:
             object.__setattr__(self, "_max_color", _get_max_color(tuple_repr))
 
     def nodes(self) -> int:
+        """Returns the number of nodes in the planar tree, :math:`|t|`."""
         return _nodes(self.unlabelled_repr)
 
     def factorial(self) -> int:
@@ -1584,9 +1592,11 @@ class PlanarTree:
         return PlanarTree(self.unlabelled_repr)
 
     def as_ordered_forest(self) -> 'OrderedForest':
+        """Returns the tree as a single-tree ordered (noncommutative) forest."""
         return OrderedForest((self,))
 
     def to_nonplanar_tree(self) -> Tree:
+        """Converts this planar tree to its non-planar equivalent (forgets sibling order)."""
         if self.list_repr is None:
             return Tree(None)
         return Tree(self.list_repr)
@@ -1652,6 +1662,7 @@ class PlanarTree:
         return ForestSum(((-1, self.as_ordered_forest()),))
 
     def sign(self):
+        """Returns the tree signed by the number of nodes, :math:`(-1)^{|t|} t`."""
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
     def colors(self) -> int:
@@ -1672,9 +1683,11 @@ class PlanarTree:
         return _to_svg(self)
 
     def level_sequence(self) -> list:
+        """Returns the level sequence of the planar tree (root at level 0)."""
         return _list_repr_to_level_sequence(self.unlabelled_repr)
 
     def color_sequence(self):
+        """Returns the color (label) sequence of the planar tree in pre-order."""
         return _list_repr_to_color_sequence(self.list_repr)
 
     def __matmul__(self, other):
@@ -1716,6 +1729,7 @@ class PlanarTree:
         return PlanarTree(_level_sequence_to_list_repr(next_))
 
     def as_forest_sum(self):
+        """Returns the planar tree as a ForestSum with coefficient 1."""
         return ForestSum(((1, self.as_ordered_forest()),))
 
 
@@ -1738,6 +1752,7 @@ class NoncommutativeForest:
         return self.tree_list[index]
 
     def simplify(self) -> 'NoncommutativeForest':
+        """Removes empty trees from the forest, preserving order."""
         if len(self.tree_list) <= 1:
             return self
         filtered = tuple(tree for tree in self.tree_list if tree.list_repr is not None)
@@ -1748,6 +1763,7 @@ class NoncommutativeForest:
         return NoncommutativeForest(filtered)
 
     def nodes(self) -> int:
+        """Returns the total number of nodes in the forest."""
         return sum(tree.nodes() for tree in self.tree_list)
 
     def num_trees(self) -> int:
@@ -1784,9 +1800,11 @@ class NoncommutativeForest:
         return _to_svg(self)
 
     def colors(self) -> int:
+        """Returns the maximum number of colors across all trees in the forest."""
         return max((t.colors() for t in self.tree_list), default=0)
 
     def equals(self, other):
+        """Two noncommutative forests are equal iff their tree lists match exactly."""
         if not isinstance(other, NoncommutativeForest):
             return False
         return self.tree_list == other.tree_list
@@ -1864,6 +1882,7 @@ class NoncommutativeForest:
         return hash(self.tree_list)
 
     def sign(self):
+        """Returns the forest signed by the number of nodes, :math:`(-1)^{|f|} f`."""
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
     def __matmul__(self, other):
@@ -1876,9 +1895,11 @@ class NoncommutativeForest:
         raise TypeError("Cannot take tensor product of NoncommutativeForest and " + str(type(other)))
 
     def as_forest_sum(self):
+        """Returns the forest as a ForestSum with coefficient 1."""
         return ForestSum(((1, self),))
 
     def join(self, root_color=0):
+        """Joins the forest into a single planar tree by connecting all trees to a new root (the B+ map)."""
         children = tuple(t.list_repr for t in self.tree_list if t.list_repr is not None)
         return PlanarTree(children + (root_color,))
 
