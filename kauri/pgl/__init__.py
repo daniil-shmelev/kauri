@@ -32,15 +32,17 @@ defined as follows.
       \\Delta_{PGL}(t) = \\sum_{S \\subseteq \\{1,\\ldots,k\\}}
           B_+(t_i : i \\in S) \\otimes B_+(t_j : j \\notin S)
 
-- The product :math:`\\cdot_{PGL}` (planar grafting) sums over all ways of attaching
-  the children of the right tree to vertices of the left tree at all possible
-  insertion positions among existing children.
+- The product :math:`\\cdot_{PGL}` (planar grafting) sums over all ways of assigning
+  the children of the right tree to vertices of the left tree, appending assigned
+  branches to the right of existing children.
 - The antipode :math:`S_{PGL}` is defined recursively using the planar grafting product.
 
 .. note::
 
-    Unlike the non-planar GL algebra, the planar GL algebra is not cocommutative,
-    so the antipode is **not** an involution (:math:`S^2 \\neq \\mathrm{id}` in general).
+    Like the non-planar GL algebra, the planar GL algebra is cocommutative
+    (the subset-complement bijection :math:`S \\leftrightarrow S^c` makes
+    :math:`\\tau \\circ \\Delta = \\Delta`), so the antipode is an involution
+    (:math:`S^2 = \\mathrm{id}`). The product is noncommutative.
 """
 
 from .pgl import antipode, counit, coproduct, product, map_power, map_product

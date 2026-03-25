@@ -169,7 +169,7 @@ def rk_symbolic_weight(
     if not (isinstance(a_mask, list) or a_mask is None):
         raise TypeError("a_mask must be a list, not " + str(type(a_mask)))
     if not (isinstance(b_mask, list) or b_mask is None):
-        raise TypeError("b_mask must be a list, not " + str(type(a_mask)))
+        raise TypeError("b_mask must be a list, not " + str(type(b_mask)))
     if not isinstance(mathematica_code, bool):
         raise TypeError("mathematica_code must be a bool, not " + str(type(mathematica_code)))
     if not isinstance(rationalise, bool):

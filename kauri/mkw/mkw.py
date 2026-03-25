@@ -90,19 +90,26 @@ def planar_convolution(f: Map, g: Map) -> Map:
     return Map(conv)
 
 
-def verify_mkw_ees(phi: Map, order: int) -> bool:
+def verify_mkw_ees(phi: Map, order: int, tol: float = 1e-10) -> bool:
     from ..gentrees import planar_trees_up_to_order
     from ..trees import validate_order
 
     validate_order(order, allow_zero=False)
     phi_sign = Map(
         lambda tree: sympy.expand(
-            sympy.sympify(sign_factor(tree)) * sympy.sympify(phi(tree))
+            sign_factor(tree) * sympy.sympify(phi(tree))
         )
     )
     residual_map = planar_convolution(phi_sign, phi)
-    return all(
-        _simplify_expanded(sympy.sympify(residual_map(tree)) - sympy.sympify(counit_impl(tree)))
-        == 0
-        for tree in planar_trees_up_to_order(order)
-    )
+    for tree in planar_trees_up_to_order(order):
+        residual = _simplify_expanded(residual_map(tree) - counit_impl(tree))
+        if residual == 0:
+            continue
+        # Fall back to numerical check for floating-point coefficients
+        try:
+            if abs(complex(residual)) < tol:
+                continue
+        except (TypeError, ValueError):
+            pass
+        return False
+    return True
