@@ -19,7 +19,6 @@ and allows for their manipulation with respect to different Hopf algebras. In pa
 characters on the Hopf algebra, as well as more complicated maps.
 """
 import copy
-from functools import lru_cache
 from typing import Union, Callable
 
 from .trees import (Tree, PlanarTree, Forest, ForestSum, TensorProductSum,
@@ -50,8 +49,8 @@ class Map:
             raise TypeError("func parameter must be callable")
         self.func = func
         self.anti = anti
+        self._cache = {}
 
-    @lru_cache(maxsize = 128) # maxsize here since caching prevents the object being garbage collected
     def __call__(self, t : Union[Tree, Forest, ForestSum]) -> Union[int, float, Tree, Forest, ForestSum]:
         """Applies the map to a tree, forest, or forest sum (extends linearly and multiplicatively)."""
         if isinstance(t, TensorProductSum):
@@ -59,7 +58,12 @@ class Map:
                             "Apply the map to each tensor factor separately.")
         if not isinstance(t, (TreeLike, ForestLike, ForestSumLike)):
             raise TypeError("Argument to Map must be Tree, Forest or ForestSum, not " + str(type(t)))
-        return apply_map(t, self.func, anti=self.anti)
+        try:
+            return self._cache[t]
+        except KeyError:
+            result = apply_map(t, self.func, anti=self.anti)
+            self._cache[t] = result
+            return result
 
     def __pow__(self, exponent : int) -> 'Map':
         """
@@ -100,6 +104,7 @@ class Map:
             self.func = lambda x : func_product(x, func_, other.func, bck_coproduct)
         else:
             raise TypeError("Error in BCK product: Cannot multiply Map by object of type " + str(type(other)))
+        self._cache.clear()
         return self
 
     def __ixor__(self, other):
@@ -119,6 +124,7 @@ class Map:
             self.func = f_
         else:
             raise TypeError("Error in CEM product: Cannot multiply Map by object of type " + str(type(other)))
+        self._cache.clear()
         return self
 
     def __mul__(self, other : Union['Map', int, float]) -> 'Map':
@@ -181,6 +187,7 @@ class Map:
             self.func = lambda x: func_(x) + other.func(x)
         else:
             raise TypeError("Cannot add Map and object of type " + str(type(other)))
+        self._cache.clear()
         return self
 
     def __add__(self, other : 'Map') -> 'Map':
