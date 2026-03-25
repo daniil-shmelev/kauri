@@ -126,7 +126,13 @@ Example usage::
     pbck.counit(PlanarTree([]))    # Returns 0
 """
 
-antipode = Map(antipode_impl, anti=True)
+def _safe_antipode(t):
+    if not isinstance(t, PlanarTree):
+        hint = " For non-planar trees, use bck.antipode instead." if isinstance(t, Tree) else ""
+        raise TypeError("Argument to pbck.antipode must be a PlanarTree, not " + str(type(t)) + "." + hint)
+    return antipode_impl(t)
+
+antipode = Map(_safe_antipode, anti=True)
 antipode.__doc__ = """
 The antipode :math:`S` of the planar BCK Hopf algebra.
 

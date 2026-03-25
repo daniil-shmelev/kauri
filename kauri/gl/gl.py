@@ -22,7 +22,7 @@ from collections import defaultdict
 
 from ..maps import Map
 from ..trees import (Tree, Forest, ForestSum, TensorProductSum,
-                     PlanarTree, EMPTY_FOREST, ZERO_FOREST_SUM)
+                     PlanarTree, EMPTY_FOREST, ZERO_FOREST_SUM, _is_scalar)
 from ..generic_algebra import func_product, func_power
 
 
@@ -176,16 +176,7 @@ def antipode_impl(t):
 def _gl_conv_inverse(func):
     """Return a function that evaluates the GL convolution inverse of func.
 
-    In the GL Hopf algebra, the generic formula f^{-1} = f ∘ S used by
-    func_power does not apply because the GL product (grafting) differs from
-    forest juxtaposition.  Instead, the convolution inverse is computed
-    directly from its recursive definition:
-
-        f^{-1}(●) = 1 / f(●)
-        f^{-1}(t) = -(1/f(●)) · Σ_{S≠∅} f(left(S)) · f^{-1}(right(S))
-
-    where the sum runs over nonempty subsets of the coproduct (excluding
-    the ● ⊗ t term).
+    Only works for scalar-valued maps (characters).
     """
     memo = {}
     bullet = Tree([])
@@ -206,7 +197,7 @@ def _gl_conv_inverse(func):
             for c, lf, rf in cp:
                 right = rf.tree_list[0]
                 if right.equals(t):
-                    continue  # skip ● ⊗ t term
+                    continue
                 left = lf.tree_list[0]
                 result += c * func(left) * inv(right)
             result = -inv_bullet * result
@@ -394,6 +385,12 @@ def map_power(f: Map, exponent: int) -> Map:
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
     if exponent >= 0:
         return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))
-    # For negative powers: compute convolution inverse, then take positive power
+    test_val = f.func(Tree([]))
+    if not _is_scalar(test_val):
+        raise TypeError(
+            "gl.map_power with negative exponent requires a scalar-valued map. "
+            "Got " + str(type(test_val)) + " for the single-vertex tree. "
+            "For tree-valued maps, use bck.map_power instead."
+        )
     f_inv = _gl_conv_inverse(f.func)
     return Map(lambda t: func_power(t, f_inv, -exponent, coproduct_impl, counit_impl, antipode_impl))

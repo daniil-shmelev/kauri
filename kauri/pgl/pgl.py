@@ -22,7 +22,7 @@ from collections import defaultdict
 
 from ..maps import Map
 from ..trees import (Tree, PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
-                     TensorProductSum, EMPTY_ORDERED_FOREST, ZERO_FOREST_SUM)
+                     TensorProductSum, EMPTY_ORDERED_FOREST, ZERO_FOREST_SUM, _is_scalar)
 from ..generic_algebra import forest_apply, func_product, func_power
 from ..gl.gl import _graft_helper
 
@@ -140,7 +140,10 @@ def antipode_impl(t):
 # ---------------------------------------------------------------------------
 
 def _pgl_conv_inverse(func):
-    """Return the PGL convolution inverse of func (recursive formula)."""
+    """Return the PGL convolution inverse of func.
+
+    Only works for scalar-valued maps (characters).
+    """
     memo = {}
     bullet = PlanarTree([])
 
@@ -190,7 +193,13 @@ Example usage::
     pgl.counit(PlanarTree([[]]))  # Returns 0
 """
 
-antipode = Map(antipode_impl, anti=True)
+def _safe_antipode(t):
+    if not isinstance(t, PlanarTree):
+        hint = " For non-planar trees, use gl.antipode instead." if isinstance(t, Tree) else ""
+        raise TypeError("Argument to pgl.antipode must be a PlanarTree, not " + str(type(t)) + "." + hint)
+    return antipode_impl(t)
+
+antipode = Map(_safe_antipode, anti=True)
 antipode.__doc__ = """
 The antipode :math:`S_{PGL}` of the planar Grossman-Larson Hopf algebra.
 
@@ -326,5 +335,12 @@ def map_power(f: Map, exponent: int) -> Map:
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
     if exponent >= 0:
         return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))
+    test_val = f.func(PlanarTree([]))
+    if not _is_scalar(test_val):
+        raise TypeError(
+            "pgl.map_power with negative exponent requires a scalar-valued map. "
+            "Got " + str(type(test_val)) + " for the single-vertex tree. "
+            "For tree-valued maps, use pbck.map_power instead."
+        )
     f_inv = _pgl_conv_inverse(f.func)
     return Map(lambda t: func_power(t, f_inv, -exponent, coproduct_impl, counit_impl, antipode_impl))
