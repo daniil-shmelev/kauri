@@ -168,7 +168,10 @@ def _format_coeff(c, is_first, rationalise):
         else:
             return ''  # sign handled by +/- operator
     else:
-        return _str(abs_c, rationalise)
+        s = _str(abs_c, rationalise)
+        if is_first and c < 0:
+            return '\u2212' + s
+        return s
 
 
 def _layout_coeff_op(items, x, c, is_first, scale, rationalise):
