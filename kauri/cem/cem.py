@@ -248,4 +248,4 @@ def map_power(f : Map, exponent : int) -> Map:
     if not isinstance(exponent, int):
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
 
-    return Map(lambda x: func_power(x, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))
+    return Map(lambda x: func_power(x, f.func, exponent, coproduct_impl, counit_impl, antipode_impl, singleton_reduce=True))

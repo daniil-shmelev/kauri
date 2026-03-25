@@ -81,12 +81,15 @@ def apply_map(t, func, anti=False):
         return anti_forest_sum_apply(t, func) if anti else forest_sum_apply(t, func)
     return func(t)
 
-def func_product(t, func1, func2, coproduct):
+def func_product(t, func1, func2, coproduct, singleton_reduce=False):
     # Given the coproduct of some hopf algebra, and two functions func1 and func2,
     # computes the function product evaluated at a tree t, defined by
     # \\mu \\circ (func1 \\otimes func2) \\circ \\Delta (t)
     # where Delta is the coproduct and mu is defined as the commutative
     # juxtaposition of trees.
+    #
+    # If singleton_reduce=True, applies singleton_reduced() to the result.
+    # This is needed for algebras where the single-node tree is the unit (CEM, GL, PGL).
 
     cp = coproduct(t)
     # a(branches) * b(subtrees)
@@ -98,11 +101,13 @@ def func_product(t, func1, func2, coproduct):
         out += c * forest_apply(branches, func1) * func2(subtree)
 
     if isinstance(out, (ForestLike, ForestSumLike)):
+        if singleton_reduce:
+            out = out.singleton_reduced()
         out = out.simplify()
 
     return out
 
-def func_power(t, func, exponent, coproduct, counit, antipode):
+def func_power(t, func, exponent, coproduct, counit, antipode, singleton_reduce=False):
     # Given the coproduct, counit and antipode of some hopf algebra,
     # computes the power of func, where the product of functions is
     # defined as above, and f^{-1} = f \\circ antipode.
@@ -113,13 +118,15 @@ def func_power(t, func, exponent, coproduct, counit, antipode):
         res = func(t)
     elif exponent < 0:
         def m(x):
-            return func_power(x, func, -exponent, coproduct, counit, antipode)
+            return func_power(x, func, -exponent, coproduct, counit, antipode, singleton_reduce)
         res = forest_sum_apply(antipode(t), m)
     else:
         def m(x):
-            return func_power(x, func, exponent - 1, coproduct, counit, antipode)
-        res = func_product(t, func, m, coproduct)
+            return func_power(x, func, exponent - 1, coproduct, counit, antipode, singleton_reduce)
+        res = func_product(t, func, m, coproduct, singleton_reduce)
 
     if isinstance(res, (ForestLike, ForestSumLike)):
+        if singleton_reduce:
+            res = res.singleton_reduced()
         res = res.simplify()
     return res

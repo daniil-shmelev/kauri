@@ -315,7 +315,7 @@ def map_product(f: Map, g: Map) -> Map:
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in pgl.map_product must be of type Map, not "
                         + str(type(f)) + " and " + str(type(g)))
-    return Map(lambda t: func_product(t, f.func, g.func, coproduct_impl))
+    return Map(lambda t: func_product(t, f.func, g.func, coproduct_impl, singleton_reduce=True))
 
 
 def map_power(f: Map, exponent: int) -> Map:
@@ -334,7 +334,7 @@ def map_power(f: Map, exponent: int) -> Map:
     if not isinstance(exponent, int):
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
     if exponent >= 0:
-        return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))
+        return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl, singleton_reduce=True))
     test_val = f.func(PlanarTree([]))
     if not _is_scalar(test_val):
         raise TypeError(
@@ -343,4 +343,4 @@ def map_power(f: Map, exponent: int) -> Map:
             "For tree-valued maps, use pbck.map_power instead."
         )
     f_inv = _pgl_conv_inverse(f.func)
-    return Map(lambda t: func_power(t, f_inv, -exponent, coproduct_impl, counit_impl, antipode_impl))
+    return Map(lambda t: func_power(t, f_inv, -exponent, coproduct_impl, counit_impl, antipode_impl, singleton_reduce=True))
