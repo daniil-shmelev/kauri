@@ -17,13 +17,14 @@
 The planar Grossman-Larson Hopf algebra module
 """
 from functools import cache
-from itertools import product as iter_product, combinations
+from itertools import product as iter_product
 from collections import defaultdict
 
 from ..maps import Map
 from ..trees import (Tree, PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
                      EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST)
 from ..generic_algebra import forest_apply, forest_sum_apply
+from ..gl.gl import _graft_helper
 from .._protocols import ForestLike, ForestSumLike
 
 
@@ -31,98 +32,25 @@ from .._protocols import ForestLike, ForestSumLike
 # Internal helpers: grafting product
 # ---------------------------------------------------------------------------
 
-def _vertex_child_counts(repr_tuple):
-    """Return list of child counts indexed by pre-order vertex index."""
-    counts = []
-    def traverse(r):
-        children = r[:-1]
-        counts.append(len(children))
-        for child in children:
-            traverse(child)
-    traverse(repr_tuple)
-    return counts
-
-
-def _planar_graft_helper(s_repr, vertex_new_branches, current_idx):
-    """Recursively graft branches at specified vertices with specified positions.
-
-    vertex_new_branches[v] = (new_reprs, positions) where positions is a sorted
-    tuple of indices in range(d+m) specifying where new branches go in the
-    merged child list.
-    """
-    root_color = s_repr[-1]
-    original_children = s_repr[:-1]
-
-    # Recursively process original children (advancing vertex counter)
-    next_idx = current_idx + 1
-    processed = []
-    for child_repr in original_children:
-        new_child, next_idx = _planar_graft_helper(child_repr, vertex_new_branches, next_idx)
-        processed.append(new_child)
-
-    # Merge with new branches if any
-    info = vertex_new_branches.get(current_idx)
-    if info is None:
-        return tuple(processed) + (root_color,), next_idx
-
-    new_reprs, positions = info
-    d = len(processed)
-    m = len(new_reprs)
-    pos_set = set(positions)
-
-    merged = []
-    orig_idx = 0
-    new_idx = 0
-    for i in range(d + m):
-        if i in pos_set:
-            merged.append(new_reprs[new_idx])
-            new_idx += 1
-        else:
-            merged.append(processed[orig_idx])
-            orig_idx += 1
-
-    return tuple(merged) + (root_color,), next_idx
-
-
 def _pgl_product_trees(s, t):
     """Compute planar GL grafting product s . t for two PlanarTrees.
 
-    Returns a list of PlanarTrees (with repetitions). For each assignment
-    of t's branches to vertices of s, and each interleaving at each vertex,
-    one result tree is produced.
+    Returns a list of PlanarTrees (with repetitions).  For each assignment
+    of t's branches to vertices of s, one result tree is produced by
+    appending the assigned branches to the right of existing children.
+    The list has |V(s)|^k entries where k = number of children of t's root.
     """
     branch_reprs = t.list_repr[:-1]
     k = len(branch_reprs)
     n = s.nodes()
-    child_counts = _vertex_child_counts(s.list_repr)
 
     results = []
     for assignment in iter_product(range(n), repeat=k):
-        # Group branches by vertex, preserving order
         vb = defaultdict(list)
         for i, v in enumerate(assignment):
             vb[v].append(branch_reprs[i])
-
-        # For each vertex receiving branches, enumerate interleavings
-        vertices = sorted(vb.keys())
-        if not vertices:
-            # k=0: t is bullet, product is just s
-            results.append(PlanarTree(s.list_repr))
-            continue
-
-        interleaving_options = []
-        for v in vertices:
-            d = child_counts[v]
-            m = len(vb[v])
-            options = [(v, tuple(vb[v]), pos) for pos in combinations(range(d + m), m)]
-            interleaving_options.append(options)
-
-        for combo in iter_product(*interleaving_options):
-            vnb = {}
-            for v, new_reprs, positions in combo:
-                vnb[v] = (new_reprs, positions)
-            result_repr, _ = _planar_graft_helper(s.list_repr, vnb, 0)
-            results.append(PlanarTree(result_repr))
+        result_repr, _ = _graft_helper(s.list_repr, vb, 0)
+        results.append(PlanarTree(result_repr))
 
     return results
 
@@ -361,8 +289,8 @@ def product(s, t):
     The planar Grossman-Larson grafting product.
 
     For trees :math:`s` and :math:`t = B_+(b_1, \\ldots, b_k)`, sums over all
-    ways of attaching each :math:`b_i` to a vertex of :math:`s` at all possible
-    insertion positions among existing children.
+    ways of assigning each :math:`b_i` to a vertex of :math:`s`, appending
+    assigned branches to the right of existing children.
 
     Also accepts a ForestSum as the first argument (linear extension).
 

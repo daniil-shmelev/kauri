@@ -143,31 +143,35 @@ class TestProduct(unittest.TestCase):
                              msg=f"{t.list_repr} . bullet should be {t.list_repr}")
 
     def test_product_chain_chain(self):
-        """chain_2 . chain_2 = 2*cherry + chain_3 in planar GL.
+        """chain_2 . chain_2 = cherry + chain_3 in planar GL.
 
         chain_2 has 2 vertices (root + leaf) and chain_2 has 1 branch (bullet).
-        Vertex 0 (root, 1 child): 2 insertion positions -> 2 copies of cherry.
-        Vertex 1 (leaf, 0 children): 1 position -> 1 copy of chain_3.
+        Vertex 0 (root): append after existing child -> cherry [[], []].
+        Vertex 1 (leaf): append after no children -> chain_3 [[[]]].
         """
         result = pgl.product(PT([[]]), PT([[]]))
         expected = (
-            ForestSum(((2, PT([[],[]]).as_ordered_forest()),))
+            ForestSum(((1, PT([[],[]]).as_ordered_forest()),))
             + ForestSum(((1, PT([[[]]]).as_ordered_forest()),))
         )
         self.assertEqual(expected, result)
 
     def test_product_differs_from_nonplanar(self):
-        """Planar GL product differs from non-planar GL product
-        (extra terms from insertion positions)."""
-        # In non-planar GL: / . / = Y + chain_3 (coefficients 1, 1)
-        # In planar GL:     / . / = 2Y + chain_3 (coefficients 2, 1)
-        result = pgl.product(PT([[]]), PT([[]]))
-        # Check that cherry has coefficient 2
+        """Planar GL product splits terms that non-planar GL merges.
+
+        Non-planar: cherry . chain_2 = 1*trident + 2*B+(bullet,chain_2)
+          (because B+(chain_2,bullet) == B+(bullet,chain_2) unordered)
+        Planar: cherry . chain_2 = 1*trident + 1*B+(bullet,chain_2) + 1*B+(chain_2,bullet)
+          (the two orderings are distinct planar trees)
+        """
+        result = pgl.product(PT([[],[]]), PT([[]]))
         terms = {}
         for c, f in result.term_list:
             terms[f] = terms.get(f, 0) + c
-        self.assertEqual(terms[PT([[],[]]).as_ordered_forest()], 2)
-        self.assertEqual(terms[PT([[[]]]).as_ordered_forest()], 1)
+        # All three are distinct planar trees with coefficient 1
+        self.assertEqual(terms[PT([[],[],[]]).as_ordered_forest()], 1)
+        self.assertEqual(terms[PT([[],[[]]]).as_ordered_forest()], 1)
+        self.assertEqual(terms[PT([[[]],[]]).as_ordered_forest()], 1)
 
     def test_product_planar_sensitivity(self):
         """Grafting preserves planar structure: different orderings give different results."""
@@ -230,7 +234,8 @@ class TestAntipode(unittest.TestCase):
 
 class TestAntipodeInvolution(unittest.TestCase):
     """S^2 = id holds for cocommutative Hopf algebras.
-    The planar GL is NOT cocommutative, so S^2 != id in general."""
+    The planar GL coproduct is cocommutative (S <-> S^c is a bijection
+    on subsets), so S^2 = id despite the product being noncommutative."""
 
     def test_involution_primitives(self):
         """S^2 = id for primitive elements (chains): S = -id so S^2 = id."""
@@ -239,18 +244,12 @@ class TestAntipodeInvolution(unittest.TestCase):
             self.assertEqual(_as_fs(t), s2,
                              msg=f"S^2({t.list_repr}) should equal t")
 
-    def test_not_involution_cherry(self):
-        """S^2 != id for cherry (insertion positions break symmetry)."""
-        t = PT([[],[]])
-        s2 = pgl.antipode(pgl.antipode(t))
-        self.assertNotEqual(_as_fs(t), s2)
-
-    def test_not_involution(self):
-        """S^2 != id for asymmetric planar trees."""
-        t1 = PT([[[]],[]])
-        s2 = pgl.antipode(pgl.antipode(t1))
-        self.assertNotEqual(_as_fs(t1), s2,
-                            msg="S^2 should NOT be id for [[[]],[]]")
+    def test_involution_all(self):
+        """S^2 = id for all test trees (cocommutative => involution)."""
+        for t in trees:
+            s2 = pgl.antipode(pgl.antipode(t))
+            self.assertEqual(_as_fs(t), s2,
+                             msg=f"S^2({t.list_repr}) should equal t")
 
 
 class TestCounitOfAntipode(unittest.TestCase):
