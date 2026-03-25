@@ -408,6 +408,8 @@ class Tree:
         return NotImplemented
 
     def __lt__(self, other):
+        if not isinstance(other, Tree):
+            return NotImplemented
         # Deal with empty trees
         if self.list_repr is None:
             if other.list_repr is None:
@@ -678,7 +680,7 @@ class CommutativeForest:
 
             (Tree([[9],0]) * Tree([3])).colors() # Returns 10
         """
-        return max(t.colors() for t in self.tree_list)
+        return max((t.colors() for t in self.tree_list), default=0)
 
     def num_trees(self) -> int:
         """
@@ -1020,7 +1022,7 @@ class ForestSum:
 
             (Tree([[9],0]) * Tree([3]) + Tree([2])).colors() # Returns 10
         """
-        return max(f.colors() for _, f in self.term_list)
+        return max((f.colors() for _, f in self.term_list), default=0)
 
     def num_trees(self) -> int:
         """
@@ -1514,7 +1516,7 @@ class TensorProductSum:
 
             (Tree([[9],0]) @ Tree([3]) + Tree([2]) @ Tree([4])).colors() # Returns 10
         """
-        return max(max(f1.colors(), f2.colors()) for _, f1, f2 in self.term_list)
+        return max((max(f1.colors(), f2.colors()) for _, f1, f2 in self.term_list), default=0)
 
 
 ######################################
@@ -1759,9 +1761,7 @@ class NoncommutativeForest:
         return _to_svg(self)
 
     def colors(self) -> int:
-        if len(self.tree_list) == 0:
-            return 0
-        return max(t.colors() for t in self.tree_list)
+        return max((t.colors() for t in self.tree_list), default=0)
 
     def equals(self, other):
         if not isinstance(other, NoncommutativeForest):

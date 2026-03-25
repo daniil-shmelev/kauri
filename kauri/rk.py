@@ -62,7 +62,7 @@ def _internal_symbolic(i, t_rep, a, b, s):
     return sum(a[i,j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
 
 def _derivative_symbolic(i, t_rep, a, b, s):
-    if t_rep in (None, []): # Empty and singleton tree
+    if t_rep is None or len(t_rep) == 1:
         return 1
     out = 1
     for subtree in t_rep[:-1]:
@@ -282,10 +282,9 @@ class RK:
         self.c = [sum(a[i][j] for j in range(self.s)) for i in range(self.s)]
 
         self.explicit = self._check_explicit()
-        self.deriv_dict = {}  # {repr(None) : 1, repr([]) : 1}
+        self.deriv_dict = {}
         for i in range(self.s):
             self.deriv_dict[(i, repr(None))] = 1
-            self.deriv_dict[(i, repr([]))] = 1
 
         self.np_a = np.array(a)
         self.np_b = np.array(b)

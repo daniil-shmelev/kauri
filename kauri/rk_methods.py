@@ -320,6 +320,10 @@ def EES25(x):
     :param x: Parameter of the :math:`EES(2,5)` scheme.
     :rtype: kauri.RK
     """
+    if x - 1 == 0:
+        raise ValueError(f"EES25(x) is not defined for x = {x} (division by zero in a21).")
+    if 1 - 4*x**2 == 0:
+        raise ValueError(f"EES25(x) is not defined for x = {x} (division by zero in a31, a32).")
     b1 = x
     b2 = 1/2
     b3 = 1/2 - x
@@ -339,10 +343,20 @@ def EES27(x, plus=True):
     The Explicit and Effectively Symmetric scheme of order 2 and antisymmetric order 7,
     :math:`EES(2,7;x)`. For the Butcher tableau, see :cite:`shmelev2025ees`.
 
-    :param x: Parameter of the :math:`EES(2,5)` scheme.
+    :param x: Parameter of the :math:`EES(2,7)` scheme.
     :param plus: If True, takes :math:`+\\sqrt{2}` in the Butcher tableau, otherwise :math:`-\\sqrt{2}`.
     :rtype: kauri.RK
     """
+    if 2*x - 1 == 0:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in alpha, beta).")
+    if x - 1 == 0:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in a21, a31, a41).")
+    if 2*x**2 - 1 == 0:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in a41, a43).")
+    if 2*x**2 - 4*x + 1 == 0:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in beta, a43).")
+    if 4*x**2 - 4*x - 1 == 0:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in alpha, beta).")
     sqrt2 = sqrt(2) if plus else - sqrt(2)
 
     b1 = x
