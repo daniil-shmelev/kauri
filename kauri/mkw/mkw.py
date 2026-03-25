@@ -30,7 +30,7 @@ def _simplify_expanded(value: sympy.core.basic.Basic | int | float) -> sympy.cor
 
 @dataclass(frozen=True)
 class CoproductTerm:
-    coeff: sympy.core.basic.Basic
+    coeff: int
     left: OrderedForest
     right: PlanarTree
 
@@ -68,7 +68,7 @@ def _coproduct_helper(tree: PlanarTree) -> tuple[tuple[OrderedForest, PlanarTree
 def coproduct_terms(tree: PlanarTree) -> tuple[CoproductTerm, ...]:
     """Ordered-tree BCK-style coproduct terms, preserving sibling order."""
     return tuple(
-        CoproductTerm(coeff=sympy.Integer(1), left=left, right=right)
+        CoproductTerm(coeff=1, left=left, right=right)
         for left, right in _coproduct_helper(tree)
     )
 
@@ -79,13 +79,13 @@ counit = Map(counit_impl)
 def planar_convolution(f: Map, g: Map) -> Map:
     """Function product of two maps using the planar BCK-style coproduct."""
 
-    def conv(tree: PlanarTree) -> sympy.core.basic.Basic:
-        out: sympy.core.basic.Basic = sympy.Integer(0)
+    def conv(tree: PlanarTree):
+        out = 0
         for term in coproduct_terms(tree):
-            left_val = sympy.sympify(f(term.left))
-            right_val = sympy.sympify(g(term.right))
-            out = sympy.expand(out + sympy.sympify(term.coeff) * left_val * right_val)
-        return _simplify_expanded(out)
+            left_val = f(term.left)
+            right_val = g(term.right)
+            out = out + term.coeff * left_val * right_val
+        return out
 
     return Map(conv)
 
