@@ -5,3 +5,5 @@ Hopf algebra operations for truncated EES verification.
 
 from .mkw import (counit, coproduct_terms, CoproductTerm,
                   planar_convolution, verify_mkw_ees)
+
+__all__ = ['counit', 'coproduct_terms', 'CoproductTerm', 'planar_convolution', 'verify_mkw_ees']

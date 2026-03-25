@@ -24,6 +24,8 @@ splitting that directly constructs the factorisation
 planar BCK convolution algebra.
 """
 
+__all__ = ['id_sqrt', 'minus', 'plus']
+
 from .trees import ForestSum, ZERO_FOREST_SUM, _is_scalar
 from .pbck.pbck import coproduct_impl
 from .generic_algebra import apply_map, forest_apply, func_product

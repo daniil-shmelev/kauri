@@ -168,7 +168,7 @@ def _list_repr_to_color_sequence(rep):
     if rep is None:
         return []
     if len(rep) == 1:
-        return rep
+        return list(rep)
 
     layout = [rep[-1]]
     for r in rep[:-1]:

@@ -41,3 +41,5 @@ The ``kauri.bck`` sub-package implements the Butcher-Connes-Kreimer (BCK) :cite:
 """
 
 from .bck import antipode, counit, coproduct, map_power, map_product
+
+__all__ = ['coproduct', 'counit', 'antipode', 'map_product', 'map_power']

@@ -129,6 +129,13 @@ def planar_trees_up_to_order(order: int):
         yield from planar_trees_of_order(current_order)
 
 
+def _validate_num_colors(d):
+    if not isinstance(d, int):
+        raise TypeError("number of colors d must be an int, not " + str(type(d)))
+    if d < 0:
+        raise ValueError("number of colors d must be non-negative")
+
+
 def _all_colorings(unlabelled, d: int, n: int, cls=Tree):
     """Yields a tree (of type *cls*) for every coloring of an unlabelled shape."""
     for coloring in product(range(d), repeat=n):
@@ -165,6 +172,7 @@ def colored_trees_of_order(order: int, d: int):
     :yields: Colored trees
     :rtype: Tree
     """
+    _validate_num_colors(d)
     for shape in trees_of_order(order):
         yield from _color_all_variants(shape, d)
 
@@ -180,6 +188,7 @@ def colored_trees_up_to_order(order: int, d: int):
     :yields: Colored trees
     :rtype: Tree
     """
+    _validate_num_colors(d)
     for shape in trees_up_to_order(order):
         yield from _color_all_variants(shape, d)
 
@@ -201,6 +210,7 @@ def colored_planar_trees_of_order(order: int, d: int):
     from .trees import PlanarTree, EMPTY_PLANAR_TREE, validate_order
 
     validate_order(order)
+    _validate_num_colors(d)
     if order == 0:
         yield EMPTY_PLANAR_TREE
         return
@@ -222,5 +232,6 @@ def colored_planar_trees_up_to_order(order: int, d: int):
     from .trees import validate_order
 
     validate_order(order)
+    _validate_num_colors(d)
     for current_order in range(order + 1):
         yield from colored_planar_trees_of_order(current_order, d)

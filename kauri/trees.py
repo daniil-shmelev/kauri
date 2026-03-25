@@ -983,7 +983,11 @@ class ForestSum:
         r = ""
         for c, f in self.term_list:
             term_str = str(c) + " * " + repr(f)
-            if c >= 0 and r:
+            try:
+                non_negative = bool(c >= 0)
+            except TypeError:
+                non_negative = True
+            if non_negative and r:
                 r += " + " + term_str
             elif r:
                 r += " " + term_str
@@ -1377,7 +1381,11 @@ class TensorProductSum:
         r = ""
         for c, f1, f2 in self.term_list:
             term_str = str(c) + " * " + repr(f1) + " \u2297 " + repr(f2)
-            if c >= 0 and r:
+            try:
+                non_negative = bool(c >= 0)
+            except TypeError:
+                non_negative = True
+            if non_negative and r:
                 r += " + " + term_str
             elif r:
                 r += " " + term_str
@@ -1711,6 +1719,12 @@ class PlanarTree:
     def __next__(self) -> 'PlanarTree':
         """Generates the next planar tree in lexicographic order of level sequences.
 
+        .. note::
+            Enumeration runs from the star tree (widest) to the chain tree
+            (tallest) within each order, which is the opposite direction
+            from ``Tree.__next__()``.  To iterate all planar trees of order
+            *n*, start from the star tree ``PlanarTree([[]]*( n-1))``.
+
         :return: Next planar tree
         :rtype: PlanarTree
 
@@ -1940,6 +1954,8 @@ def _check_compatible(a, b):
 
 
 def validate_order(order: int, *, allow_zero: bool = True) -> None:
+    if not isinstance(order, int):
+        raise TypeError("order must be an int, not " + str(type(order)))
     if allow_zero:
         if order < 0:
             raise ValueError("order must be non-negative")

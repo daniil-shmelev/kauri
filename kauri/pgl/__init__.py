@@ -46,3 +46,5 @@ defined as follows.
 """
 
 from .pgl import antipode, counit, coproduct, product, map_power, map_product
+
+__all__ = ['coproduct', 'counit', 'antipode', 'product', 'map_product', 'map_power']

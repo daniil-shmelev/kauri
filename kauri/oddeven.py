@@ -17,6 +17,8 @@ This module provides instances of ``kauri.Map`` related to the odd-even
 decomposition applied to the BCK Hopf algebra :cite:`shmelev2025ees, aguiar2006combinatorial`.
 """
 
+__all__ = ['id_sqrt', 'minus', 'plus']
+
 from .trees import Tree
 from .bck import antipode
 from .generic_algebra import apply_map
