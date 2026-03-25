@@ -1283,17 +1283,20 @@ class ForestSum:
             Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
         """
         if _is_scalar(other):
+            empty = EMPTY_ORDERED_FOREST if _is_planar_obj(self) else EMPTY_FOREST
             term_list = []
             for c, f in self:
-                term_list.append((other * c, f, EMPTY_FOREST))
+                term_list.append((other * c, f, empty))
             return TensorProductSum(term_list)
-        if isinstance(other, (Tree, Forest)):
-            other_ = other.as_forest()
+        if isinstance(other, (TreeLike, ForestLike)):
+            _check_compatible(self, other)
+            other_ = _coerce_to_forest(other)
             term_list = []
             for c, f in self:
                 term_list.append((c, f, other_))
             return TensorProductSum(term_list)
         if isinstance(other, ForestSum):
+            _check_compatible(self, other)
             term_list = []
             for c1, f1 in self:
                 for c2, f2 in other:
@@ -1532,6 +1535,7 @@ class PlanarTree:
 
     list_repr: Union[tuple, list, None] = None
     unlabelled_repr = None
+    _max_color = 0
 
     def __post_init__(self) -> None:
         if self.list_repr is not None:
@@ -1627,12 +1631,12 @@ class PlanarTree:
 
     def __add__(self, other):
         if _is_scalar(other):
-            return ForestSum(((1, self.as_ordered_forest()), (other, EMPTY_ORDERED_FOREST)))
+            return ForestSum(((1, self.as_ordered_forest()), (other, EMPTY_ORDERED_FOREST))).simplify()
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
-            return ForestSum(((1, self), (1, other)))
+            return ForestSum(((1, self), (1, other))).simplify()
         if isinstance(other, ForestSum):
             _check_compatible(self, other)
-            return ForestSum(((1, self),) + other.term_list)
+            return ForestSum(((1, self),) + other.term_list).simplify()
         _check_compatible(self, other)
         raise TypeError("Cannot add PlanarTree and " + str(type(other)))
 
@@ -1829,12 +1833,12 @@ class NoncommutativeForest:
 
     def __add__(self, other):
         if _is_scalar(other):
-            return ForestSum(((1, self), (other, EMPTY_ORDERED_FOREST)))
+            return ForestSum(((1, self), (other, EMPTY_ORDERED_FOREST))).simplify()
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
-            return ForestSum(((1, self), (1, other)))
+            return ForestSum(((1, self), (1, other))).simplify()
         if isinstance(other, ForestSum):
             _check_compatible(self, other)
-            return ForestSum(((1, self),) + other.term_list)
+            return ForestSum(((1, self),) + other.term_list).simplify()
         _check_compatible(self, other)
         raise TypeError("Cannot add NoncommutativeForest and " + str(type(other)))
 

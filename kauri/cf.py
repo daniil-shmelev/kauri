@@ -38,6 +38,11 @@ class CFMethod:
             raise ValueError("At least one exponential required")
         self.s = len(betas[0])
         self.J = len(betas)
+        if len(a) != self.s or any(len(row) != self.s for row in a):
+            raise ValueError(f"Coefficient matrix A must be {self.s}x{self.s}, matching beta vector length")
+        for l, beta in enumerate(betas):
+            if len(beta) != self.s:
+                raise ValueError(f"betas[{l}] has length {len(beta)}, expected {self.s}")
         self.a = a
         self.betas = betas
         self.name = name

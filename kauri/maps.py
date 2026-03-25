@@ -22,8 +22,8 @@ import copy
 from functools import lru_cache
 from typing import Union, Callable
 
-from .trees import (Tree, PlanarTree, Forest, ForestSum, EMPTY_TREE,
-                     _is_scalar, _is_planar_obj)
+from .trees import (Tree, PlanarTree, Forest, ForestSum, TensorProductSum,
+                     EMPTY_TREE, _is_scalar, _is_planar_obj)
 from ._protocols import TreeLike, ForestLike, ForestSumLike
 from .generic_algebra import apply_map, func_power, func_product
 
@@ -53,6 +53,9 @@ class Map:
 
     @lru_cache(maxsize = 128) # maxsize here since caching prevents the object being garbage collected
     def __call__(self, t : Union[Tree, Forest, ForestSum]) -> Union[int, float, Tree, Forest, ForestSum]:
+        if isinstance(t, TensorProductSum):
+            raise TypeError("Cannot apply Map to TensorProductSum. "
+                            "Apply the map to each tensor factor separately.")
         if not isinstance(t, (TreeLike, ForestLike, ForestSumLike)):
             raise TypeError("Argument to Map must be Tree, Forest or ForestSum, not " + str(type(t)))
         return apply_map(t, self.func, anti=self.anti)
@@ -241,6 +244,8 @@ class Map:
             (bck.antipode & bck.antipode)(t)
             bck.antipode(bck.antipode(t)) #Same as above
         """
+        if not isinstance(other, Map):
+            raise TypeError("Cannot compose Map with object of type " + str(type(other)))
         def _composed(x):
             inner = other(x)
             empty = PlanarTree(None) if _is_planar_obj(inner) else Tree(None)

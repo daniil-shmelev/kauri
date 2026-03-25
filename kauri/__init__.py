@@ -22,7 +22,7 @@ __all__ = [
     "Tree", "Forest", "CommutativeForest", "NoncommutativeForest",
     "PlanarTree", "OrderedForest", "EMPTY_PLANAR_TREE",
     "ForestSum", "TensorProductSum",
-    "EMPTY_TREE", "EMPTY_FOREST", "EMPTY_FOREST_SUM", "ZERO_FOREST_SUM",
+    "EMPTY_TREE", "EMPTY_FOREST", "EMPTY_ORDERED_FOREST", "EMPTY_FOREST_SUM", "ZERO_FOREST_SUM",
     # Maps
     "Map", "ident", "sign", "exact_weights", "omega",
     # Tree generation
@@ -67,7 +67,7 @@ from .rk_methods import (euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
 
 from .bseries import BSeries, elementary_differential
 
-from .trees import EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM, ZERO_FOREST_SUM
+from .trees import EMPTY_TREE, EMPTY_FOREST, EMPTY_ORDERED_FOREST, EMPTY_FOREST_SUM, ZERO_FOREST_SUM
 
 import kauri.bck
 import kauri.cem

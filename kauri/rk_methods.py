@@ -22,6 +22,8 @@ from math import sqrt
 
 from .rk import RK
 
+_EES_TOL = 1e-10
+
 euler = RK([[0]], [1], 'Euler')
 euler.__doc__ = """
 The Euler method
@@ -320,9 +322,9 @@ def EES25(x):
     :param x: Parameter of the :math:`EES(2,5)` scheme.
     :rtype: kauri.RK
     """
-    if x - 1 == 0:
+    if abs(x - 1) < _EES_TOL:
         raise ValueError(f"EES25(x) is not defined for x = {x} (division by zero in a21).")
-    if 1 - 4*x**2 == 0:
+    if abs(1 - 4*x**2) < _EES_TOL:
         raise ValueError(f"EES25(x) is not defined for x = {x} (division by zero in a31, a32).")
     b1 = x
     b2 = 1/2
@@ -347,15 +349,16 @@ def EES27(x, plus=True):
     :param plus: If True, takes :math:`+\\sqrt{2}` in the Butcher tableau, otherwise :math:`-\\sqrt{2}`.
     :rtype: kauri.RK
     """
-    if 2*x - 1 == 0:
+    _tol = 1e-10
+    if abs(2*x - 1) < _EES_TOL:
         raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in alpha, beta).")
-    if x - 1 == 0:
+    if abs(x - 1) < _EES_TOL:
         raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in a21, a31, a41).")
-    if 2*x**2 - 1 == 0:
+    if abs(2*x**2 - 1) < _EES_TOL:
         raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in a41, a43).")
-    if 2*x**2 - 4*x + 1 == 0:
+    if abs(2*x**2 - 4*x + 1) < _EES_TOL:
         raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in beta, a43).")
-    if 4*x**2 - 4*x - 1 == 0:
+    if abs(4*x**2 - 4*x - 1) < _EES_TOL:
         raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in alpha, beta).")
     sqrt2 = sqrt(2) if plus else - sqrt(2)
 

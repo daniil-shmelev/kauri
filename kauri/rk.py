@@ -620,15 +620,16 @@ class RK:
         if exponent == 0:
             return RK([[0]], [0])
 
-        expn_ = exponent
         if exponent < 0:
-            out = self._inverse()
+            base = self._inverse()
             expn_ = -exponent
         else:
-            out = copy.deepcopy(self)
+            base = copy.deepcopy(self)
+            expn_ = exponent
 
+        out = base
         for _ in range(expn_-1):
-            out = out * self
+            out = out * base
         return out
 
     def _internal_weights(self, i, t_rep):
