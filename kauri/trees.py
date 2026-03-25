@@ -1520,6 +1520,7 @@ class TensorProductSum:
 
 
 ######################################
+@total_ordering
 @dataclass(frozen=True)
 class PlanarTree:
     """Ordered rooted tree; sibling order is part of identity."""
@@ -1590,6 +1591,19 @@ class PlanarTree:
         if isinstance(other, (NoncommutativeForest, ForestSum)):
             return self.as_forest_sum() == other
         return NotImplemented
+
+    def __lt__(self, other):
+        if not isinstance(other, PlanarTree):
+            return NotImplemented
+        if self.list_repr is None:
+            if other.list_repr is None:
+                return False
+            return True
+        if other.list_repr is None:
+            return False
+        if self.nodes() != other.nodes():
+            return self.nodes() < other.nodes()
+        return LabelledReprComparison(self.list_repr) < LabelledReprComparison(other.list_repr)
 
     def __mul__(self, other):
         return self.as_ordered_forest().__mul__(other)

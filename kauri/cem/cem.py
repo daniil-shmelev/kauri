@@ -120,6 +120,9 @@ def _coproduct_helper(t):
     return t_coproduct_forests, t_coproduct_trees
 
 def coproduct_impl(t):
+    if not isinstance(t, Tree):
+        hint = " The CEM algebra is only defined for non-planar trees." if isinstance(t, PlanarTree) else ""
+        raise TypeError("CEM coproduct expects a Tree, not " + str(type(t)) + "." + hint)
     f, s = _coproduct_helper(t)
     cp = zip([x.simplify().singleton_reduced() for x in f], s)
     return TensorProductSum(tuple((1, x[0], x[1]) for x in cp)).simplify()

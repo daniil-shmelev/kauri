@@ -46,6 +46,9 @@ def antipode_impl(t):
 
 @cache
 def coproduct_impl(t):
+    if not isinstance(t, Tree):
+        hint = " Use pbck.coproduct for planar trees, or pbck.map_power/pbck.map_product for Map operations." if isinstance(t, PlanarTree) else ""
+        raise TypeError("BCK coproduct expects a Tree, not " + str(type(t)) + "." + hint)
     # This follows the recursive definition of https://arxiv.org/pdf/hep-th/9808042
     # using B_- and B_+
     if t == Tree(None):
