@@ -92,6 +92,10 @@ def counit_impl(t):
 
 @cache
 def coproduct_impl(t):
+    if not isinstance(t, PlanarTree):
+        raise TypeError(
+            f"Argument to pgl.coproduct must be a PlanarTree, not {type(t).__name__}. "
+            "For non-planar trees, use gl.coproduct instead.")
     if t.list_repr is None:
         raise TypeError("PGL coproduct is not defined for the empty tree")
     root_color = t.list_repr[-1]

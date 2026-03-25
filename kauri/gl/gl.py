@@ -124,6 +124,10 @@ def counit_impl(t):
 
 @cache
 def coproduct_impl(t):
+    if not isinstance(t, Tree):
+        raise TypeError(
+            f"Argument to gl.coproduct must be a Tree, not {type(t).__name__}. "
+            "For planar trees, use pgl.coproduct instead.")
     if t.list_repr is None:
         raise TypeError("GL coproduct is not defined for the empty tree")
     # GL coproduct: enumerate all 2^k subsets of children of the root.
