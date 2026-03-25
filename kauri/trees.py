@@ -40,7 +40,7 @@ import sympy
 
 from .utils import (_nodes, _height, _factorial, _sigma,
                     _sorted_list_repr, _list_repr_to_level_sequence,
-                    _to_list, _next_layout, _level_sequence_to_list_repr,
+                    _to_list, _next_layout, _next_planar_layout, _level_sequence_to_list_repr,
                     _check_valid, _to_labelled_tuple, _get_max_color, _to_unlabelled_tuple,
                     _list_repr_to_color_sequence, LabelledReprComparison)
 from ._protocols import ForestLike, TreeLike
@@ -1659,6 +1659,35 @@ class PlanarTree:
         if isinstance(other, ForestSum):
             return TensorProductSum(tuple((c, self, f) for c, f in other))
         raise TypeError("Cannot take tensor product of PlanarTree and " + str(type(other)))
+
+    def sorted_list_repr(self):
+        """Returns the list representation. For planar trees this is the identity
+        (sibling order is part of the tree's identity)."""
+        return self.list_repr
+
+    def equals(self, other_tree):
+        """Two planar trees are equal iff their list representations match exactly."""
+        return self.list_repr == other_tree.list_repr
+
+    def __next__(self) -> 'PlanarTree':
+        """Generates the next planar tree in lexicographic order of level sequences.
+
+        :return: Next planar tree
+        :rtype: PlanarTree
+
+        Example usage::
+
+                t = PlanarTree([[],[]])
+                next(t) # returns PlanarTree([[[]]])
+        """
+        if self.list_repr is None:
+            return PlanarTree([])
+        if self._max_color > 0:
+            warnings.warn("Calling next() on a labelled tree will ignore the labelling.")
+
+        layout = self.level_sequence()
+        next_ = _next_planar_layout(layout)
+        return PlanarTree(_level_sequence_to_list_repr(next_))
 
     def as_forest_sum(self):
         return ForestSum(((1, self.as_ordered_forest()),))

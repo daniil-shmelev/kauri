@@ -221,6 +221,22 @@ def _next_layout(layout):
         result[i] = result[i - p + q]
     return result
 
+def _next_planar_layout(layout):
+    # Given a level sequence of a planar tree, computes the layout
+    # of the next planar tree in lexicographic order.
+    # Unlike _next_layout (Beyer-Hedetniemi), this enumerates ALL valid
+    # level sequences, since every sequence corresponds to a distinct planar tree.
+    n = len(layout)
+    for p in range(n - 1, 0, -1):
+        if layout[p] < layout[p - 1] + 1:
+            result = list(layout)
+            result[p] += 1
+            for i in range(p + 1, n):
+                result[i] = 1
+            return result
+    # Chain (maximal sequence) — advance to next order
+    return [0] + [1] * n
+
 def _rationalise(c, tol = 1e-10):
     # rationalised float
     return str(sp.nsimplify(c, tolerance=tol, rational = True))
