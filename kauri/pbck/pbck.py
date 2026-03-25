@@ -205,13 +205,12 @@ def map_product(f: Map, g: Map) -> Map:
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in pbck.map_product must be of type Map, not "
                         + str(type(f)) + " and " + str(type(g)))
-    return Map(lambda t: func_product(t, f.func, g.func, coproduct_impl))
+    return Map(lambda t: func_product(t, f.func, g.func, coproduct_impl, anti1=f.anti))
 
 
 def map_power(f: Map, exponent: int) -> Map:
     """
-    Returns the convolution power of a scalar-valued map in the planar BCK
-    Hopf algebra.
+    Returns the convolution power of a map in the planar BCK Hopf algebra.
 
     :param f: f
     :type f: Map
@@ -232,4 +231,4 @@ def map_power(f: Map, exponent: int) -> Map:
         raise TypeError("f must be a Map, not " + str(type(f)))
     if not isinstance(exponent, int):
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
-    return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))
+    return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl, anti1=f.anti))

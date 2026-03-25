@@ -26,6 +26,13 @@ from ..trees import (Tree, Forest, ForestSum, TensorProductSum,
 from ..generic_algebra import func_product, func_power
 
 
+def _gl_combine(a, b):
+    """GL product that falls back to scalar multiplication for scalar arguments."""
+    if _is_scalar(a) or _is_scalar(b):
+        return a * b
+    return product(a, b)
+
+
 # ---------------------------------------------------------------------------
 # Internal helpers: grafting product
 # ---------------------------------------------------------------------------
@@ -354,16 +361,16 @@ def map_product(f: Map, g: Map) -> Map:
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in gl.map_product must be of type Map, not "
                         + str(type(f)) + " and " + str(type(g)))
-    return Map(lambda t: func_product(t, f.func, g.func, coproduct_impl, singleton_reduce=True))
+    return Map(lambda t: func_product(t, f.func, g.func, coproduct_impl, singleton_reduce=True, product=_gl_combine))
 
 
 def map_power(f: Map, exponent: int) -> Map:
     """
-    Returns the convolution power of a scalar-valued map in the GL Hopf algebra.
+    Returns the convolution power of a map in the GL Hopf algebra.
 
     For negative exponents, the convolution inverse is computed via the
     recursive formula specific to the GL coproduct, then raised to the
-    corresponding positive power.
+    corresponding positive power. Negative exponents require scalar-valued maps.
 
     :param f: f
     :type f: Map
@@ -384,7 +391,7 @@ def map_power(f: Map, exponent: int) -> Map:
     if not isinstance(exponent, int):
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
     if exponent >= 0:
-        return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl, singleton_reduce=True))
+        return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl, singleton_reduce=True, product=_gl_combine))
     test_val = f.func(Tree([]))
     if not _is_scalar(test_val):
         raise TypeError(
@@ -393,4 +400,4 @@ def map_power(f: Map, exponent: int) -> Map:
             "For tree-valued maps, use bck.map_power instead."
         )
     f_inv = _gl_conv_inverse(f.func)
-    return Map(lambda t: func_power(t, f_inv, -exponent, coproduct_impl, counit_impl, antipode_impl, singleton_reduce=True))
+    return Map(lambda t: func_power(t, f_inv, -exponent, coproduct_impl, counit_impl, antipode_impl, singleton_reduce=True, product=_gl_combine))
