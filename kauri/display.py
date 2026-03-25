@@ -134,7 +134,7 @@ def _layout_forest(forest, x_start, y_base, scale, show_empty=False):
     gap = TREE_GAP * scale
     cw = CHAR_WIDTH_FACTOR
 
-    if show_empty and forest == Forest((Tree(None),)):
+    if show_empty and len(forest.tree_list) == 1 and forest.tree_list[0].list_repr is None:
         fs = FONT_SIZE * scale
         items = [('text', x_start + fs * cw / 2, y_base, '\u2205', fs)]
         return items, fs * cw, LEVEL_SPACING * scale

@@ -22,7 +22,7 @@ from collections import defaultdict
 
 from ..maps import Map
 from ..trees import (Tree, PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
-                     TensorProductSum, EMPTY_ORDERED_FOREST)
+                     TensorProductSum, EMPTY_ORDERED_FOREST, ZERO_FOREST_SUM)
 from ..generic_algebra import forest_apply, func_product, func_power
 from ..gl.gl import _graft_helper
 
@@ -250,12 +250,12 @@ def product(s, t):
     ways of assigning each :math:`b_i` to a vertex of :math:`s`, appending
     assigned branches to the right of existing children.
 
-    Also accepts a ForestSum as the first argument (linear extension).
+    Extends bilinearly to ForestSum arguments.
 
     :param s: left operand
     :type s: PlanarTree or ForestSum
     :param t: right operand
-    :type t: PlanarTree
+    :type t: PlanarTree or ForestSum
     :rtype: ForestSum
 
     Example usage::
@@ -265,19 +265,25 @@ def product(s, t):
 
         pgl.product(PlanarTree([[]]), PlanarTree([[]]))
     """
-    if isinstance(s, ForestSum) and isinstance(t, PlanarTree):
+    if isinstance(s, PlanarTree):
+        if s.list_repr is None:
+            raise TypeError("PGL product is not defined for the empty tree")
+        s = s.as_forest_sum()
+    if isinstance(t, PlanarTree):
         if t.list_repr is None:
             raise TypeError("PGL product is not defined for the empty tree")
-        return _pgl_product_linear(s, t)
-    if isinstance(s, PlanarTree) and isinstance(t, PlanarTree):
-        if s.list_repr is None or t.list_repr is None:
-            raise TypeError("PGL product is not defined for the empty tree")
-        result_trees = _pgl_product_trees(s, t)
-        terms = tuple((1, tree.as_ordered_forest()) for tree in result_trees)
-        return ForestSum(terms).simplify()
+        t = t.as_forest_sum()
+    if isinstance(s, ForestSum) and isinstance(t, ForestSum):
+        result = ZERO_FOREST_SUM
+        for c, f in t.term_list:
+            tree = f.tree_list[0]
+            if tree.list_repr is None:
+                continue
+            result = result + c * _pgl_product_linear(s, tree)
+        return result.simplify()
     hint = " For non-planar trees, use gl.product instead." if isinstance(s, Tree) or isinstance(t, Tree) else ""
     raise TypeError(
-        "PGL product expects (PlanarTree, PlanarTree) or (ForestSum, PlanarTree), got ("
+        "PGL product expects PlanarTree or ForestSum arguments, got ("
         + str(type(s)) + ", " + str(type(t)) + ")." + hint
     )
 

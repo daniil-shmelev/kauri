@@ -299,12 +299,12 @@ def product(s, t):
 
         s \\cdot_{GL} t = \\sum_{f: \\{1,\\ldots,k\\} \\to V(s)} \\mathrm{graft}(s, b_1, \\ldots, b_k, f)
 
-    Also accepts a ForestSum as the first argument (linear extension).
+    Extends bilinearly to ForestSum arguments.
 
     :param s: left operand
     :type s: Tree or ForestSum
     :param t: right operand
-    :type t: Tree
+    :type t: Tree or ForestSum
     :rtype: ForestSum
 
     Example usage::
@@ -314,19 +314,25 @@ def product(s, t):
 
         gl.product(kr.Tree([[]]), kr.Tree([[]])) # Returns 1 [[], []] + 1 [[[]]]
     """
-    if isinstance(s, ForestSum) and isinstance(t, Tree):
+    if isinstance(s, Tree):
+        if s.list_repr is None:
+            raise TypeError("GL product is not defined for the empty tree")
+        s = s.as_forest_sum()
+    if isinstance(t, Tree):
         if t.list_repr is None:
             raise TypeError("GL product is not defined for the empty tree")
-        return _gl_product_linear(s, t)
-    if isinstance(s, Tree) and isinstance(t, Tree):
-        if s.list_repr is None or t.list_repr is None:
-            raise TypeError("GL product is not defined for the empty tree")
-        result_trees = _gl_product_trees(s, t)
-        terms = tuple((1, tree) for tree in result_trees)
-        return ForestSum(terms).simplify()
+        t = t.as_forest_sum()
+    if isinstance(s, ForestSum) and isinstance(t, ForestSum):
+        result = ZERO_FOREST_SUM
+        for c, f in t.term_list:
+            tree = f.tree_list[0]
+            if tree.list_repr is None:
+                continue
+            result = result + c * _gl_product_linear(s, tree)
+        return result.simplify()
     hint = " For planar trees, use pgl.product instead." if isinstance(s, PlanarTree) or isinstance(t, PlanarTree) else ""
     raise TypeError(
-        "GL product expects (Tree, Tree) or (ForestSum, Tree), got ("
+        "GL product expects Tree or ForestSum arguments, got ("
         + str(type(s)) + ", " + str(type(t)) + ")." + hint
     )
 
