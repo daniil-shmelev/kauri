@@ -61,15 +61,15 @@ class TestCoproduct(unittest.TestCase):
         c, left, right = cp[0]
         self.assertEqual(c, 1)
         self.assertEqual(left, OrderedForest((PT([]),)))
-        self.assertEqual(right, PT([]))
+        self.assertEqual(right, OrderedForest((PT([]),)))
 
     def test_coproduct_chain2(self):
         """Chain trees are primitive: Delta = bullet tensor t + t tensor bullet."""
         cp = pgl.coproduct(PT([[]]))
         terms = {(left, right): c for c, left, right in cp}
         self.assertEqual(len(terms), 2)
-        self.assertEqual(terms[(OrderedForest((PT([]),)), PT([[]]))], 1)
-        self.assertEqual(terms[(OrderedForest((PT([[]]),)), PT([]))], 1)
+        self.assertEqual(terms[(OrderedForest((PT([]),)), OrderedForest((PT([[]]),)))], 1)
+        self.assertEqual(terms[(OrderedForest((PT([[]]),)), OrderedForest((PT([]),)))], 1)
 
     def test_coproduct_cherry(self):
         """Delta(Y) = bullet tensor Y + 2 chain_2 tensor chain_2 + Y tensor bullet."""
@@ -78,11 +78,11 @@ class TestCoproduct(unittest.TestCase):
         for c, left, right in cp:
             terms[(left, right)] = terms.get((left, right), 0) + c
         # bullet tensor cherry
-        self.assertEqual(terms[(OrderedForest((PT([]),)), PT([[],[]]))] , 1)
+        self.assertEqual(terms[(OrderedForest((PT([]),)), OrderedForest((PT([[],[]]),)))] , 1)
         # cherry tensor bullet
-        self.assertEqual(terms[(OrderedForest((PT([[],[]]),)), PT([]))], 1)
+        self.assertEqual(terms[(OrderedForest((PT([[],[]]),)), OrderedForest((PT([]),)))], 1)
         # chain_2 tensor chain_2 (both children are identical bullets, so coeff=2)
-        self.assertEqual(terms[(OrderedForest((PT([[]]),)), PT([[]]))], 2)
+        self.assertEqual(terms[(OrderedForest((PT([[]]),)), OrderedForest((PT([[]]),)))], 2)
         self.assertEqual(len(terms), 3)
 
     def test_coproduct_primitive(self):
@@ -92,8 +92,8 @@ class TestCoproduct(unittest.TestCase):
             cp = pgl.coproduct(t)
             terms = {(left, right): c for c, left, right in cp}
             self.assertEqual(len(terms), 2, msg=f"Chain {t.list_repr} should be primitive")
-            self.assertIn((OrderedForest((PT([]),)), t), terms)
-            self.assertIn((OrderedForest((t,)), PT([])), terms)
+            self.assertIn((OrderedForest((PT([]),)), OrderedForest((t,))), terms)
+            self.assertIn((OrderedForest((t,)), OrderedForest((PT([]),))), terms)
 
     def test_coproduct_planar_sensitivity(self):
         """Different planar orderings give different coproducts."""
@@ -108,13 +108,13 @@ class TestCoproduct(unittest.TestCase):
         cp = pgl.coproduct(PT([[],[[]]]))
         terms = {(left, right): c for c, left, right in cp}
         # {} -> bullet tensor B+(bullet, chain_2)
-        self.assertEqual(terms[(OrderedForest((PT([]),)), PT([[],[[]]])) ], 1)
+        self.assertEqual(terms[(OrderedForest((PT([]),)), OrderedForest((PT([[],[[]]]),))) ], 1)
         # {1} -> chain_2 tensor B+(chain_2)=chain_3
-        self.assertEqual(terms[(OrderedForest((PT([[]]),)), PT([[[]]])) ], 1)
+        self.assertEqual(terms[(OrderedForest((PT([[]]),)), OrderedForest((PT([[[]]]),))) ], 1)
         # {2} -> chain_3 tensor chain_2
-        self.assertEqual(terms[(OrderedForest((PT([[[]]]),)), PT([[]]) )], 1)
+        self.assertEqual(terms[(OrderedForest((PT([[[]]]),)), OrderedForest((PT([[]]),)) )], 1)
         # {1,2} -> B+(bullet, chain_2) tensor bullet
-        self.assertEqual(terms[(OrderedForest((PT([[],[[]]]),)), PT([]) )], 1)
+        self.assertEqual(terms[(OrderedForest((PT([[],[[]]]),)), OrderedForest((PT([]),)) )], 1)
         self.assertEqual(len(terms), 4)
 
     def test_type_error(self):
@@ -209,10 +209,10 @@ class TestAntipode(unittest.TestCase):
         for t in trees:
             cp = pgl.coproduct(t)
             result = 0
-            for c, lf, right in cp:
-                left = lf.tree_list[0]
+            for c, lf, rf in cp:
+                left = lf[0]
                 s_left = pgl.antipode(left)
-                gl_prod = pgl.product(s_left, right)
+                gl_prod = pgl.product(s_left, rf[0])
                 result = result + c * gl_prod
             if pgl.counit(t) == 0:
                 self.assertEqual(0, result,

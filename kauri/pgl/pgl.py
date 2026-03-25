@@ -22,10 +22,9 @@ from collections import defaultdict
 
 from ..maps import Map
 from ..trees import (Tree, PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
-                     EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST)
-from ..generic_algebra import forest_apply, forest_sum_apply
+                     TensorProductSum, EMPTY_ORDERED_FOREST)
+from ..generic_algebra import forest_apply, func_product, func_power
 from ..gl.gl import _graft_helper
-from .._protocols import ForestLike, ForestSumLike
 
 
 # ---------------------------------------------------------------------------
@@ -84,15 +83,6 @@ def counit_impl(t):
 # Coproduct
 # ---------------------------------------------------------------------------
 
-def _simplify_coproduct(terms):
-    """Merge equal (OrderedForest, PlanarTree) terms by summing coefficients."""
-    merged = {}
-    for c, left, right in terms:
-        key = (left, right)
-        merged[key] = merged.get(key, 0) + c
-    return tuple((c, l, r) for (l, r), c in merged.items() if c != 0)
-
-
 @cache
 def coproduct_impl(t):
     if t.list_repr is None:
@@ -101,15 +91,15 @@ def coproduct_impl(t):
     children = t.list_repr[:-1]
     k = len(children)
 
-    raw_terms = []
+    terms = []
     for mask in iter_product([0, 1], repeat=k):
         left_children = tuple(children[i] for i in range(k) if mask[i] == 1)
         right_children = tuple(children[i] for i in range(k) if mask[i] == 0)
         left_tree = PlanarTree(left_children + (root_color,))
         right_tree = PlanarTree(right_children + (root_color,))
-        raw_terms.append((1, OrderedForest((left_tree,)), right_tree))
+        terms.append((1, left_tree.as_ordered_forest(), right_tree.as_ordered_forest()))
 
-    return _simplify_coproduct(raw_terms)
+    return TensorProductSum(tuple(terms)).simplify()
 
 
 # ---------------------------------------------------------------------------
@@ -130,15 +120,16 @@ def antipode_impl(t):
     cp = coproduct_impl(t)
     out = ForestSum(((-1, t.as_ordered_forest()),))
 
-    for c, left_forest, right_tree in cp:
-        left = left_forest.tree_list[0]
+    for c, left_forest, right_forest in cp:
+        left = left_forest[0]
+        right = right_forest[0]
 
         # Skip trivial terms: t tensor bullet and bullet tensor t
-        if left == t or right_tree == t:
+        if left == t or right == t:
             continue
 
         s_left = antipode_impl(left)  # ForestSum
-        pgl_prod = _pgl_product_linear(s_left, right_tree)
+        pgl_prod = _pgl_product_linear(s_left, right)
         out = out - c * pgl_prod
 
     return out.simplify()
@@ -147,20 +138,6 @@ def antipode_impl(t):
 # ---------------------------------------------------------------------------
 # Convolution helpers
 # ---------------------------------------------------------------------------
-
-def _planar_func_product(t, func1, func2, coproduct):
-    """Convolution product of scalar-valued maps using the PGL coproduct."""
-    cp = coproduct(t)
-    if len(cp) == 0:
-        return 0
-    c0, left0, right0 = cp[0]
-    out = c0 * forest_apply(left0, func1) * func2(right0)
-    for c, left, right in cp[1:]:
-        out += c * forest_apply(left, func1) * func2(right)
-    if isinstance(out, (ForestLike, ForestSumLike)):
-        out = out.simplify()
-    return out
-
 
 def _pgl_conv_inverse(func):
     """Return the PGL convolution inverse of func (recursive formula)."""
@@ -180,37 +157,18 @@ def _pgl_conv_inverse(func):
             cp = coproduct_impl(t)
             inv_bullet = inv(bullet)
             result = 0
-            for c, lf, right_tree in cp:
-                if right_tree == t:
+            for c, lf, rf in cp:
+                right = rf[0]
+                if right == t:
                     continue
-                left = lf.tree_list[0]
-                result += c * func(left) * inv(right_tree)
+                left = lf[0]
+                result += c * func(left) * inv(right)
             result = -inv_bullet * result
 
         memo[key] = result
         return result
 
     return inv
-
-
-def _planar_func_power(t, func, exponent, coproduct, counit, antipode):
-    """Convolution power of a scalar-valued map using the PGL coproduct."""
-    if exponent == 0:
-        return counit(t)
-    elif exponent == 1:
-        return func(t)
-    elif exponent < 0:
-        def m(x):
-            return _planar_func_power(x, func, -exponent, coproduct, counit, antipode)
-        res = forest_sum_apply(antipode(t), m)
-    else:
-        def m(x):
-            return _planar_func_power(x, func, exponent - 1, coproduct, counit, antipode)
-        res = _planar_func_product(t, func, m, coproduct)
-
-    if isinstance(res, (ForestLike, ForestSumLike)):
-        res = res.simplify()
-    return res
 
 
 # ---------------------------------------------------------------------------
@@ -251,7 +209,7 @@ Example usage::
 """
 
 
-def coproduct(t: PlanarTree) -> tuple:
+def coproduct(t: PlanarTree) -> TensorProductSum:
     """
     The coproduct :math:`\\Delta_{PGL}` of the planar Grossman-Larson Hopf algebra.
 
@@ -266,7 +224,7 @@ def coproduct(t: PlanarTree) -> tuple:
 
     :param t: planar tree
     :type t: PlanarTree
-    :rtype: tuple[tuple[int, OrderedForest, PlanarTree], ...]
+    :rtype: TensorProductSum
 
     Example usage::
 
@@ -342,7 +300,7 @@ def map_product(f: Map, g: Map) -> Map:
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in pgl.map_product must be of type Map, not "
                         + str(type(f)) + " and " + str(type(g)))
-    return Map(lambda t: _planar_func_product(t, f.func, g.func, coproduct_impl))
+    return Map(lambda t: func_product(t, f.func, g.func, coproduct_impl))
 
 
 def map_power(f: Map, exponent: int) -> Map:
@@ -361,6 +319,6 @@ def map_power(f: Map, exponent: int) -> Map:
     if not isinstance(exponent, int):
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
     if exponent >= 0:
-        return Map(lambda t: _planar_func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))
+        return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))
     f_inv = _pgl_conv_inverse(f.func)
-    return Map(lambda t: _planar_func_power(t, f_inv, -exponent, coproduct_impl, counit_impl, antipode_impl))
+    return Map(lambda t: func_power(t, f_inv, -exponent, coproduct_impl, counit_impl, antipode_impl))

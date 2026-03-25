@@ -66,15 +66,15 @@ class TestCoproduct(unittest.TestCase):
         c, left, right = cp[0]
         self.assertEqual(c, 1)
         self.assertEqual(left, EMPTY_ORDERED_FOREST)
-        self.assertEqual(right, EMPTY_PLANAR_TREE)
+        self.assertEqual(right, EMPTY_ORDERED_FOREST)
 
     def test_coproduct_bullet(self):
         cp = pbck.coproduct(PT([]))
         # Delta(bullet) = empty tensor bullet + bullet tensor empty
         self.assertEqual(len(cp), 2)
         terms = {(left, right): c for c, left, right in cp}
-        self.assertEqual(terms[(EMPTY_ORDERED_FOREST, PT([]))], 1)
-        self.assertEqual(terms[(PT([]).as_ordered_forest(), EMPTY_PLANAR_TREE)], 1)
+        self.assertEqual(terms[(EMPTY_ORDERED_FOREST, PT([]).as_ordered_forest())], 1)
+        self.assertEqual(terms[(PT([]).as_ordered_forest(), EMPTY_ORDERED_FOREST)], 1)
 
     def test_coproduct_chain2(self):
         cp = pbck.coproduct(PT([[]]))
@@ -82,9 +82,9 @@ class TestCoproduct(unittest.TestCase):
         terms = {}
         for c, left, right in cp:
             terms[(left, right)] = terms.get((left, right), 0) + c
-        self.assertEqual(terms[(OrderedForest((PT([[]]),)), EMPTY_PLANAR_TREE)], 1)
-        self.assertEqual(terms[(EMPTY_ORDERED_FOREST, PT([[]]))], 1)
-        self.assertEqual(terms[(OrderedForest((PT([]),)), PT([]))], 1)
+        self.assertEqual(terms[(OrderedForest((PT([[]]),)), EMPTY_ORDERED_FOREST)], 1)
+        self.assertEqual(terms[(EMPTY_ORDERED_FOREST, OrderedForest((PT([[]]),)))], 1)
+        self.assertEqual(terms[(OrderedForest((PT([]),)), OrderedForest((PT([]),)))], 1)
         self.assertEqual(len(terms), 3)
 
     def test_coproduct_cherry(self):
@@ -94,10 +94,10 @@ class TestCoproduct(unittest.TestCase):
             terms[(left, right)] = terms.get((left, right), 0) + c
         # Delta(Y) = Y tensor empty + empty tensor Y
         #           + 2 * bullet tensor chain2 + bullet*bullet tensor bullet
-        self.assertEqual(terms[(OrderedForest((PT([[],[]]),)), EMPTY_PLANAR_TREE)], 1)
-        self.assertEqual(terms[(EMPTY_ORDERED_FOREST, PT([[],[]]))] , 1)
-        self.assertEqual(terms[(OrderedForest((PT([]),)), PT([[]]))], 2)
-        self.assertEqual(terms[(OrderedForest((PT([]), PT([]))), PT([]))], 1)
+        self.assertEqual(terms[(OrderedForest((PT([[],[]]),)), EMPTY_ORDERED_FOREST)], 1)
+        self.assertEqual(terms[(EMPTY_ORDERED_FOREST, OrderedForest((PT([[],[]]),)))] , 1)
+        self.assertEqual(terms[(OrderedForest((PT([]),)), OrderedForest((PT([[]]),)))], 2)
+        self.assertEqual(terms[(OrderedForest((PT([]), PT([]))), OrderedForest((PT([]),)))], 1)
         self.assertEqual(len(terms), 4)
 
     def test_coproduct_bullet_primitive(self):
@@ -170,7 +170,8 @@ class TestAntipodeProperty(unittest.TestCase):
         for t in nonunit_trees:
             cp = pbck.coproduct(t)
             result = 0
-            for c, left_forest, right_tree in cp:
+            for c, left_forest, right_forest in cp:
+                right_tree = right_forest[0]
                 # S is an anti-homomorphism: S(t1*t2) = S(t2)*S(t1)
                 s_left = anti_forest_apply(left_forest, pbck.antipode.func)
                 if right_tree.list_repr is not None:
@@ -186,7 +187,8 @@ class TestAntipodeProperty(unittest.TestCase):
         for t in nonunit_trees:
             cp = pbck.coproduct(t)
             result = 0
-            for c, left_forest, right_tree in cp:
+            for c, left_forest, right_forest in cp:
+                right_tree = right_forest[0]
                 s_right = pbck.antipode(right_tree)
                 # Multiply left_forest * S(right)
                 # left_forest is NoncommutativeForest, s_right is ForestSum

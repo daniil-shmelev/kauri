@@ -21,9 +21,8 @@ from itertools import product as iter_product
 
 from ..maps import Map
 from ..trees import (Tree, PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
-                     EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST)
-from ..generic_algebra import forest_apply, forest_sum_apply, anti_forest_apply
-from .._protocols import ForestLike, ForestSumLike
+                     TensorProductSum, EMPTY_ORDERED_FOREST)
+from ..generic_algebra import forest_apply, func_product, func_power, anti_forest_apply
 
 
 # ---------------------------------------------------------------------------
@@ -38,35 +37,27 @@ def counit_impl(t):
 # Coproduct
 # ---------------------------------------------------------------------------
 
-def _simplify_coproduct(terms):
-    """Merge equal (OrderedForest, PlanarTree) terms by summing coefficients."""
-    merged = {}
-    for c, left, right in terms:
-        key = (left, right)
-        merged[key] = merged.get(key, 0) + c
-    return tuple((c, l, r) for (l, r), c in merged.items() if c != 0)
-
-
 @cache
 def coproduct_impl(t):
     if t.list_repr is None:
-        return ((1, EMPTY_ORDERED_FOREST, EMPTY_PLANAR_TREE),)
+        return TensorProductSum(((1, EMPTY_ORDERED_FOREST, EMPTY_ORDERED_FOREST),))
 
     if len(t.list_repr) == 1:
-        return ((1, EMPTY_ORDERED_FOREST, t),
-                (1, t.as_ordered_forest(), EMPTY_PLANAR_TREE))
+        return TensorProductSum(((1, EMPTY_ORDERED_FOREST, t.as_ordered_forest()),
+                (1, t.as_ordered_forest(), EMPTY_ORDERED_FOREST)))
 
     root_color = t.list_repr[-1]
     children = [PlanarTree(rep) for rep in t.list_repr[:-1]]
     child_coproducts = [coproduct_impl(child) for child in children]
 
-    raw_terms = [(1, OrderedForest((t,)), EMPTY_PLANAR_TREE)]
+    raw_terms = [(1, OrderedForest((t,)), EMPTY_ORDERED_FOREST)]
 
     for picks in iter_product(*child_coproducts):
         left_trees = []
         right_repr_children = []
         coeff = 1
-        for c, left_forest, right_tree in picks:
+        for c, left_forest, right_forest in picks:
+            right_tree = right_forest[0]
             coeff *= c
             left_trees.extend(left_forest.tree_list)
             if right_tree.list_repr is not None:
@@ -75,9 +66,9 @@ def coproduct_impl(t):
 
         left = OrderedForest(tuple(left_trees)).simplify()
         right = PlanarTree(tuple(right_repr_children))
-        raw_terms.append((coeff, left, right))
+        raw_terms.append((coeff, left, right.as_ordered_forest()))
 
-    return _simplify_coproduct(raw_terms)
+    return TensorProductSum(tuple(raw_terms)).simplify()
 
 
 # ---------------------------------------------------------------------------
@@ -104,7 +95,8 @@ def antipode_impl(t):
     cp = coproduct_impl(t)
     out = ForestSum(((-1, t.as_ordered_forest()),))
 
-    for c, left_forest, right_tree in cp:
+    for c, left_forest, right_forest in cp:
+        right_tree = right_forest[0]
         if right_tree.list_repr is None or right_tree == t:
             continue
 
@@ -113,44 +105,6 @@ def antipode_impl(t):
         out = out - c * term
 
     return out.simplify()
-
-
-# ---------------------------------------------------------------------------
-# Convolution helpers
-# ---------------------------------------------------------------------------
-
-def _planar_func_product(t, func1, func2, coproduct):
-    """Convolution product of scalar-valued maps using the planar coproduct."""
-    cp = coproduct(t)
-    if len(cp) == 0:
-        return 0
-    c0, left0, right0 = cp[0]
-    out = c0 * forest_apply(left0, func1) * func2(right0)
-    for c, left, right in cp[1:]:
-        out += c * forest_apply(left, func1) * func2(right)
-    if isinstance(out, (ForestLike, ForestSumLike)):
-        out = out.simplify()
-    return out
-
-
-def _planar_func_power(t, func, exponent, coproduct, counit, antipode):
-    """Convolution power of a scalar-valued map using the planar coproduct."""
-    if exponent == 0:
-        return counit(t)
-    elif exponent == 1:
-        return func(t)
-    elif exponent < 0:
-        def m(x):
-            return _planar_func_power(x, func, -exponent, coproduct, counit, antipode)
-        res = forest_sum_apply(antipode(t), m)
-    else:
-        def m(x):
-            return _planar_func_power(x, func, exponent - 1, coproduct, counit, antipode)
-        res = _planar_func_product(t, func, m, coproduct)
-
-    if isinstance(res, (ForestLike, ForestSumLike)):
-        res = res.simplify()
-    return res
 
 
 # ---------------------------------------------------------------------------
@@ -192,23 +146,20 @@ Example usage::
 """
 
 
-def coproduct(t: PlanarTree) -> tuple:
+def coproduct(t: PlanarTree) -> TensorProductSum:
     """
     The coproduct :math:`\\Delta` of the planar BCK Hopf algebra.
 
-    Returns a tuple of ``(coefficient, OrderedForest, PlanarTree)`` triples
-    representing the coproduct as a sum of tensor products.
-
     :param t: planar tree
     :type t: PlanarTree
-    :rtype: tuple[tuple[int, OrderedForest, PlanarTree], ...]
+    :rtype: TensorProductSum
 
     Example usage::
 
         from kauri.trees import PlanarTree
         import kauri.pbck as pbck
 
-        pbck.coproduct(PlanarTree(None))  # Returns ((1, empty_forest, empty_tree),)
+        pbck.coproduct(PlanarTree(None))  # Returns 1 [] tensor []
         pbck.coproduct(PlanarTree([]))    # Returns unit coproduct terms
     """
     if not isinstance(t, PlanarTree):
@@ -244,7 +195,7 @@ def map_product(f: Map, g: Map) -> Map:
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in pbck.map_product must be of type Map, not "
                         + str(type(f)) + " and " + str(type(g)))
-    return Map(lambda t: _planar_func_product(t, f.func, g.func, coproduct_impl))
+    return Map(lambda t: func_product(t, f.func, g.func, coproduct_impl))
 
 
 def map_power(f: Map, exponent: int) -> Map:
@@ -271,4 +222,4 @@ def map_power(f: Map, exponent: int) -> Map:
         raise TypeError("f must be a Map, not " + str(type(f)))
     if not isinstance(exponent, int):
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
-    return Map(lambda t: _planar_func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))
+    return Map(lambda t: func_power(t, f.func, exponent, coproduct_impl, counit_impl, antipode_impl))

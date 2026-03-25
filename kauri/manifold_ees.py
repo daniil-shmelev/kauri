@@ -66,12 +66,12 @@ def _sym_coproduct_eval(tree, left_func, right_func):
         return sympy.Integer(1)
     cp = coproduct_impl(tree)
     result = sympy.Integer(0)
-    for c, left_forest, right_tree in cp:
+    for c, left_forest, right_forest in cp:
         left_val = sympy.Integer(1)
         for ti in left_forest.tree_list:
             if ti.list_repr is not None:
                 left_val *= sympy.sympify(left_func(ti))
-        right_val = sympy.sympify(right_func(right_tree))
+        right_val = sympy.sympify(right_func(right_forest[0]))
         result += c * left_val * right_val
     return sympy.expand(result)
 

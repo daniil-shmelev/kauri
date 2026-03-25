@@ -25,8 +25,8 @@ planar BCK convolution algebra.
 """
 
 from .trees import ForestSum, ZERO_FOREST_SUM
-from .pbck.pbck import coproduct_impl, _planar_func_product
-from .generic_algebra import apply_map, forest_apply
+from .pbck.pbck import coproduct_impl
+from .generic_algebra import apply_map, forest_apply, func_product
 from .maps import Map
 from functools import cache
 
@@ -48,7 +48,7 @@ def _planar_id_sqrt(t):
     if len(t.list_repr) == 1:
         return fs_t * 0.5
     # Convolution square of IDENTITY via planar coproduct
-    ident_sq = _planar_func_product(t, _planar_ident, _planar_ident, coproduct_impl)
+    ident_sq = func_product(t, _planar_ident, _planar_ident, coproduct_impl)
     # Subtract the two edge terms => middle terms only
     out = ident_sq.as_forest_sum() - 2 * fs_t
     # Apply id_sqrt to each tree in the middle terms
@@ -97,7 +97,8 @@ def _remainder(t):
     fs_t = t.as_forest_sum()
     cp = coproduct_impl(t)
     all_middle_terms = []
-    for c, left, right in cp:
+    for c, left, right_forest in cp:
+        right = right_forest[0]
         if right.list_repr is None or right.list_repr == t.list_repr:
             continue
         plus_left = forest_apply(left, _planar_plus)
