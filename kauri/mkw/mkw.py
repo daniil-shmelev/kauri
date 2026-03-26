@@ -67,6 +67,9 @@ def _coproduct_helper(tree: PlanarTree) -> tuple[tuple[OrderedForest, PlanarTree
 
 def coproduct_terms(tree: PlanarTree) -> tuple[CoproductTerm, ...]:
     """Ordered-tree BCK-style coproduct terms, preserving sibling order."""
+    if not isinstance(tree, PlanarTree):
+        hint = " For non-planar trees, use bck.coproduct instead." if type(tree).__name__ == "Tree" else ""
+        raise TypeError("Argument to mkw.coproduct_terms must be a PlanarTree, not " + str(type(tree)) + "." + hint)
     return tuple(
         CoproductTerm(coeff=1, left=left, right=right)
         for left, right in _coproduct_helper(tree)

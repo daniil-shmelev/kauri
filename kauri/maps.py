@@ -213,7 +213,7 @@ class Map:
         return temp
 
     def __neg__(self):
-        return Map(lambda x : -self.func(x))
+        return Map(lambda x : -self.func(x), anti=self.anti)
 
     def __isub__(self, other):
         self.__iadd__(-other)
@@ -340,7 +340,7 @@ class Map:
         of the exact solution and :math:`e^{\\star (-1)} = e \\circ S_{CEM}`
         :cite:`chartier2010algebraic, murua2006hopf`.
 
-        :return: Exponential map
+        :return: Logarithm map
         :rtype: Map
         """
         from .cem.cem import antipode_impl as cem_antipode

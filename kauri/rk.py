@@ -270,7 +270,7 @@ class RK:
         if not isinstance(a, (list, np.ndarray)):
             raise TypeError("a must be a list or array, not " + str(type(a)))
         if not isinstance(b, (list, np.ndarray)):
-            raise TypeError("b must be a list or array, not " + str(type(a)))
+            raise TypeError("b must be a list or array, not " + str(type(b)))
 
         self.name = name
         self.s = len(b)
@@ -478,11 +478,13 @@ class RK:
         if not isinstance(t0, float):
             raise TypeError("t0 must be a float, not " + str(type(t0)))
         if not isinstance(t_end, float):
-            raise TypeError("t_end must be a float, not " + str(type(t0)))
+            raise TypeError("t_end must be a float, not " + str(type(t_end)))
         if not callable(f):
             raise TypeError("f must be callable")
         if not isinstance(n, int):
             raise TypeError("n must be an int, not " + str(type(n)))
+        if n <= 0:
+            raise ValueError("n must be a positive integer, got " + str(n))
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))
         if not isinstance(max_iter, int):

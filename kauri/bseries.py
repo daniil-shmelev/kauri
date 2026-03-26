@@ -271,11 +271,11 @@ class BSeries:
             out = out.subs(self.y[i], y[i])
         return [float(x) for x in out]
 
-    def series(self) -> sp.Matrix:
+    def series(self) -> sp.MatrixBase:
         """
         Returns the truncated B-series as a sympy Matrix.
 
-        :rtype: sympy.Matrix
+        :rtype: sympy.MatrixBase
         """
         return self.symbolic_expr
 
