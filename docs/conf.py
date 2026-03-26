@@ -6,6 +6,7 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('.'))   # for kauri_sphinx extension
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
@@ -22,7 +23,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
-    "sphinxcontrib.bibtex"
+    "sphinxcontrib.bibtex",
+    'kauri_sphinx',
 ]
 
 templates_path = ['_templates']
