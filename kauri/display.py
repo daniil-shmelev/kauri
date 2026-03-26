@@ -229,7 +229,7 @@ def _layout_forest_sum(forest_sum, scale, rationalise=False):
     for i, (c, f) in enumerate(forest_sum.term_list):
         x = _layout_coeff_op(items, x, c, i == 0, scale, rationalise)
 
-        f_items, f_w, f_h = _layout_forest(f, x, 0, scale)
+        f_items, f_w, f_h = _layout_forest(f, x, 0, scale, show_empty=True)
         items.extend(f_items)
         x += f_w + coeff_gap / 2
         max_height = max(max_height, f_h)

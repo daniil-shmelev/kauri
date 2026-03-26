@@ -35,9 +35,7 @@ The ``kauri.bck`` sub-package implements the Butcher-Connes-Kreimer (BCK) :cite:
 
   .. math::
 
-      S_{BCK}(t) = -t - \\sum_{s \\subset t} (-1)^{n(t \\setminus s)} S_{BCK}([t \\setminus s]) s,
-
-  where :math:`n(t \\setminus s)` is the number of trees in the forest :math:`[t \\setminus s]`.
+      S_{BCK}(t) = -t - \\sum_{s \\subset t} S_{BCK}([t \\setminus s]) \\, s.
 """
 
 from .bck import antipode, counit, coproduct, map_power, map_product

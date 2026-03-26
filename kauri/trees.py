@@ -263,15 +263,15 @@ class Tree:
         Example usage::
 
             t = Tree([[[]],[]])
-            t.alpha()
+            t.beta()
         """
         return math.factorial(self.nodes()) // self.sigma()
 
     def density(self) -> float:
         """
-        Density of the tree, :math:`\\gamma(t) = t! / |t|!`.
+        Density of the tree, :math:`t! / |t|!`.
 
-        :return: Density, :math:`\\gamma(t)`
+        :return: Density, :math:`t! / |t|!`
         :rtype: float
 
         Example usage::
@@ -464,7 +464,7 @@ class Tree:
         Example usage::
 
             t = Tree([[],[[]]])
-            t.level_sequence() #Returns Tree([[[]],[]])
+            t.sorted() #Returns Tree([[[]],[]])
         """
         return Tree(self.sorted_list_repr())
 
@@ -695,7 +695,7 @@ class CommutativeForest:
         Example usage::
 
             f = Tree([]) * Tree([[]])
-            f.len() #Returns 2
+            f.num_trees() #Returns 2
         """
         return len(self.tree_list)
 
@@ -955,6 +955,8 @@ class ForestSum:
         new_term_list = []
 
         for term in self.term_list:
+            if not _is_scalar(term[0]):
+                raise TypeError("ForestSum coefficients must be scalars, got " + str(type(term[0])))
             if isinstance(term[1], ForestLike):
                 new_term_list.append(term)
             elif isinstance(term[1], Tree):
@@ -1055,7 +1057,7 @@ class ForestSum:
         Example usage::
 
             f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
-            f.num_trees() #Returns 2
+            f.num_forests() #Returns 2
         """
         return len(self.term_list)
 
@@ -1567,7 +1569,7 @@ class PlanarTree:
         return _height(self.unlabelled_repr)
 
     def density(self) -> float:
-        """Density of the tree, ``factorial() / nodes()!``."""
+        """Density of the tree, :math:`t! / |t|!`."""
         return self.factorial() / math.factorial(self.nodes())
 
     def alpha(self) -> int:

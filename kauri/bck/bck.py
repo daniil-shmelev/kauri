@@ -31,9 +31,6 @@ def counit_impl(t):
 def antipode_impl(t):
     if t.list_repr is None:
         return EMPTY_FOREST_SUM # Antipode of empty tree is the empty tree
-    if t.list_repr == tuple():
-        return -t # Antipode of singleton is the negative singleton
-
     cp = coproduct_impl(t)
     out = -t.as_forest_sum() # First term, -t
     for c, branches, subtree_ in cp: # Remaining terms
@@ -148,7 +145,7 @@ def map_product(f : Map, g : Map) -> Map:
         import kauri.bck as bck
 
         ident = kr.Map(lambda x : x)
-        counit = bck.map_product(ident, bck.antipode) # Equivalent to indent * bck.antipode
+        counit = bck.map_product(ident, bck.antipode) # Equivalent to ident * bck.antipode
     """
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in bck.map_product must be of type Map, not " + str(type(f)) + " and " + str(type(g)))

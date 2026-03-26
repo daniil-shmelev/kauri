@@ -75,7 +75,7 @@ and the symmetric-adjoint method is given by
 
     bs_adjoint = kr.BSeries(y, f, bs1.weights ** (-1) & kr.sign, 5)
 
-where `kr.sign` is the :class:`Map` sending `t` to `-t`.
+where `kr.sign` is the :class:`Map` sending `t` to `(-1)^|t| * t`.
 
 """
 import itertools
@@ -249,7 +249,7 @@ class BSeries:
 
     def __call__(self, y : list, h : Union[int, float]) -> list:
         """
-        Evalutes the B-series at the given values for y and h.
+        Evaluates the B-series at the given values for y and h.
 
         :param y: List of values to substitute for y
         :type y: list

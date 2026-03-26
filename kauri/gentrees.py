@@ -44,7 +44,7 @@ def trees_up_to_order(order : int) -> Generator[Tree, None, None]:
     if not isinstance(order, int):
         raise TypeError("order must be an int, not " + str(type(order)))
     if order < 0:
-        raise ValueError("order must be positive")
+        raise ValueError("order must be non-negative")
 
     t = Tree(None)
     while t.nodes() <= order:
@@ -71,7 +71,7 @@ def trees_of_order(order : int) -> Generator[Tree, None, None]:
     if not isinstance(order, int):
         raise TypeError("order must be an int, not " + str(type(order)))
     if order < 0:
-        raise ValueError("order must be positive")
+        raise ValueError("order must be non-negative")
 
     t = Tree(_level_sequence_to_list_repr(list(range(order))))
     while t.nodes() == order:

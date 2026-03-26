@@ -39,6 +39,8 @@ def _check_valid(obj):
 
     if isinstance(obj[-1], int) and obj[-1] < 0:
         return False
+    if isinstance(obj[-1], (tuple, list)):
+        return _check_valid(obj[-1])
     return True
 
 def _to_labelled_tuple(obj):

@@ -21,8 +21,8 @@ characters on the Hopf algebra, as well as more complicated maps.
 import copy
 from typing import Union, Callable
 
-from .trees import (Tree, PlanarTree, Forest, ForestSum, TensorProductSum,
-                     EMPTY_TREE, _is_scalar, _is_planar_obj)
+from .trees import (Tree, PlanarTree, Forest, NoncommutativeForest, ForestSum,
+                     TensorProductSum, EMPTY_TREE, _is_scalar, _is_planar_obj)
 from ._protocols import TreeLike, ForestLike, ForestSumLike
 from .generic_algebra import apply_map, func_power, func_product
 
@@ -118,8 +118,10 @@ class Map:
                     out = other.func(EMPTY_TREE)
                 else:
                     out = func_product(x, func_, other.func, cem_coproduct)
-                if isinstance(out, (ForestLike, ForestSumLike)):
+                if isinstance(out, (Forest, NoncommutativeForest, ForestSum)):
                     out = out.singleton_reduced()
+                    if isinstance(out, ForestSum):
+                        out = out.simplify()
                 return out
             self.func = f_
         else:
@@ -279,8 +281,7 @@ class Map:
 
             \\widetilde{\\phi}(t) = (\\phi \\star e^{\\star (-1)})(t)
 
-        where :math:`\\mathrm{Id}` is the identity map on trees and
-        :math:`e^{\\star (-1)} = e \\circ S_{CEM}` :cite:`chartier2010algebraic`.
+        and :math:`e^{\\star (-1)} = e \\circ S_{CEM}` :cite:`chartier2010algebraic`.
 
         :return: Map corresponding to the modified vector field
         """
@@ -289,9 +290,8 @@ class Map:
     def preprocessed_integrator(self) -> 'Map':
         """
         Assuming the given map :math:`\\phi` corresponds to the elementary weights
-        function of a B-series method, returns the map corresponding to the coefficients
-        of the modified (B-series) vector field, :math:`\\widetilde{\\phi}`,
-        defined by
+        function of a B-series method, returns the map corresponding to the
+        preprocessed integrator, :math:`\\widetilde{\\phi}`, defined by
 
         .. math::
 
@@ -304,10 +304,9 @@ class Map:
 
             \\widetilde{\\phi}(t) = (e \\star \\phi^{\\star (-1)})(t)
 
-        where :math:`\\mathrm{Id}` is the identity map on trees and
-        :math:`\\phi^{\\star (-1)} = \\phi \\circ S_{CEM}` :cite:`chartier2010algebraic`.
+        and :math:`\\phi^{\\star (-1)} = \\phi \\circ S_{CEM}` :cite:`chartier2010algebraic`.
 
-        :return: Map corresponding to the modified vector field
+        :return: Map corresponding to the preprocessed integrator
         """
         from .cem.cem import antipode_impl as cem_antipode
         return exact_weights ^ (self & Map(cem_antipode))

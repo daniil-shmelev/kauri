@@ -2,7 +2,7 @@
 Runtime-checkable protocols for tree, forest, and forest-sum types.
 
 Both the non-planar (Tree/Forest/ForestSum) and planar
-(PlanarTree/OrderedForest/OrderedForestSum) types satisfy these
+(PlanarTree/OrderedForest) types satisfy these
 structurally, enabling generic algebra code to work with either family.
 """
 from typing import Any, Protocol, runtime_checkable

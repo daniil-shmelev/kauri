@@ -136,6 +136,9 @@ def _build_coproduct(t, singleton_reduce=True):
 @cache
 def _coproduct_raw(t):
     """Internal coproduct preserving bullet factors, cached for convolution use."""
+    if not isinstance(t, Tree):
+        hint = " The CEM algebra is only defined for non-planar trees." if isinstance(t, PlanarTree) else ""
+        raise TypeError("CEM coproduct expects a Tree, not " + str(type(t)) + "." + hint)
     return _build_coproduct(t, singleton_reduce=False)
 
 def coproduct_impl(t):

@@ -64,6 +64,6 @@ The plus operation, defined by :cite:`shmelev2025ees`
 
 .. math::
 
-    \\tau^- = \\mu \\circ (\\mathrm{Id} \\otimes (\\cdot)^- \\circ S) \\circ \\Delta(\\tau)
+    \\tau^+ = \\mu \\circ (\\mathrm{Id} \\otimes (\\cdot)^- \\circ S) \\circ \\Delta(\\tau)
 
 """
