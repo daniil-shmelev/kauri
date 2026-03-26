@@ -28,4 +28,17 @@ Display
    t = kr.Tree([[],[]])
    kr.display(bck.antipode(t))
 
+.. rubric:: Displaying multiple objects side by side
+
+Multiple arguments are rendered in a single image, analogous to
+``print(a, b, c)``:
+
+.. kauri-exec::
+
+   import kauri as kr
+   t1 = kr.Tree([])
+   t2 = kr.Tree([[]])
+   t3 = kr.Tree([[], [[]]])
+   kr.display(t1, t2, t3)
+
 .. autofunction:: kauri.display.display

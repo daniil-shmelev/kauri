@@ -45,8 +45,8 @@ class KauriExecDirective(SphinxDirective):
 
         from kauri.display import _to_svg
 
-        def _capturing_display(obj, *, scale=1.0, rationalise=False, **kw):
-            svg = _to_svg(obj, scale=scale, rationalise=rationalise)
+        def _capturing_display(*args, scale=1.0, rationalise=False, **kw):
+            svg = _to_svg(*args, scale=scale, rationalise=rationalise)
             captured_svgs.append(svg)
 
         import kauri

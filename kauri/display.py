@@ -32,6 +32,7 @@ TREE_GAP = 12
 TERM_GAP = 18
 COEFF_GAP = 5
 TENSOR_GAP = 10
+DISPLAY_GAP = 35
 FONT_SIZE = 11
 PADDING = 8
 CHAR_WIDTH_FACTOR = 0.6   # estimated character width as fraction of font size
@@ -345,31 +346,59 @@ def _render_svg(items, width, height, scale):
 
 # ── Layer 3: Orchestration ───────────────────────────────────────────────
 
-def _to_svg(obj, scale=1.0, rationalise=False):
-    """Generate an SVG string for a tree-algebra object."""
-    if scale <= 0:
-        raise ValueError("scale must be positive, got " + str(scale))
+def _layout_single(obj, scale, rationalise):
+    """Layout a single tree-algebra object.
+
+    Returns (items, width, height).
+    """
     if isinstance(obj, TensorProductSum):
-        items, w, h = _layout_tensor_sum(obj, scale, rationalise)
+        return _layout_tensor_sum(obj, scale, rationalise)
     elif isinstance(obj, ForestSum):
-        items, w, h = _layout_forest_sum(obj, scale, rationalise)
+        return _layout_forest_sum(obj, scale, rationalise)
     elif isinstance(obj, (Forest, NoncommutativeForest)):
-        items, w, h = _layout_forest(obj, 0, 0, scale, show_empty=True)
+        return _layout_forest(obj, 0, 0, scale, show_empty=True)
     elif isinstance(obj, (Tree, PlanarTree)):
         if obj.list_repr is None:
             fs = FONT_SIZE * scale
             cw = CHAR_WIDTH_FACTOR
             items = [('text', fs * cw / 2, fs * cw / 2, '\u2205', fs)]
-            w, h = fs * cw, fs * cw
+            return items, fs * cw, fs * cw
         else:
             level_seq = obj.level_sequence()
             color_seq = obj.color_sequence()
             items, w, h = _layout_tree(level_seq, color_seq, 0, 0, scale)
             items = _shift_items_x(items, w / 2)
+            return items, w, h
     else:
         raise TypeError("Cannot display object of type " + str(type(obj)))
 
-    return _render_svg(items, w, h, scale)
+
+def _to_svg(*objects, scale=1.0, rationalise=False):
+    """Generate an SVG string for one or more tree-algebra objects.
+
+    Multiple arguments are laid out side by side with extra spacing.
+    """
+    if scale <= 0:
+        raise ValueError("scale must be positive, got " + str(scale))
+
+    if len(objects) == 1:
+        items, w, h = _layout_single(objects[0], scale, rationalise)
+        return _render_svg(items, w, h, scale)
+
+    gap = DISPLAY_GAP * scale
+    all_items = []
+    total_w = 0
+    max_h = 0
+
+    for i, obj in enumerate(objects):
+        items, w, h = _layout_single(obj, scale, rationalise)
+        all_items.extend(_shift_items_x(items, total_w))
+        total_w += w
+        max_h = max(max_h, h)
+        if i < len(objects) - 1:
+            total_w += gap
+
+    return _render_svg(all_items, total_w, max_h, scale)
 
 
 # ── Jupyter detection ────────────────────────────────────────────────────
@@ -385,9 +414,8 @@ def _in_jupyter():
 
 # ── Public API ───────────────────────────────────────────────────────────
 
-def display(obj: Union[Tree, Forest, ForestSum, TensorProductSum,
-                       PlanarTree, NoncommutativeForest],
-            *,
+def display(*objects: Union[Tree, Forest, ForestSum, TensorProductSum,
+                           PlanarTree, NoncommutativeForest],
             scale: float = 1.0,
             fig_size: tuple = None,
             file_name: str = None,
@@ -398,23 +426,33 @@ def display(obj: Union[Tree, Forest, ForestSum, TensorProductSum,
 
     In Jupyter, renders inline SVG.
 
-    :param obj: Object to display
+    Multiple arguments are rendered side by side in a single image,
+    analogous to ``print(a, b, c)``.
+
+    :param objects: One or more objects to display
     :param scale: Scale factor for SVG output (default 1.0)
     :param file_name: If provided, saves SVG to ``file_name.svg``
     :param rationalise: If True, rationalise float coefficients
     """
-    if not isinstance(obj, (Tree, Forest, ForestSum, TensorProductSum,
-                            PlanarTree, NoncommutativeForest)):
-        raise TypeError("Cannot display object of type " + str(type(obj))
-                        + ". Object must be Tree, Forest, ForestSum, TensorProductSum,"
-                        + " PlanarTree, or NoncommutativeForest.")
+    _VALID_TYPES = (Tree, Forest, ForestSum, TensorProductSum,
+                    PlanarTree, NoncommutativeForest)
 
-    if isinstance(obj, ForestSum) and len(obj.term_list) == 0:
-        pass  # zero — no colors to check
-    elif isinstance(obj, TensorProductSum) and (obj.term_list is None or len(obj.term_list) == 0):
-        pass
-    elif obj.colors() > 9:
-        raise ValueError("Cannot display labelled trees with more than 9 different colors.")
+    if not objects:
+        raise TypeError("display() requires at least one argument.")
+
+    for obj in objects:
+        if not isinstance(obj, _VALID_TYPES):
+            raise TypeError("Cannot display object of type " + str(type(obj))
+                            + ". Object must be Tree, Forest, ForestSum, TensorProductSum,"
+                            + " PlanarTree, or NoncommutativeForest.")
+
+    for obj in objects:
+        if isinstance(obj, ForestSum) and len(obj.term_list) == 0:
+            continue
+        if isinstance(obj, TensorProductSum) and (obj.term_list is None or len(obj.term_list) == 0):
+            continue
+        if obj.colors() > 9:
+            raise ValueError("Cannot display labelled trees with more than 9 different colors.")
 
     if use_plt is not None:
         warnings.warn("use_plt is deprecated and ignored. Output is now SVG.",
@@ -424,7 +462,7 @@ def display(obj: Union[Tree, Forest, ForestSum, TensorProductSum,
         warnings.warn("fig_size is deprecated and ignored. SVG auto-sizes.",
                        DeprecationWarning, stacklevel=2)
 
-    svg = _to_svg(obj, scale=scale, rationalise=rationalise)
+    svg = _to_svg(*objects, scale=scale, rationalise=rationalise)
 
     if file_name is not None:
         with open(file_name + '.svg', 'w', encoding='utf-8') as fh:
