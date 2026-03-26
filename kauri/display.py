@@ -24,19 +24,19 @@ from .trees import (Tree, ForestSum, Forest, TensorProductSum,
 from .utils import _branch_level_sequences, _str
 
 # ── Configuration constants ──────────────────────────────────────────────
-NODE_RADIUS = 3.5
-EDGE_WIDTH = 1.2
+NODE_RADIUS = 4
+EDGE_WIDTH = 1.5
 LEVEL_SPACING = 20
 SIBLING_GAP = 10
-TREE_GAP = 12
+TREE_GAP = 5
 TERM_GAP = 18
-COEFF_GAP = 5
-TENSOR_GAP = 10
-DISPLAY_GAP = 35
-FONT_SIZE = 11
+COEFF_GAP = 6
+TENSOR_GAP = 14
+DISPLAY_GAP = 20
+FONT_SIZE = 14
 PADDING = 8
 CHAR_WIDTH_FACTOR = 0.6   # estimated character width as fraction of font size
-NODE_STROKE_WIDTH = 0.8
+NODE_STROKE_WIDTH = 1.0
 
 COLORS = ['black',
           'firebrick',
