@@ -6,8 +6,15 @@
   </picture>
 </p>
 
-Kauri is a Python package for symbolic and algebraic manipulation of rooted trees,
-often used in the study of B-series, Runge-Kutta methods, and backward error analysis. It implements Hopf algebraic structures and provides tools for symbolic computation and visualization.
+<h2 align="center">Kauri</h2>
+
+![PyPI - Version](https://img.shields.io/pypi/v/kauri)
+![PyPI - Downloads](https://img.shields.io/pypi/dm/kauri)
+![CI - Test](https://github.com/daniil-shmelev/kauri/actions/workflows/tests.yml/badge.svg)
+![Read the Docs](https://img.shields.io/readthedocs/kauri)
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+
+Kauri is a Python package for symbolic and algebraic manipulation of rooted trees, with applications to B-series, Runge-Kutta methods, and backward error analysis. It implements multiple Hopf algebraic structures on both non-planar and planar rooted trees, and provides tools for symbolic computation, visualization, and numerical integration.
 
 ## Installation
 
@@ -19,21 +26,41 @@ pip install kauri
 
 Full documentation is available at [https://kauri.readthedocs.io](https://kauri.readthedocs.io)
 
-## Functionalities
+## Features
 
-The main goal of the kauri package is to provide implementations of:
+### Hopf algebras
 
-- The Butcher-Connes-Kreimer (BCK) Hopf algebra of (un)labelled non-planar rooted trees [[Connes & Kreimer, 1999](#reference)], 
-used for the analysis of B-series and Runge-Kutta schemes
-- The Calaque, Ebrahimi-Fard and Manchon (CEM) Hopf algebra [[Calaque, Ebrahimi-Fard & Manchon, 2011](#reference)], 
-used for backward error analysis of B-series and Runge-Kutta schemes
-- Evaluation and manipulation of Runge-Kutta schemes, including symbolic expressions for elementary weights functions
-and order conditions
-- Evaluation and symbolic manipulation of truncated B-series over unlabelled trees.
+| Algebra | Non-planar | Planar |
+|---------|-----------|--------|
+| Butcher-Connes-Kreimer (BCK) | `kauri.bck` | `kauri.pbck` |
+| Grossman-Larson (GL) | `kauri.gl` | `kauri.pgl` |
+| Calaque-Ebrahimi-Fard-Manchon (CEM) | `kauri.cem` | -- |
 
-## Simple Examples
+Each algebra provides: `coproduct`, `counit`, `antipode`, `map_product`, `map_power`.
 
-### Unlabelled BCK coproduct
+### Tree types
+
+| Non-planar (commutative) | Planar (noncommutative) |
+|-------------------------|------------------------|
+| `Tree` | `PlanarTree` |
+| `Forest` | `OrderedForest` |
+| `ForestSum` | `ForestSum` |
+| `TensorProductSum` | `TensorProductSum` |
+
+### Additional modules
+
+- **B-series** (`BSeries`) -- symbolic and numerical manipulation of truncated B-series
+- **Runge-Kutta methods** (`RK`) -- 15+ predefined methods with order verification, composition, and numerical integration
+- **Commutator-free methods** (`CFMethod`) -- Lie group integrators with planar order theory
+- **Odd-even decomposition** (`oddeven`, `planar_oddeven`) -- symmetric splitting of characters
+- **Map algebra** (`Map`) -- BCK/CEM convolution products, composition, exp/log
+- **Tree generation** -- enumeration of non-planar, planar, and coloured trees
+- **SVG display** -- inline visualization in Jupyter notebooks
+
+## Examples
+
+### BCK coproduct
+
 ```python
 import kauri as kr
 import kauri.bck as bck
@@ -42,37 +69,68 @@ t = kr.Tree([[], [[]]])
 cp = bck.coproduct(t)
 kr.display(cp)
 ```
-Output:
 
 <picture>
-  <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/example1.png">
-  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/example1.png" width="500" alt="example1">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_bck_coproduct.svg" width="600" alt="BCK coproduct example">
 </picture>
 
 ### Labelled BCK antipode
-```python
-import kauri as kr
-import kauri.bck as bck
 
+```python
 t = kr.Tree([[[3],2],[1],0])
 s = bck.antipode(t)
 kr.display(s)
 ```
-Output:
 
 <picture>
-  <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/example2.png">
-  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/example2.png" width="500" alt="example2">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_bck_antipode.svg" width="600" alt="BCK antipode example">
+</picture>
+
+### Grossman-Larson coproduct
+
+```python
+import kauri.gl as gl
+
+t = kr.Tree([[], [[]]])
+cp = gl.coproduct(t)
+kr.display(cp)
+```
+
+<picture>
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_gl_coproduct.svg" width="700" alt="GL coproduct example">
+</picture>
+
+### Planar BCK coproduct
+
+```python
+import kauri.pbck as pbck
+
+pt = kr.PlanarTree([[], [[]]])
+cp = pbck.coproduct(pt)
+kr.display(cp)
+```
+
+<picture>
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_pbck_coproduct.svg" width="600" alt="Planar BCK coproduct example">
+</picture>
+
+### Trees of order 4
+
+```python
+for t in kr.trees_of_order(4):
+    kr.display(t)
+```
+
+<picture>
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_trees_order4.svg" width="350" alt="Trees of order 4">
 </picture>
 
 ### Runge-Kutta order conditions
-```python
-import kauri as kr
 
+```python
 t = kr.Tree([[],[]])
-print(kr.rk_order_cond(t, s = 3, explicit = True))
+print(kr.rk_order_cond(t, s=3, explicit=True))
 ```
-Output:
 ```
 a10**2*b1 + b2*(a20 + a21)**2 - 1/3
 ```
@@ -80,109 +138,46 @@ a10**2*b1 + b2*(a20 + a21)**2 - 1/3
 ### Truncated B-series of RK4
 
 ```python
-import kauri as kr
 import sympy as sp
-import numpy as np
-import matplotlib.pyplot as plt
 
 y1 = sp.symbols('y1')
 y = sp.Matrix([y1])
 f = sp.Matrix([y1 ** 2])
 
 m = kr.rk4.elementary_weights_map()
-bs = kr.BSeries(y, f, weights = m, order = 5)
+bs = kr.BSeries(y, f, weights=m, order=5)
 print(bs.series())
-
-t = np.linspace(0, 0.9, 100)
-true = [1 / (1 - x) for x in t]
-plt.plot(t, true, linestyle="--", color="black")
-plt.plot(t, [bs([1], h) for h in t], color = 'firebrick')
-plt.show()
 ```
 
-## The BCK Hopf Algebra
+### Odd-even decomposition
 
-The Butcher-Connes-Kreimer Hopf algebra of (un)labelled non-planar rooted trees [[Connes & Kreimer, 1999](#reference)], is given by
-$(\mathcal{H}, \Delta_{BCK},\mu,\varepsilon_{BCK}, \emptyset, S_{BCK})$, where<br>
-- $\mathcal{H}$ is the set of all linear combinations of forests of (un)labelled trees
-- Multiplication $\mu$ is defined as the commutative juxtaposition of trees
-- Comultiplication $\Delta_{BCK}$ is defined by
-```math
-\Delta_{BCK}(t) = t \otimes \emptyset + \emptyset \otimes t + \sum_{s \subset t} s \otimes [t\setminus s]
-```
-where the sum is over proper rooted subtrees $s$ of $t$, and $[t\setminus s]$ is the product of all branches formed when
-$s$ is erased from $t$.
-- The unit $\emptyset$ is the empty tree
-- The counit $\varepsilon_{BCK}$ is given by $\varepsilon(\tau) = 1$ if $\tau = \emptyset$ and $0$ otherwise
-- The antipode $S_{BCK}$ is defined by
-```math
-S_{BCK}(t) = -t - \sum_{s \subset t} S([t \setminus s])s, \quad S_{BCK}(\bullet) = -\bullet
+```python
+import kauri.oddeven as oddeven
+
+# The square root of the identity in BCK convolution
+sqrt_id = oddeven.id_sqrt
+
+# Verify: sqrt_id * sqrt_id == identity
+t = kr.Tree([[],[]])
+print((sqrt_id * sqrt_id)(t))  # Same as kr.ident(t)
 ```
 
-Given two maps $f,g : \mathcal{H} \to \mathcal{H}$, we define their product map by
-```math
-(f\cdot g)(\tau) = \mu \circ (f \otimes g) \circ \Delta(\tau).
-```
+### Modified equations and preprocessing
 
-## The CEM Hopf Algebra
+```python
+# Modified equation of a B-series method
+phi = kr.rk4.elementary_weights_map()
+mod_eq = phi.modified_equation()
 
-The Calaque, Ebrahimi-Fard and Manchon (CEM) [[Calaque, Ebrahimi-Fard & Manchon, 2011](#reference)] Hopf algebra
-$(\widetilde{H}, \Delta_{CEM}, \mu, \varepsilon_{CEM}, \bullet, S_{CEM})$ is defined as follows.
-
-- $\widetilde{H}$ is the space of non-empty unlabelled trees, defined as
-  $\widetilde{H} = H / J$ where $H$ is the space of unlabelled non-planar rooted trees and
-$J$ is the ideal generated by $\bullet - \emptyset$.
-- The unit is the single-node tree, $\bullet$.
-- The counit map is defined by $\varepsilon_{CEM}(\bullet) = 1$,
-  $\varepsilon_{CEM}(t) = 0$ for all $\bullet \neq t \in \widetilde{H}$.
-- Multiplication $\mu : \widetilde{H} \otimes \widetilde{H} \to \widetilde{H}$ is defined as the
-  commutative juxtaposition of two forests.
-- Comultiplication $\Delta : \widetilde{H} \to \widetilde{H} \otimes \widetilde{H}$ is defined as
-
-```math
-\Delta_{CEM}(t) = \sum_{s \subset t} s \otimes t / s
-```
-
-  where the sum runs over all possible subforests $s$ of $t$, and
-  $t / s$ is the tree obtained by contracting each connected component of
-  $s$ onto a vertex [[Calaque, Ebrahimi-Fard & Manchon, 2011](#reference)].
-- The antipode $S_{CEM}$ is defined by $S_{CEM}(\bullet) = \bullet$ and
-
-```math
-S_{CEM}(t) = -t - \sum_{t, \bullet \neq s \subset t} S_{CEM}(s) \,\, t / s.
-```
-
-## Truncated B-series
-
-Consider an ODE of the form
-```math
-\frac{dy}{ds} = f(y)
-```
-
-Given a weights function $\varphi$, the associated truncated B-Series is
-
-```math
-B_h(\varphi, y_0) := \sum_{|t| \leq n} \frac{h^{|t|}}{\sigma(t)} \varphi(t) F(t)(y_0),
-```
-
-where the sum runs over all trees of order at most $n$, $\sigma(t)$ is the symmetry factor
-of a tree, and $F(t)(y_0)$ are the elementary differentials, defined recursively on trees by:
-
-```math
-F(\emptyset) = y,
-```
-```math
-F(\bullet) = f(y),
-```
-```math
-F([t_1, t_2, \ldots, t_k])(y) = f^{(k)}(y)(F(t_1)(y), F(t_2)(y), \ldots, F(t_k)(y)).
+# Preprocessed integrator
+preprocessed = phi.preprocessed_integrator()
 ```
 
 ## Citation
 If you found this library useful in your research, please consider citing:
-```bibtex    
+```bibtex
 @misc{shmelev2025ees,
-  title={Explicit and Effectively Symmetric Runge-Kutta Methods}, 
+  title={Explicit and Effectively Symmetric Runge-Kutta Methods},
   author={Shmelev, Daniil and Ebrahimi-Fard, Kurusch and Tapia, Nikolas and Salvi, Cristopher},
   journal={arXiv:2507.21006},
   year={2025}
@@ -191,6 +186,8 @@ If you found this library useful in your research, please consider citing:
 
 ## References
 <a name="reference"></a>
-- Connes, A., & Kreimer, D. (1999). *Hopf algebras, renormalization and noncommutative geometry*. In *Quantum field theory: perspective and prospective* (pp. 59–109). Springer.
-- Calaque, D., Ebrahimi-Fard, K., & Manchon, D. (2011). Two interacting Hopf algebras of trees: A Hopf-algebraic approach to composition and substitution of B-series. Advances in Applied Mathematics, 47(2), 282–308. Elsevier.
-- Beyer, T., & Hedetniemi, S. M. (1980). *Constant time generation of rooted trees*. In *SIAM Journal on Computing 9.4* (pp. 706-712)
+- Connes, A., & Kreimer, D. (1999). *Hopf algebras, renormalization and noncommutative geometry*. In *Quantum field theory: perspective and prospective* (pp. 59-109). Springer.
+- Calaque, D., Ebrahimi-Fard, K., & Manchon, D. (2011). *Two interacting Hopf algebras of trees: A Hopf-algebraic approach to composition and substitution of B-series*. Advances in Applied Mathematics, 47(2), 282-308.
+- Grossman, R., & Larson, R. G. (1989). *Hopf-algebraic structure of families of trees*. Journal of Algebra, 126(1), 184-210.
+- Munthe-Kaas, H. Z., & Wright, W. M. (2008). *On the Hopf algebraic structure of Lie group integrators*. Foundations of Computational Mathematics, 8(2), 227-257.
+- Beyer, T., & Hedetniemi, S. M. (1980). *Constant time generation of rooted trees*. SIAM Journal on Computing, 9(4), 706-712.
