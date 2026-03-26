@@ -18,5 +18,3 @@ CEM Hopf Algebra
 .. autofunction:: coproduct
 .. autofunction:: kauri.cem.map_product
 .. autofunction:: kauri.cem.map_power
-
-.. include:: ../refs.rst

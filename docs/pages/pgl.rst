@@ -30,4 +30,3 @@ Planar Grossman--Larson Hopf Algebra
 .. autofunction:: kauri.pgl.map_product
 .. autofunction:: kauri.pgl.map_power
 
-.. include:: ../refs.rst

@@ -83,11 +83,12 @@ class Tree:
 
     :param list_repr: The nested list representation of the tree
 
-    Example usage::
+    .. kauri-exec::
 
-            t1 = Tree([[[]],[]]) # An unlabelled tree
-            t2 = Tree([[[3],1],[2],0]) # A labelled tree
-            t3 = Tree([[[3],1],[2]]) # This is the same as t2, since the missing label defaults to 0
+        t1 = kr.Tree([[[]],[]]) # An unlabelled tree
+        t2 = kr.Tree([[[3],1],[2],0]) # A labelled tree
+        t3 = kr.Tree([[[3],1],[2]]) # This is the same as t2, since the missing label defaults to 0
+        kr.display(t3)
     """
 ######################################
     list_repr: Union[tuple, list, None] = None

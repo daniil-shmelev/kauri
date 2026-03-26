@@ -19,4 +19,3 @@ Planar BCK Hopf Algebra
 .. autofunction:: kauri.pbck.map_product
 .. autofunction:: kauri.pbck.map_power
 
-.. include:: ../refs.rst

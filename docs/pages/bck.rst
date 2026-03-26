@@ -27,5 +27,3 @@ BCK Hopf Algebra
 .. autofunction:: coproduct
 .. autofunction:: kauri.bck.map_product
 .. autofunction:: kauri.bck.map_power
-
-.. include:: ../refs.rst

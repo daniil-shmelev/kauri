@@ -22,5 +22,3 @@ Colored Trees
 
 .. autofunction:: kauri.gentrees.colored_trees_of_order
 .. autofunction:: kauri.gentrees.colored_trees_up_to_order
-
-.. include:: ../../refs.rst

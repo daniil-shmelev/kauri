@@ -60,6 +60,11 @@ class KauriExecDirective(SphinxDirective):
         _disp_mod.display = _capturing_display
 
         ns = {'kauri': kauri, 'kr': kauri}
+        # Inject public symbols so docstring examples can use bare names
+        for name in getattr(kauri, '__all__', []):
+            obj = getattr(kauri, name, None)
+            if obj is not None:
+                ns[name] = obj
         stdout_buf = io.StringIO()
 
         try:

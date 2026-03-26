@@ -30,4 +30,3 @@ Grossman--Larson Hopf Algebra
 .. autofunction:: kauri.gl.map_product
 .. autofunction:: kauri.gl.map_power
 
-.. include:: ../refs.rst

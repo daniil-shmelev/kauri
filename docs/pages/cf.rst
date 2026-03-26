@@ -6,4 +6,3 @@ Commutator-Free Methods
 .. autoclass:: kauri.cf.CFMethod
    :members:
 
-.. include:: ../refs.rst

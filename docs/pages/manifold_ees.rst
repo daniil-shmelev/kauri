@@ -12,4 +12,3 @@ Manifold EES Order Conditions
 .. autofunction:: kauri.manifold_ees.mathematica_export
 .. autofunction:: kauri.manifold_ees.verify_conditions
 
-.. include:: ../refs.rst

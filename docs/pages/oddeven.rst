@@ -15,5 +15,3 @@ Odd-Even Decomposition
 .. autodata:: id_sqrt
 .. autodata:: minus
 .. autodata:: plus
-
-.. include:: ../refs.rst
