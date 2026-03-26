@@ -21,16 +21,20 @@ The ``kauri.gl`` sub-package implements the Grossman-Larson (GL) :cite:`grossman
 - The unit is the single-vertex tree :math:`\\bullet`.
 - The counit map is defined by :math:`\\varepsilon_{GL}(\\bullet) = 1`,
   :math:`\\varepsilon_{GL}(t) = 0` for all :math:`|t| > 1`.
-- The coproduct :math:`\\Delta_{GL}` splits the children of the root into all possible subsets:
-  for :math:`t = B_+(t_1, \\ldots, t_k)`,
+- The coproduct :math:`\\Delta_{GL}` is cocommutative, and splits the children of the root
+  into all possible subsets: for :math:`t = B_+(t_1, \\ldots, t_k)`,
 
   .. math::
 
       \\Delta_{GL}(t) = \\sum_{S \\subseteq \\{1,\\ldots,k\\}} B_+(t_i : i \\in S) \\otimes B_+(t_j : j \\notin S)
 
 - The product :math:`\\cdot_{GL}` (grafting) sums over all ways of attaching the children of
-  the right tree to vertices of the left tree.
-- The antipode :math:`S_{GL}` is defined recursively using the grafting product.
+  the right tree to vertices of the left tree. The product is noncommutative.
+- The antipode :math:`S_{GL}(\\bullet) = \\bullet` and
+
+  .. math::
+
+      S_{GL}(t) = -t - \\sum_{\\substack{S \\subset \\{1,\\ldots,k\\} \\\\ S \\neq \\emptyset,\\, S \\neq \\{1,\\ldots,k\\}}} S_{GL}(B_+(t_i : i \\in S)) \\cdot_{GL} B_+(t_j : j \\notin S)
 """
 
 from .gl import antipode, counit, coproduct, product, map_power, map_product

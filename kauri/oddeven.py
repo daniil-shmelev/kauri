@@ -47,16 +47,30 @@ id_sqrt.__doc__ = """
 The square root of the identity map, :math:`\\mathrm{Id}^{1/2}`. The unique
 multiplicative map such that :math:`\\mathrm{Id}^{1/2} \\cdot \\mathrm{Id}^{1/2} = \\mathrm{Id}`
 :cite:`shmelev2025ees`.
+
+**Example usage:**
+
+.. kauri-exec::
+
+    for t in kr.trees_of_order(4):
+        kr.display(t, "\\u2192", oddeven.id_sqrt(t), rationalise=True)
 """
 minus = ((sign & antipode) * ident) & id_sqrt
 minus.__doc__ = """
 The minus operation, defined by :cite:`shmelev2025ees`
 
 .. math::
-    
+
     \\tau^- = \\mu \\circ (\\overline{S} \\otimes \\mathrm{Id}) \\circ \\Delta \\circ \\mathrm{Id}^{1/2}(\\tau)
 
 where :math:`\\overline{S}(\\tau) := (-1)^{|\\tau|}S(\\tau)`.
+
+**Example usage:**
+
+.. kauri-exec::
+
+    for t in kr.trees_of_order(4):
+        kr.display(t, "\\u2192", oddeven.minus(t), rationalise=True)
 """
 plus = ident * (minus & antipode)
 plus.__doc__ = """
@@ -66,4 +80,10 @@ The plus operation, defined by :cite:`shmelev2025ees`
 
     \\tau^+ = \\mu \\circ (\\mathrm{Id} \\otimes (\\cdot)^- \\circ S) \\circ \\Delta(\\tau)
 
+**Example usage:**
+
+.. kauri-exec::
+
+    for t in kr.trees_of_order(4):
+        kr.display(t, "\\u2192", oddeven.plus(t), rationalise=True)
 """

@@ -23,8 +23,8 @@ defined as follows.
 - The unit is the single-vertex tree :math:`\\bullet`.
 - The counit map is defined by :math:`\\varepsilon_{PGL}(\\bullet) = 1`,
   :math:`\\varepsilon_{PGL}(t) = 0` for all :math:`|t| > 1`.
-- The coproduct :math:`\\Delta_{PGL}` splits the children of the root into all
-  possible subsets, preserving sibling order on both sides:
+- The coproduct :math:`\\Delta_{PGL}` is cocommutative, and splits the children of the root
+  into all possible subsets, preserving sibling order on both sides:
   for :math:`t = B_+(t_1, \\ldots, t_k)`,
 
   .. math::
@@ -32,17 +32,14 @@ defined as follows.
       \\Delta_{PGL}(t) = \\sum_{S \\subseteq \\{1,\\ldots,k\\}}
           B_+(t_i : i \\in S) \\otimes B_+(t_j : j \\notin S)
 
-- The product :math:`\\cdot_{PGL}` (planar grafting) sums over all ways of assigning
-  the children of the right tree to vertices of the left tree, appending assigned
-  branches to the right of existing children.
-- The antipode :math:`S_{PGL}` is defined recursively using the planar grafting product.
+- The product :math:`\\cdot_{PGL}` (planar grafting) sums over all ways of attaching the
+  children of the right tree to vertices of the left tree, appending assigned
+  branches to the right of existing children. The product is noncommutative.
+- The antipode :math:`S_{PGL}(\\bullet) = \\bullet` and
 
-.. note::
+  .. math::
 
-    Like the non-planar GL algebra, the planar GL algebra is cocommutative
-    (the subset-complement bijection :math:`S \\leftrightarrow S^c` makes
-    :math:`\\tau \\circ \\Delta = \\Delta`), so the antipode is an involution
-    (:math:`S^2 = \\mathrm{id}`). The product is noncommutative.
+      S_{PGL}(t) = -t - \\sum_{\\substack{S \\subset \\{1,\\ldots,k\\} \\\\ S \\neq \\emptyset,\\, S \\neq \\{1,\\ldots,k\\}}} S_{PGL}(B_+(t_i : i \\in S)) \\cdot_{PGL} B_+(t_j : j \\notin S)
 """
 
 from .pgl import antipode, counit, coproduct, product, map_power, map_product

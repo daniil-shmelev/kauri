@@ -16,26 +16,27 @@
 """
 The ``kauri.pbck`` sub-package implements the planar (ordered) Butcher-Connes-Kreimer
 Hopf algebra :cite:`munthe2008hopf`
-:math:`(H, \\Delta, \\mu, \\varepsilon, \\emptyset, S)`, defined as follows.
+:math:`(H, \\Delta_{PBCK}, \\mu, \\varepsilon_{PBCK}, \\emptyset, S_{PBCK})`, defined as follows.
 
 - :math:`H` is the set of all planar (ordered) rooted trees, where sibling order matters.
 - The unit :math:`\\emptyset` is the empty ordered forest.
-- The counit map is defined by :math:`\\varepsilon(\\emptyset) = 1`,
-  :math:`\\varepsilon(t) = 0` for all :math:`\\emptyset \\neq t \\in H`.
-- Multiplication :math:`\\mu : H \\otimes H \\to H` is the
+- The counit map is defined by :math:`\\varepsilon_{PBCK}(\\emptyset) = 1`,
+  :math:`\\varepsilon_{PBCK}(t) = 0` for all :math:`\\emptyset \\neq t \\in H`.
+- Multiplication :math:`\\mu : H \\otimes H \\to H` is defined as the
   noncommutative (ordered) concatenation of forests.
-- Comultiplication :math:`\\Delta : H \\to H \\otimes H` is defined recursively using
-  admissible cuts, preserving sibling order:
+- Comultiplication :math:`\\Delta_{PBCK} : H \\to H \\otimes H` is defined as
 
   .. math::
 
-      \\Delta(t) = t \\otimes \\emptyset + (\\mathrm{id} \\otimes B_+) \\Delta(B_-(t))
+      \\Delta_{PBCK}(t) = t \\otimes \\emptyset + \\emptyset \\otimes t + \\sum_{s \\subset t} [t \\setminus s] \\otimes s
 
-- The antipode :math:`S` is defined recursively:
+  where the sum runs over all proper rooted subtrees :math:`s` of :math:`t`, and :math:`[t \\setminus s]`
+  is the ordered forest remaining after erasing :math:`s` from :math:`t`, preserving sibling order.
+- The antipode :math:`S_{PBCK}` is defined by :math:`S_{PBCK}(\\bullet) = -\\bullet` and
 
   .. math::
 
-      S(t) = -t - \\sum_{\\text{proper}} S(\\text{branches}) \\cdot \\text{subtree}
+      S_{PBCK}(t) = -t - \\sum_{s \\subset t} S_{PBCK}([t \\setminus s]) \\, s.
 
 .. note::
 

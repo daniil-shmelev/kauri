@@ -74,8 +74,8 @@ class Map:
 
             (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta_{BCK} (t)
 
-        and negative powers are defined as :math:`f^{-n} = f^n \\circ S_{BCK}`,
-         where :math:`S_{BCK}` is the BCK antipode.
+        and negative powers are defined as :math:`f^{-n} = (f \\circ S_{BCK})^n`,
+        where :math:`S_{BCK}` is the BCK antipode.
 
         :param exponent: Exponent
         :type exponent: int

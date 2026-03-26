@@ -68,6 +68,13 @@ The square root of the identity map in the planar BCK Hopf algebra,
 :math:`\\mathrm{Id}^{1/2}`. The unique multiplicative map such that
 :math:`\\mathrm{Id}^{1/2} \\cdot \\mathrm{Id}^{1/2} = \\mathrm{Id}`
 where the product is the convolution in the planar BCK Hopf algebra.
+
+**Example usage:**
+
+.. kauri-exec::
+
+    for t in kr.planar_trees_of_order(4):
+        kr.display(t, "\\u2192", planar_oddeven.id_sqrt(t), rationalise=True)
 """
 
 
@@ -142,6 +149,13 @@ minus.__doc__ = """
 The minus (odd) part of the identity in the planar BCK Hopf algebra.
 Satisfies :math:`\\mathrm{Id}^+ \\cdot \\mathrm{Id}^- = \\mathrm{Id}`
 where :math:`\\cdot` is the planar BCK convolution product.
+
+**Example usage:**
+
+.. kauri-exec::
+
+    for t in kr.planar_trees_of_order(4):
+        kr.display(t, "\\u2192", planar_oddeven.minus(t), rationalise=True)
 """
 
 plus = Map(_planar_plus)
@@ -149,4 +163,11 @@ plus.__doc__ = """
 The plus (even) part of the identity in the planar BCK Hopf algebra.
 Satisfies :math:`\\mathrm{Id}^+ \\cdot \\mathrm{Id}^- = \\mathrm{Id}`
 where :math:`\\cdot` is the planar BCK convolution product.
+
+**Example usage:**
+
+.. kauri-exec::
+
+    for t in kr.planar_trees_of_order(4):
+        kr.display(t, "\\u2192", planar_oddeven.plus(t), rationalise=True)
 """

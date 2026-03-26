@@ -1,17 +1,20 @@
 Odd-Even Decomposition
 ========================
 
+Non-Planar
+----------
+
 .. automodule:: kauri.oddeven
 
-.. rubric:: Example: Square root of the identity map
+.. autodata:: kauri.oddeven.id_sqrt
+.. autodata:: kauri.oddeven.minus
+.. autodata:: kauri.oddeven.plus
 
-.. kauri-exec::
+Planar
+------
 
-   import kauri as kr
-   import kauri.oddeven as oddeven
-   for t in kr.trees_of_order(4):
-       print(repr(t), '->', oddeven.id_sqrt(t))
+.. automodule:: kauri.planar_oddeven
 
-.. autodata:: id_sqrt
-.. autodata:: minus
-.. autodata:: plus
+.. autodata:: kauri.planar_oddeven.id_sqrt
+.. autodata:: kauri.planar_oddeven.minus
+.. autodata:: kauri.planar_oddeven.plus

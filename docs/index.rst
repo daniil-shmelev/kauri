@@ -13,7 +13,6 @@ B-series, and Runge--Kutta methods. Install it with
 - **Core types:** :doc:`/pages/fundamentals` -- Tree, Forest, ForestSum, Maps, Display
 - **Hopf algebras:** :doc:`/pages/hopf_algebras` -- BCK, CEM, Grossman--Larson (non-planar & planar)
 - **Analysis:** :doc:`/pages/analysis` -- B-series, Runge--Kutta schemes, commutator-free methods
-- **Non-planar trees:** :doc:`/pages/non_planar` | **Planar trees:** :doc:`/pages/planar`
 
 .. toctree::
    :hidden:
@@ -23,6 +22,4 @@ B-series, and Runge--Kutta methods. Install it with
    /pages/fundamentals
    /pages/hopf_algebras
    /pages/analysis
-   /pages/non_planar
-   /pages/planar
 
