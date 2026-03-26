@@ -187,6 +187,14 @@ def map_product(f: Map, g: Map) -> Map:
 
         (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta(t)
 
+    .. note::
+
+        Both maps must be **scalar-valued** (returning numbers, not trees/forests).
+        Because the planar forest algebra is noncommutative, the convolution product
+        of algebra homomorphisms is not itself a homomorphism, so iterated convolution
+        products of tree-valued maps will not associate correctly. This limitation
+        does not affect scalar-valued maps or the non-planar (commutative) BCK algebra.
+
     :param f: f
     :type f: Map
     :param g: g
@@ -211,6 +219,11 @@ def map_product(f: Map, g: Map) -> Map:
 def map_power(f: Map, exponent: int) -> Map:
     """
     Returns the convolution power of a map in the planar BCK Hopf algebra.
+
+    .. note::
+
+        The map should be **scalar-valued** for iterated powers (exponent > 1 or < 0).
+        See :func:`map_product` for details on the noncommutative limitation.
 
     :param f: f
     :type f: Map

@@ -1449,7 +1449,7 @@ class TensorProductSum:
         """
         if _is_scalar(other):
             if other == 0:
-                return not self.term_list
+                return not self.simplify().term_list
             return NotImplemented
         if not isinstance(other, TensorProductSum):
             return NotImplemented
@@ -1468,11 +1468,11 @@ class TensorProductSum:
         :type other: TensorProductSum | int | float
         """
         if isinstance(other, TensorProductSum):
-            return TensorProductSum(self.term_list + other.term_list)
+            return TensorProductSum(self.term_list + other.term_list).simplify()
         if _is_scalar(other):
             if other == 0:
                 return self
-            return TensorProductSum(self.term_list + ((other, EMPTY_FOREST, EMPTY_FOREST),))
+            return TensorProductSum(self.term_list + ((other, EMPTY_FOREST, EMPTY_FOREST),)).simplify()
         raise TypeError("Cannot add TensorProductSum and " + str(type(other)))
 
     def __neg__(self):
@@ -1493,8 +1493,10 @@ class TensorProductSum:
             for c1, f11, f12 in self:
                 for c2, f21, f22 in other:
                     new_term_list.append((c1 * c2, f11 * f21, f12 * f22))
-            return TensorProductSum(tuple(new_term_list))
+            return TensorProductSum(tuple(new_term_list)).simplify()
         if _is_scalar(other):
+            if other == 0:
+                return TensorProductSum(())
             return TensorProductSum(tuple((other * x[0], x[1], x[2]) for x in self.term_list))
         raise TypeError("Cannot multiply TensorSum by " + str(type(other)))
 

@@ -112,7 +112,7 @@ class Map:
         if _is_scalar(other):
             self.func = lambda x: other * func_(x)
         elif isinstance(other, Map):
-            from .cem.cem import coproduct_impl as cem_coproduct
+            from .cem.cem import _coproduct_raw as cem_coproduct
             def f_(x):
                 if x.list_repr is None:
                     out = other.func(EMPTY_TREE)
