@@ -71,7 +71,7 @@ kr.display(cp)
 ```
 
 <picture>
-  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_bck_coproduct.svg" width="600" alt="BCK coproduct example">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_bck_coproduct.svg" width="495" alt="BCK coproduct example">
 </picture>
 
 ### Labelled BCK antipode
@@ -83,7 +83,7 @@ kr.display(s)
 ```
 
 <picture>
-  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_bck_antipode.svg" width="600" alt="BCK antipode example">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_bck_antipode.svg" width="558" alt="BCK antipode example">
 </picture>
 
 ### Grossman-Larson coproduct
@@ -97,7 +97,7 @@ kr.display(cp)
 ```
 
 <picture>
-  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_gl_coproduct.svg" width="700" alt="GL coproduct example">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_gl_coproduct.svg" width="266" alt="GL coproduct example">
 </picture>
 
 ### Planar BCK coproduct
@@ -111,7 +111,7 @@ kr.display(cp)
 ```
 
 <picture>
-  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_pbck_coproduct.svg" width="600" alt="Planar BCK coproduct example">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_pbck_coproduct.svg" width="495" alt="Planar BCK coproduct example">
 </picture>
 
 ### Trees of order 4
@@ -122,7 +122,7 @@ for t in kr.trees_of_order(4):
 ```
 
 <picture>
-  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_trees_order4.svg" width="350" alt="Trees of order 4">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_trees_order4.svg" width="200" alt="Trees of order 4">
 </picture>
 
 ### Runge-Kutta order conditions
