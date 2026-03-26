@@ -13,4 +13,3 @@ commutator-free methods, and related tools.
    oddeven
    cf
    manifold_ees
-   mkw

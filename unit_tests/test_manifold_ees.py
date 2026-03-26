@@ -157,5 +157,20 @@ class TestPhaseD(unittest.TestCase):
             self.assertIsNotNone(gb)
 
 
+# ── EES character verification ─────────────────────────────────────────
+
+class TestVerifyEESCharacter(unittest.TestCase):
+    def test_counit_satisfies_ees(self):
+        """The counit satisfies the EES (odd) condition up to order 5."""
+        from kauri.manifold_ees import verify_ees_character
+        counit = Map(lambda tree: 1 if tree == EMPTY_PLANAR_TREE else 0)
+        self.assertTrue(verify_ees_character(counit, 5))
+
+    def test_constant_map_fails_ees(self):
+        """A constant map violates the EES condition."""
+        from kauri.manifold_ees import verify_ees_character
+        self.assertFalse(verify_ees_character(Map(lambda tree: 1), 3))
+
+
 if __name__ == '__main__':
     unittest.main()

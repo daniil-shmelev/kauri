@@ -278,3 +278,48 @@ def verify_conditions(conditions, substitutions) -> tuple[bool, int, sympy.Expr]
         if val != 0:
             return False, i, val
     return True, -1, sympy.Integer(0)
+
+
+# ---------------------------------------------------------------------------
+# EES character verification
+# ---------------------------------------------------------------------------
+
+def verify_ees_character(phi, order: int, tol: float = 1e-10) -> bool:
+    """
+    Check whether a character satisfies the EES (odd) condition up to *order*.
+
+    Verifies :math:`(\\bar\\phi \\cdot \\phi)(\\tau) = \\varepsilon(\\tau)` for
+    all ordered trees up to *order*, where
+    :math:`\\bar\\phi(\\tau) = (-1)^{|\\tau|}\\,\\phi(\\tau)`.
+
+    :param phi: A callable mapping planar trees to scalars.
+    :param order: Maximum tree order to check.
+    :param tol: Numerical tolerance for floating-point residuals.
+    :returns: ``True`` if the condition holds for all trees up to *order*.
+    """
+    from .gentrees import planar_trees_up_to_order
+    from .trees import validate_order
+
+    validate_order(order, allow_zero=False)
+
+    def _phi_sign(tree):
+        return sympy.expand(sign_factor(tree) * sympy.sympify(phi(tree)))
+
+    def _phi(tree):
+        return sympy.sympify(phi(tree))
+
+    for tree in planar_trees_up_to_order(order):
+        if tree.list_repr is None:
+            continue
+        residual = sympy.simplify(
+            sympy.expand(_sym_coproduct_eval(tree, _phi_sign, _phi))
+        )
+        if residual == 0:
+            continue
+        try:
+            if abs(complex(residual)) < tol:
+                continue
+        except (TypeError, ValueError):
+            pass
+        return False
+    return True

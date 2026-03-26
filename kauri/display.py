@@ -378,8 +378,14 @@ def _layout_single(obj, scale, rationalise):
         w = len(obj) * fs * cw
         items = [('text', w / 2, 0, obj, fs)]
         return items, w, LEVEL_SPACING * scale
+    elif isinstance(obj, (int, float)):
+        return _layout_single(str(obj), scale, rationalise)
     else:
-        raise TypeError("Cannot display object of type " + str(type(obj)))
+        # Try converting to string as a fallback (e.g. sympy expressions)
+        try:
+            return _layout_single(str(obj), scale, rationalise)
+        except Exception:
+            raise TypeError("Cannot display object of type " + str(type(obj)))
 
 
 def _to_svg(*objects, scale=1.0, rationalise=False):
@@ -444,18 +450,19 @@ def display(*objects: Union[Tree, Forest, ForestSum, TensorProductSum,
     :param file_name: If provided, saves SVG to ``file_name.svg``
     :param rationalise: If True, rationalise float coefficients
     """
-    _VALID_TYPES = (Tree, Forest, ForestSum, TensorProductSum,
-                    PlanarTree, NoncommutativeForest, str)
+    _TREE_TYPES = (Tree, Forest, ForestSum, TensorProductSum,
+                   PlanarTree, NoncommutativeForest)
 
     if not objects:
         raise TypeError("display() requires at least one argument.")
 
     for obj in objects:
-        if not isinstance(obj, _VALID_TYPES):
-            raise TypeError("Cannot display object of type " + str(type(obj))
-                            + ". Object must be Tree, Forest, ForestSum, TensorProductSum,"
-                            + " PlanarTree, NoncommutativeForest, or str.")
-        if isinstance(obj, str):
+        if isinstance(obj, (str, int, float)):
+            continue
+        if not isinstance(obj, _TREE_TYPES):
+            # Allow anything with a __str__ method (e.g. sympy expressions)
+            if not hasattr(obj, '__str__'):
+                raise TypeError("Cannot display object of type " + str(type(obj)))
             continue
         if isinstance(obj, ForestSum) and len(obj.term_list) == 0:
             continue

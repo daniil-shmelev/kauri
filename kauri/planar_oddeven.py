@@ -14,21 +14,34 @@
 # =========================================================================
 """
 This module provides instances of ``kauri.Map`` related to the odd-even
-decomposition applied to the planar BCK Hopf algebra.
+decomposition applied to the planar BCK Hopf algebra
+:cite:`aguiar2006combinatorial`.
 
-Unlike the commutative case, the closed-form convolution expressions for
-``minus`` and ``plus`` do not transfer to the noncommutative setting.
-Instead, ``minus`` and ``plus`` are defined recursively via a grade-based
-splitting that directly constructs the factorisation
+The ``minus`` map is computed via the convolution formula
+
+.. math::
+
+    \\tau^- = \\mu \\circ (\\overline{S} \\otimes \\mathrm{Id}) \\circ
+    \\Delta(\\mathrm{Id}^{1/2}(\\tau))
+
+where :math:`\\overline{S}(\\tau) := (-1)^{|\\tau|}S(\\tau)` and the
+coproduct is extended to the :class:`~kauri.trees.ForestSum` returned by
+:math:`\\mathrm{Id}^{1/2}`.  The ``plus`` map is then derived
+recursively from the factorisation
 :math:`\\mathrm{Id} = \\mathrm{Id}^+ \\cdot \\mathrm{Id}^-` in the
-planar BCK convolution algebra.
+planar BCK convolution algebra:
+
+.. math::
+
+    \\tau^+ = \\tau - \\tau^- - \\sum_{(\\tau)}'
+    (\\tau'_{(1)})^+ \\cdot (\\tau'_{(2)})^-
 """
 
 __all__ = ['id_sqrt', 'minus', 'plus']
 
-from .trees import PlanarTree, ForestSum, ZERO_FOREST_SUM, _is_scalar
-from .pbck.pbck import coproduct_impl
-from .generic_algebra import apply_map, forest_apply, func_product
+from .trees import PlanarTree, ForestSum, TensorProductSum, ZERO_FOREST_SUM
+from .pbck.pbck import coproduct_impl, antipode_impl
+from .generic_algebra import apply_map, forest_apply, anti_forest_apply, func_product, sign_factor
 from .maps import Map
 from functools import cache
 
@@ -67,94 +80,100 @@ id_sqrt.__doc__ = """
 The square root of the identity map in the planar BCK Hopf algebra,
 :math:`\\mathrm{Id}^{1/2}`. The unique multiplicative map such that
 :math:`\\mathrm{Id}^{1/2} \\cdot \\mathrm{Id}^{1/2} = \\mathrm{Id}`
-where the product is the convolution in the planar BCK Hopf algebra.
+where the product is the convolution in the planar BCK Hopf algebra
+:cite:`aguiar2006combinatorial`.
 
 **Example usage:**
 
 .. kauri-exec::
 
-    for t in kr.planar_trees_of_order(4):
+    for t in kr.planar_trees_of_order(3):
         kr.display(t, "\\u2192", planar_oddeven.id_sqrt(t), rationalise=True)
 """
 
 
 # ---------------------------------------------------------------------------
-# Grade-splitting helpers
+# Extend PBCK coproduct to ForestSum
 # ---------------------------------------------------------------------------
 
-def _grade_filter(fs, parity):
-    """Extract terms whose forests have node count matching the given parity (0=even, 1=odd)."""
-    terms = tuple((c, f) for c, f in fs.term_list if f.nodes() % 2 == parity)
-    return ForestSum(terms) if terms else ZERO_FOREST_SUM
+def _extend_coproduct_to_forestsum(fs):
+    """Extend the PBCK coproduct from trees to a ForestSum.
+
+    For a forest f = t1·t2·…·tk the coproduct is the ordered product
+    Δ(t1)·Δ(t2)·…·Δ(tk), and this is extended linearly over the sum.
+    """
+    all_terms = []
+    for c, forest in fs.term_list:
+        cp = None
+        for tree in forest.tree_list:
+            tree_cp = coproduct_impl(tree)
+            cp = tree_cp if cp is None else cp * tree_cp
+        if cp is not None:
+            all_terms.extend((c * tc, lf, rf) for tc, lf, rf in cp.term_list)
+    return TensorProductSum(tuple(all_terms)).simplify()
 
 
 # ---------------------------------------------------------------------------
-# Recursive plus / minus via grade-splitting
+# Minus via convolution formula
 # ---------------------------------------------------------------------------
 #
-# The factorisation Id = plus * minus (planar BCK convolution) is
-# constructed recursively.  For each tree t with Δ(t) = t⊗e + e⊗t + Σ',
+#   τ⁻ = μ ∘ (S̄ ⊗ Id) ∘ Δ(Id^{1/2}(τ))
 #
-#   (plus * minus)(t) = plus(t) + minus(t) + Σ'_middle plus(left)·minus(right) = t
-#
-# so  plus(t) + minus(t) = t - Σ'_middle plus(left)·minus(right)  =: R(t)
-#
-# We split:  plus(t) = even-grade part of R(t)
-#            minus(t) = odd-grade part of R(t)
-#
-# Base case: plus(e) = minus(e) = e  (empty tree / forest).
-
-@cache
-def _remainder(t):
-    """Compute R(t) = t - Σ'_{middle Δ} plus(left)·minus(right)."""
-    fs_t = t.as_forest_sum()
-    cp = coproduct_impl(t)
-    all_middle_terms = []
-    for c, left, right_forest in cp:
-        right = right_forest[0]
-        if right.list_repr is None or right.list_repr == t.list_repr:
-            continue
-        plus_left = forest_apply(left, _planar_plus)
-        minus_right = _planar_minus(right)
-        product = c * plus_left * minus_right
-        if isinstance(product, ForestSum):
-            all_middle_terms.extend(product.term_list)
-        elif _is_scalar(product):
-            pass  # zero contribution
-        else:
-            all_middle_terms.append((1, product))
-
-    if not all_middle_terms:
-        return fs_t
-
-    return ForestSum(fs_t.term_list + tuple((-c, f) for c, f in all_middle_terms)).simplify()
-
-
-@cache
-def _planar_plus(t):
-    if t.list_repr is None:
-        return t.as_forest_sum()
-    return _grade_filter(_remainder(t), 0)
-
+# where S̄(τ) := (-1)^{|τ|} S(τ) and S is the PBCK antipode (an
+# anti-homomorphism, so we use anti_forest_apply).
 
 @cache
 def _planar_minus(t):
+    """Compute Id⁻ via the convolution formula on Δ(Id^{1/2}(t))."""
     if t.list_repr is None:
         return t.as_forest_sum()
-    return _grade_filter(_remainder(t), 1)
+    sqrt_t = _planar_id_sqrt(t)
+    cp = _extend_coproduct_to_forestsum(sqrt_t)
+    terms = []
+    for c, left, right in cp.term_list:
+        s_left = sign_factor(left) * anti_forest_apply(left, antipode_impl)
+        product = c * s_left * right.as_forest_sum()
+        terms.extend(product.term_list)
+    return ForestSum(tuple(terms)).simplify()
+
+
+# ---------------------------------------------------------------------------
+# Plus via recursive factorisation Id = Id⁺ · Id⁻
+# ---------------------------------------------------------------------------
+#
+# For each tree t with Δ(t) = t⊗e + e⊗t + Σ':
+#   plus(t) = t − minus(t) − Σ'_middle plus(left)·minus(right)
+
+@cache
+def _planar_plus(t):
+    """Derive Id⁺ recursively from the factorisation Id = Id⁺ · Id⁻."""
+    if t.list_repr is None:
+        return t.as_forest_sum()
+    fs_t = t.as_forest_sum()
+    cp = coproduct_impl(t)
+    middle_terms = []
+    for c, left, right_forest in cp.term_list:
+        right = right_forest[0]
+        if right.list_repr is None or right.list_repr == t.list_repr:
+            continue
+        product = c * forest_apply(left, _planar_plus) * _planar_minus(right)
+        middle_terms.extend(product.term_list)
+    middle = ForestSum(tuple(middle_terms))
+    return (fs_t - _planar_minus(t) - middle).simplify()
 
 
 minus = Map(_planar_minus)
 minus.__doc__ = """
 The minus (odd) part of the identity in the planar BCK Hopf algebra.
 Satisfies :math:`\\mathrm{Id}^+ \\cdot \\mathrm{Id}^- = \\mathrm{Id}`
-where :math:`\\cdot` is the planar BCK convolution product.
+where :math:`\\cdot` is the planar BCK convolution product
+:cite:`aguiar2006combinatorial`.
 
 **Example usage:**
 
 .. kauri-exec::
 
-    for t in kr.planar_trees_of_order(4):
+    for t in kr.planar_trees_of_order(3):
         kr.display(t, "\\u2192", planar_oddeven.minus(t), rationalise=True)
 """
 
@@ -162,12 +181,13 @@ plus = Map(_planar_plus)
 plus.__doc__ = """
 The plus (even) part of the identity in the planar BCK Hopf algebra.
 Satisfies :math:`\\mathrm{Id}^+ \\cdot \\mathrm{Id}^- = \\mathrm{Id}`
-where :math:`\\cdot` is the planar BCK convolution product.
+where :math:`\\cdot` is the planar BCK convolution product
+:cite:`aguiar2006combinatorial`.
 
 **Example usage:**
 
 .. kauri-exec::
 
-    for t in kr.planar_trees_of_order(4):
+    for t in kr.planar_trees_of_order(3):
         kr.display(t, "\\u2192", planar_oddeven.plus(t), rationalise=True)
 """
