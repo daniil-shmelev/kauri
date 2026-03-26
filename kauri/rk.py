@@ -726,9 +726,9 @@ class RK:
     def planar_antisymmetric_order(self, tol: float = 1e-10, limit: int = 10) -> int:
         """
         Returns the antisymmetric order of the RK scheme on ordered (planar)
-        trees, using the planar BCK Hopf algebra.
+        trees, using the NCK Hopf algebra.
 
-        Checks ``D(tau) = ((sign . Phi) *_pbck Phi)(tau) - epsilon(tau) = 0``
+        Checks ``D(tau) = ((sign . Phi) *_nck Phi)(tau) - epsilon(tau) = 0``
         for all ordered trees tau.
 
         :param tol: Tolerance for evaluating order conditions.
@@ -740,9 +740,9 @@ class RK:
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))
 
-        from .pbck.pbck import map_product as pbck_map_product
+        from .nck.nck import map_product as nck_map_product
 
         ew = self.elementary_weights_map()
         sign_ew = Map(lambda t: sign_factor(t) * ew(t))
-        m = pbck_map_product(sign_ew, ew)
+        m = nck_map_product(sign_ew, ew)
         return _check_planar_antisymmetric_order(m, tol, limit)

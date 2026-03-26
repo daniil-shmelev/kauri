@@ -14,7 +14,7 @@
 # =========================================================================
 """
 This module provides instances of ``kauri.Map`` related to the odd-even
-decomposition applied to the planar BCK Hopf algebra
+decomposition applied to the NCK Hopf algebra
 :cite:`aguiar2006combinatorial`.
 
 The ``minus`` map is computed via the convolution formula
@@ -29,7 +29,7 @@ coproduct is extended to the :class:`~kauri.trees.ForestSum` returned by
 :math:`\\mathrm{Id}^{1/2}`.  The ``plus`` map is then derived
 recursively from the factorisation
 :math:`\\mathrm{Id} = \\mathrm{Id}^+ \\cdot \\mathrm{Id}^-` in the
-planar BCK convolution algebra:
+NCK convolution algebra:
 
 .. math::
 
@@ -40,7 +40,7 @@ planar BCK convolution algebra:
 __all__ = ['id_sqrt', 'minus', 'plus']
 
 from .trees import PlanarTree, ForestSum, TensorProductSum, ZERO_FOREST_SUM
-from .pbck.pbck import coproduct_impl, antipode_impl
+from .nck.nck import coproduct_impl, antipode_impl
 from .generic_algebra import apply_map, forest_apply, anti_forest_apply, func_product, sign_factor
 from .maps import Map
 from functools import cache
@@ -77,10 +77,10 @@ def _planar_id_sqrt(t):
 
 id_sqrt = Map(_planar_id_sqrt)
 id_sqrt.__doc__ = """
-The square root of the identity map in the planar BCK Hopf algebra,
+The square root of the identity map in the NCK Hopf algebra,
 :math:`\\mathrm{Id}^{1/2}`. The unique multiplicative map such that
 :math:`\\mathrm{Id}^{1/2} \\cdot \\mathrm{Id}^{1/2} = \\mathrm{Id}`
-where the product is the convolution in the planar BCK Hopf algebra
+where the product is the convolution in the NCK Hopf algebra
 :cite:`aguiar2006combinatorial`.
 
 **Example usage:**
@@ -164,9 +164,9 @@ def _planar_plus(t):
 
 minus = Map(_planar_minus)
 minus.__doc__ = """
-The minus (odd) part of the identity in the planar BCK Hopf algebra.
+The minus (odd) part of the identity in the NCK Hopf algebra.
 Satisfies :math:`\\mathrm{Id}^+ \\cdot \\mathrm{Id}^- = \\mathrm{Id}`
-where :math:`\\cdot` is the planar BCK convolution product
+where :math:`\\cdot` is the NCK convolution product
 :cite:`aguiar2006combinatorial`.
 
 **Example usage:**
@@ -179,9 +179,9 @@ where :math:`\\cdot` is the planar BCK convolution product
 
 plus = Map(_planar_plus)
 plus.__doc__ = """
-The plus (even) part of the identity in the planar BCK Hopf algebra.
+The plus (even) part of the identity in the NCK Hopf algebra.
 Satisfies :math:`\\mathrm{Id}^+ \\cdot \\mathrm{Id}^- = \\mathrm{Id}`
-where :math:`\\cdot` is the planar BCK convolution product
+where :math:`\\cdot` is the NCK convolution product
 :cite:`aguiar2006combinatorial`.
 
 **Example usage:**

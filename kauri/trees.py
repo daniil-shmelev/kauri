@@ -2333,7 +2333,7 @@ EMPTY_ORDERED_FOREST = NoncommutativeForest((EMPTY_PLANAR_TREE,))
 
 _CROSS_TYPE_HINT = (
     "Cannot combine planar and non-planar tree types. "
-    "Use PlanarTree/OrderedForest with planar algebras (pgl, pbck), "
+    "Use PlanarTree/OrderedForest with planar algebras (pgl, nck), "
     "or Tree/Forest with non-planar algebras (gl, bck, cem)."
 )
 

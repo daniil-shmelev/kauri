@@ -6,7 +6,7 @@ exponentials *J*, explicit flag), this module:
 
 1. Creates symbolic SymPy parameters ``a[i][j]`` and ``beta[l][i]``.
 2. Computes the LB-series character ``alpha(tau)`` for each ordered tree
-   via planar BCK convolution of the individual exponential characters.
+   via NCK convolution of the individual exponential characters.
 3. Generates forward conditions ``alpha(tau) - 1/gamma(tau) = 0``.
 4. Generates antisymmetry conditions ``D(tau) = 0``.
 5. Provides a thin Groebner-basis wrapper around ``sympy.groebner``.
@@ -18,7 +18,7 @@ import sympy
 from .trees import PlanarTree, EMPTY_PLANAR_TREE
 from .gentrees import planar_trees_of_order
 from .rk import _elementary_symbolic
-from .pbck.pbck import coproduct_impl
+from .nck.nck import coproduct_impl
 from .generic_algebra import sign_factor
 
 
@@ -77,7 +77,7 @@ def _sym_coproduct_eval(tree, left_func, right_func):
 
 
 # ---------------------------------------------------------------------------
-# Symbolic LB-series character via planar BCK convolution
+# Symbolic LB-series character via NCK convolution
 # ---------------------------------------------------------------------------
 
 def symbolic_lb_character(
@@ -92,8 +92,8 @@ def symbolic_lb_character(
     """
     Compute the LB-series character ``alpha(tau)`` symbolically.
 
-    Uses the planar BCK convolution:
-    ``alpha = alpha_J *_pbck ... *_pbck alpha_1``.
+    Uses the NCK convolution:
+    ``alpha = alpha_J *_nck ... *_nck alpha_1``.
 
     :param tree: An ordered (planar) tree.
     :param a: Symbolic *s* x *s* coefficient matrix.
@@ -115,7 +115,7 @@ def symbolic_lb_character(
     if J == 1:
         return sympy.expand(ew_funcs[0](tree))
 
-    # Iteratively convolve: result = alpha_1, then alpha_2 *_pbck result, ...
+    # Iteratively convolve: result = alpha_1, then alpha_2 *_nck result, ...
     current = ew_funcs[0]
     for l in range(1, J):
         prev, outer = current, ew_funcs[l]
@@ -173,7 +173,7 @@ def antisymmetry_conditions(
     """
     Antisymmetry conditions: ``D(tau) = 0`` for all ordered trees of
     order ``1`` through ``max_order``, where
-    ``D = (sign . alpha) *_pbck alpha - epsilon``.
+    ``D = (sign . alpha) *_nck alpha - epsilon``.
     """
     # Pre-compute sign * alpha for all cached trees
     sign_alpha_cache = {

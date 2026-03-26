@@ -14,7 +14,7 @@
 # =========================================================================
 
 """
-The planar BCK Hopf algebra module
+The NCK (noncommutative Connes-Kreimer) Hopf algebra module
 """
 from functools import cache
 from itertools import product as iter_product
@@ -41,7 +41,7 @@ def counit_impl(t):
 def coproduct_impl(t):
     if not isinstance(t, PlanarTree):
         raise TypeError(
-            f"Argument to pbck.coproduct must be a PlanarTree, not {type(t)}. "
+            f"Argument to nck.coproduct must be a PlanarTree, not {type(t)}. "
             "For non-planar trees, use bck.coproduct instead.")
     if t.list_repr is None:
         return TensorProductSum(((1, EMPTY_ORDERED_FOREST, EMPTY_ORDERED_FOREST),))
@@ -117,7 +117,7 @@ def antipode_impl(t):
 
 counit = Map(counit_impl)
 counit.__doc__ = """
-The counit :math:`\\varepsilon` of the planar BCK Hopf algebra.
+The counit :math:`\\varepsilon` of the NCK Hopf algebra.
 
 :type: Map
 
@@ -125,21 +125,21 @@ The counit :math:`\\varepsilon` of the planar BCK Hopf algebra.
 
 .. kauri-exec::
 
-    print(pbck.counit(PlanarTree(None)))  # Returns 1
-    print(pbck.counit(PlanarTree([])))  # Returns 0
+    print(nck.counit(PlanarTree(None)))  # Returns 1
+    print(nck.counit(PlanarTree([])))  # Returns 0
 """
 
 def _safe_antipode(t):
     if not isinstance(t, PlanarTree):
         hint = " For non-planar trees, use bck.antipode instead." if isinstance(t, Tree) else ""
-        raise TypeError("Argument to pbck.antipode must be a PlanarTree, not " + str(type(t)) + "." + hint)
+        raise TypeError("Argument to nck.antipode must be a PlanarTree, not " + str(type(t)) + "." + hint)
     return antipode_impl(t)
 
 antipode = Map(_safe_antipode, anti=True)
 antipode.__doc__ = """
-The antipode :math:`S` of the planar BCK Hopf algebra.
+The antipode :math:`S` of the NCK Hopf algebra.
 
-Since the planar BCK algebra is noncommutative, the antipode is an
+Since the NCK algebra is noncommutative, the antipode is an
 anti-homomorphism: :math:`S(t_1 t_2) = S(t_2) S(t_1)`. This map uses
 ``anti=True`` to ensure forests are processed in reversed order.
 
@@ -150,13 +150,13 @@ anti-homomorphism: :math:`S(t_1 t_2) = S(t_2) S(t_1)`. This map uses
 .. kauri-exec::
 
     t = PlanarTree([[[]],[]])
-    kr.display(pbck.antipode(t))
+    kr.display(nck.antipode(t))
 """
 
 
 def coproduct(t: PlanarTree) -> TensorProductSum:
     """
-    The coproduct :math:`\\Delta` of the planar BCK Hopf algebra.
+    The coproduct :math:`\\Delta` of the NCK Hopf algebra.
 
     :param t: planar tree
     :type t: PlanarTree
@@ -167,17 +167,17 @@ def coproduct(t: PlanarTree) -> TensorProductSum:
     .. kauri-exec::
 
         t = PlanarTree([[[]],[]])
-        kr.display(pbck.coproduct(t))
+        kr.display(nck.coproduct(t))
     """
     if not isinstance(t, PlanarTree):
         hint = " For non-planar trees, use bck.coproduct instead." if isinstance(t, Tree) else ""
-        raise TypeError("Argument to pbck.coproduct must be a PlanarTree, not " + str(type(t)) + "." + hint)
+        raise TypeError("Argument to nck.coproduct must be a PlanarTree, not " + str(type(t)) + "." + hint)
     return coproduct_impl(t)
 
 
 def map_product(f: Map, g: Map) -> Map:
     """
-    Returns the convolution product of scalar-valued maps in the planar BCK
+    Returns the convolution product of scalar-valued maps in the NCK
     Hopf algebra, defined by
 
     .. math::
@@ -203,18 +203,18 @@ def map_product(f: Map, g: Map) -> Map:
     .. kauri-exec::
 
         f = Map(lambda x: 1 if x.list_repr is None else 0)
-        g = pbck.map_product(f, f)
+        g = nck.map_product(f, f)
         print(g(PlanarTree([[]])))
     """
     if not (isinstance(f, Map) and isinstance(g, Map)):
-        raise TypeError("Arguments in pbck.map_product must be of type Map, not "
+        raise TypeError("Arguments in nck.map_product must be of type Map, not "
                         + str(type(f)) + " and " + str(type(g)))
     return Map(lambda t: func_product(t, f.func, g.func, coproduct_impl, anti1=f.anti))
 
 
 def map_power(f: Map, exponent: int) -> Map:
     """
-    Returns the convolution power of a map in the planar BCK Hopf algebra.
+    Returns the convolution power of a map in the NCK Hopf algebra.
 
     .. note::
 
@@ -232,7 +232,7 @@ def map_power(f: Map, exponent: int) -> Map:
     .. kauri-exec::
 
         f = Map(lambda x: 1 if x.list_repr is None else x.nodes())
-        f_sq = pbck.map_power(f, 2)
+        f_sq = nck.map_power(f, 2)
         print(f_sq(PlanarTree([[]])))
     """
     if not isinstance(f, Map):

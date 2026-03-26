@@ -45,7 +45,7 @@ __all__ = [
     # Odd-even decomposition
     "id_sqrt", "minus", "plus",
     # Submodules
-    "bck", "cem", "gl", "pbck", "pgl",
+    "bck", "cem", "gl", "mkw", "nck", "pgl",
     "oddeven", "planar_oddeven",
 ]
 
@@ -72,7 +72,8 @@ from .trees import EMPTY_TREE, EMPTY_FOREST, EMPTY_ORDERED_FOREST, EMPTY_FOREST_
 import kauri.bck
 import kauri.cem
 import kauri.gl
-import kauri.pbck
+import kauri.mkw
+import kauri.nck
 import kauri.pgl
 
 from .oddeven import id_sqrt, minus, plus

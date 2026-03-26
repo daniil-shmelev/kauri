@@ -32,11 +32,13 @@ Full documentation is available at [https://kauri.readthedocs.io](https://kauri.
 
 | Algebra | Non-planar | Planar |
 |---------|-----------|--------|
-| Butcher-Connes-Kreimer (BCK) | `kauri.bck` | `kauri.pbck` |
+| Butcher-Connes-Kreimer (BCK) | `kauri.bck` | `kauri.nck` |
 | Grossman-Larson (GL) | `kauri.gl` | `kauri.pgl` |
 | Calaque-Ebrahimi-Fard-Manchon (CEM) | `kauri.cem` | -- |
+| Munthe-Kaas-Wright (MKW) | -- | `kauri.mkw` |
 
 Each algebra provides: `coproduct`, `counit`, `antipode`, `map_product`, `map_power`.
+Additionally, `kauri.mkw` provides `shuffle_product`.
 
 ### Tree types
 
@@ -100,18 +102,18 @@ kr.display(cp)
   <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_gl_coproduct.svg" width="266" alt="GL coproduct example">
 </picture>
 
-### Planar BCK coproduct
+### NCK coproduct
 
 ```python
-import kauri.pbck as pbck
+import kauri.nck as nck
 
 pt = kr.PlanarTree([[], [[]]])
-cp = pbck.coproduct(pt)
+cp = nck.coproduct(pt)
 kr.display(cp)
 ```
 
 <picture>
-  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_pbck_coproduct.svg" width="495" alt="Planar BCK coproduct example">
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/restructure/docs/_static/example_nck_coproduct.svg" width="495" alt="NCK coproduct example">
 </picture>
 
 ### Trees of order 4

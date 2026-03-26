@@ -44,7 +44,7 @@ def antipode_impl(t):
 @cache
 def coproduct_impl(t):
     if not isinstance(t, Tree):
-        hint = " Use pbck.coproduct for planar trees, or pbck.map_power/pbck.map_product for Map operations." if isinstance(t, PlanarTree) else ""
+        hint = " Use nck.coproduct for planar trees, or nck.map_power/nck.map_product for Map operations." if isinstance(t, PlanarTree) else ""
         raise TypeError("BCK coproduct expects a Tree, not " + str(type(t)) + "." + hint)
     # This follows the recursive definition of https://arxiv.org/pdf/hep-th/9808042
     # using B_- and B_+
@@ -81,7 +81,7 @@ The counit :math:`\\varepsilon_{BCK}` of the BCK Hopf algebra.
 
 def _safe_antipode(t):
     if not isinstance(t, Tree):
-        hint = " For planar trees, use pbck.antipode instead." if isinstance(t, PlanarTree) else ""
+        hint = " For planar trees, use nck.antipode instead." if isinstance(t, PlanarTree) else ""
         raise TypeError("Argument to bck.antipode must be a Tree, not " + str(type(t)) + "." + hint)
     return antipode_impl(t)
 
@@ -115,7 +115,7 @@ def coproduct(t : Tree) -> TensorProductSum:
         kr.display(bck.coproduct(t))
     """
     if not isinstance(t, Tree):
-        hint = " For planar trees, use pbck.coproduct instead." if isinstance(t, PlanarTree) else ""
+        hint = " For planar trees, use nck.coproduct instead." if isinstance(t, PlanarTree) else ""
         raise TypeError("Argument to bck.coproduct must be a Tree, not " + str(type(t)) + "." + hint)
     return coproduct_impl(t)
 

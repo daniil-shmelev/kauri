@@ -14,7 +14,7 @@
 # =========================================================================
 
 """
-Tests for the planar BCK Hopf algebra (kauri.pbck).
+Tests for the NCK (noncommutative Connes-Kreimer) Hopf algebra (kauri.nck).
 
 References:
     - H. Munthe-Kaas, W. Wright, "On the Hopf algebraic structure of Lie
@@ -26,8 +26,8 @@ References:
 import unittest
 from kauri.trees import PlanarTree, NoncommutativeForest, OrderedForest, ForestSum, EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST
 from kauri.maps import Map
-import kauri.pbck as pbck
-from kauri.pbck.pbck import _forest_sum_mul_tree
+import kauri.nck as nck
+from kauri.nck.nck import _forest_sum_mul_tree
 from kauri.generic_algebra import anti_forest_apply
 
 PT = PlanarTree
@@ -50,18 +50,18 @@ def _as_fs(t):
 class TestCounit(unittest.TestCase):
 
     def test_counit_empty(self):
-        self.assertEqual(1, pbck.counit(PT(None)))
+        self.assertEqual(1, nck.counit(PT(None)))
 
     def test_counit_nonunit(self):
         for t in nonunit_trees:
-            self.assertEqual(0, pbck.counit(t),
+            self.assertEqual(0, nck.counit(t),
                              msg=f"counit({t.list_repr}) should be 0")
 
 
 class TestCoproduct(unittest.TestCase):
 
     def test_coproduct_empty(self):
-        cp = pbck.coproduct(PT(None))
+        cp = nck.coproduct(PT(None))
         self.assertEqual(len(cp), 1)
         c, left, right = cp[0]
         self.assertEqual(c, 1)
@@ -69,7 +69,7 @@ class TestCoproduct(unittest.TestCase):
         self.assertEqual(right, EMPTY_ORDERED_FOREST)
 
     def test_coproduct_bullet(self):
-        cp = pbck.coproduct(PT([]))
+        cp = nck.coproduct(PT([]))
         # Delta(bullet) = empty tensor bullet + bullet tensor empty
         self.assertEqual(len(cp), 2)
         terms = {(left, right): c for c, left, right in cp}
@@ -77,7 +77,7 @@ class TestCoproduct(unittest.TestCase):
         self.assertEqual(terms[(PT([]).as_ordered_forest(), EMPTY_ORDERED_FOREST)], 1)
 
     def test_coproduct_chain2(self):
-        cp = pbck.coproduct(PT([[]]))
+        cp = nck.coproduct(PT([[]]))
         # Delta(/) = / tensor empty + empty tensor / + bullet tensor bullet
         terms = {}
         for c, left, right in cp:
@@ -88,7 +88,7 @@ class TestCoproduct(unittest.TestCase):
         self.assertEqual(len(terms), 3)
 
     def test_coproduct_cherry(self):
-        cp = pbck.coproduct(PT([[],[]]))
+        cp = nck.coproduct(PT([[],[]]))
         terms = {}
         for c, left, right in cp:
             terms[(left, right)] = terms.get((left, right), 0) + c
@@ -102,15 +102,15 @@ class TestCoproduct(unittest.TestCase):
 
     def test_coproduct_bullet_primitive(self):
         """Only the single-node tree is primitive in BCK: Delta(t) = empty tensor t + t tensor empty."""
-        cp = pbck.coproduct(PT([]))
+        cp = nck.coproduct(PT([]))
         self.assertEqual(len(cp), 2)
 
     def test_coproduct_planar_sensitivity(self):
         """Different planar orderings give different coproducts."""
         t1 = PT([[[]],[]])   # B+(chain2, bullet)
         t2 = PT([[],[[]]])   # B+(bullet, chain2)
-        cp1 = pbck.coproduct(t1)
-        cp2 = pbck.coproduct(t2)
+        cp1 = nck.coproduct(t1)
+        cp2 = nck.coproduct(t2)
         # Convert to comparable sets
         terms1 = {(left, right): c for c, left, right in cp1}
         terms2 = {(left, right): c for c, left, right in cp2}
@@ -119,21 +119,21 @@ class TestCoproduct(unittest.TestCase):
 
     def test_type_error(self):
         with self.assertRaises(TypeError):
-            pbck.coproduct('s')
+            nck.coproduct('s')
         with self.assertRaises(TypeError):
-            pbck.coproduct(42)
+            nck.coproduct(42)
 
 
 class TestAntipode(unittest.TestCase):
 
     def test_antipode_empty(self):
         """S(empty) = empty."""
-        self.assertEqual(_as_fs(PT(None)), pbck.antipode(PT(None)))
+        self.assertEqual(_as_fs(PT(None)), nck.antipode(PT(None)))
 
     def test_antipode_bullet(self):
         """S(bullet) = -bullet."""
         expected = ForestSum(((-1, PT([]).as_ordered_forest()),))
-        self.assertEqual(expected, pbck.antipode(PT([])))
+        self.assertEqual(expected, nck.antipode(PT([])))
 
     def test_antipode_chain2(self):
         """S(/) = -/ + bullet*bullet."""
@@ -141,7 +141,7 @@ class TestAntipode(unittest.TestCase):
             ForestSum(((-1, OrderedForest((PT([[]]),))),))
             + ForestSum(((1, OrderedForest((PT([]), PT([])))),))
         )
-        self.assertEqual(expected, pbck.antipode(PT([[]])))
+        self.assertEqual(expected, nck.antipode(PT([[]])))
 
     def test_antipode_cherry(self):
         """S(Y) = -Y + 2*bullet*/ - bullet*bullet*bullet."""
@@ -150,17 +150,17 @@ class TestAntipode(unittest.TestCase):
             + ForestSum(((2, OrderedForest((PT([]), PT([[]])))),))
             + ForestSum(((-1, OrderedForest((PT([]), PT([]), PT([])))),))
         )
-        self.assertEqual(expected, pbck.antipode(PT([[],[]])))
+        self.assertEqual(expected, nck.antipode(PT([[],[]])))
 
     def test_antipode_planar_sensitivity(self):
         """Different planar orderings produce different antipodes."""
-        s1 = pbck.antipode(PT([[[]],[]]))
-        s2 = pbck.antipode(PT([[],[[]]]))
+        s1 = nck.antipode(PT([[[]],[]]))
+        s2 = nck.antipode(PT([[],[[]]]))
         self.assertNotEqual(s1, s2)
 
     def test_type_error(self):
         with self.assertRaises(TypeError):
-            pbck.antipode('s')
+            nck.antipode('s')
 
 
 class TestAntipodeProperty(unittest.TestCase):
@@ -168,12 +168,12 @@ class TestAntipodeProperty(unittest.TestCase):
 
     def test_left_antipode(self):
         for t in nonunit_trees:
-            cp = pbck.coproduct(t)
+            cp = nck.coproduct(t)
             result = 0
             for c, left_forest, right_forest in cp:
                 right_tree = right_forest[0]
                 # S is an anti-homomorphism: S(t1*t2) = S(t2)*S(t1)
-                s_left = anti_forest_apply(left_forest, pbck.antipode.func)
+                s_left = anti_forest_apply(left_forest, nck.antipode.func)
                 if right_tree.list_repr is not None:
                     term = _forest_sum_mul_tree(s_left, right_tree)
                 else:
@@ -185,11 +185,11 @@ class TestAntipodeProperty(unittest.TestCase):
     def test_right_antipode(self):
         """Verify m(id tensor S) Delta = eta o epsilon."""
         for t in nonunit_trees:
-            cp = pbck.coproduct(t)
+            cp = nck.coproduct(t)
             result = 0
             for c, left_forest, right_forest in cp:
                 right_tree = right_forest[0]
-                s_right = pbck.antipode(right_tree)
+                s_right = nck.antipode(right_tree)
                 # Multiply left_forest * S(right)
                 # left_forest is NoncommutativeForest, s_right is ForestSum
                 # NCF * ForestSum works via NoncommutativeForest.__mul__
@@ -204,15 +204,15 @@ class TestCounitOfAntipode(unittest.TestCase):
 
     def test_counit_of_antipode(self):
         for t in trees:
-            s_t = pbck.antipode(t)
+            s_t = nck.antipode(t)
             # Apply counit linearly to S(t)
             eps_s = 0
             for c, forest in s_t.term_list:
                 val = 1
                 for tree in forest.tree_list:
-                    val *= pbck.counit(tree)
+                    val *= nck.counit(tree)
                 eps_s += c * val
-            self.assertEqual(pbck.counit(t), eps_s,
+            self.assertEqual(nck.counit(t), eps_s,
                              msg=f"eps(S({t.list_repr})) != eps({t.list_repr})")
 
 
@@ -223,14 +223,14 @@ class TestAntipodeInvolution(unittest.TestCase):
     def test_involution_single_child_trees(self):
         """S^2 = id for trees where S(t) contains only single-tree forests."""
         for t in [PT([]), PT([[]]), PT([[[]]])]:
-            s2 = pbck.antipode(pbck.antipode(t))
+            s2 = nck.antipode(nck.antipode(t))
             self.assertEqual(_as_fs(t), s2,
                              msg=f"S^2({t.list_repr}) should equal t for this tree")
 
     def test_not_involution(self):
         """S^2 != id for trees whose antipode involves multi-tree forests."""
         for t in [PT([[],[]]), PT([[[]],[]]), PT([[],[[]]])]:
-            s2 = pbck.antipode(pbck.antipode(t))
+            s2 = nck.antipode(nck.antipode(t))
             self.assertNotEqual(_as_fs(t), s2,
                                 msg=f"S^2 should NOT be id for {t.list_repr}")
 
@@ -240,8 +240,8 @@ class TestConvolution(unittest.TestCase):
     def test_counit_conv_identity(self):
         """f * epsilon = f = epsilon * f."""
         f = Map(lambda t: t.nodes() if t.list_repr is not None else 1)
-        f_eps = pbck.map_product(f, pbck.counit)
-        eps_f = pbck.map_product(pbck.counit, f)
+        f_eps = nck.map_product(f, nck.counit)
+        eps_f = nck.map_product(nck.counit, f)
         for t in trees:
             self.assertEqual(f(t), f_eps(t),
                              msg=f"(f*eps)({t.list_repr}) != f({t.list_repr})")
@@ -253,17 +253,17 @@ class TestConvolution(unittest.TestCase):
         f = Map(lambda t: t.nodes() if t.list_repr is not None else 1)
         g = Map(lambda t: (-1)**(t.nodes()) if t.list_repr is not None else 1)
         h = Map(lambda t: t.nodes()**2 if t.list_repr is not None else 1)
-        fg_h = pbck.map_product(pbck.map_product(f, g), h)
-        f_gh = pbck.map_product(f, pbck.map_product(g, h))
+        fg_h = nck.map_product(nck.map_product(f, g), h)
+        f_gh = nck.map_product(f, nck.map_product(g, h))
         for t in trees:
             self.assertEqual(fg_h(t), f_gh(t),
                              msg=f"(f*g)*h != f*(g*h) at {t.list_repr}")
 
     def test_map_product_counit(self):
         """counit * counit = counit."""
-        m = pbck.map_product(pbck.counit, pbck.counit)
+        m = nck.map_product(nck.counit, nck.counit)
         for t in trees:
-            self.assertEqual(pbck.counit(t), m(t))
+            self.assertEqual(nck.counit(t), m(t))
 
 
 class TestMapPower(unittest.TestCase):
@@ -271,37 +271,37 @@ class TestMapPower(unittest.TestCase):
     def test_map_power_counit(self):
         """counit^n = counit for all n >= 1."""
         for n in [1, 2, 3]:
-            m = pbck.map_power(pbck.counit, n)
+            m = nck.map_power(nck.counit, n)
             for t in trees:
-                self.assertEqual(pbck.counit(t), m(t),
+                self.assertEqual(nck.counit(t), m(t),
                                  msg=f"counit^{n}({t.list_repr})")
 
     def test_map_power_zero(self):
         """f^0 = counit."""
         f = Map(lambda t: t.nodes() if t.list_repr is not None else 1)
-        m = pbck.map_power(f, 0)
+        m = nck.map_power(f, 0)
         for t in trees:
-            self.assertEqual(pbck.counit(t), m(t),
+            self.assertEqual(nck.counit(t), m(t),
                              msg=f"f^0({t.list_repr}) should be counit")
 
     def test_map_power_inverse(self):
         """f^n * f^{-n} = counit."""
         f = Map(lambda t: t.nodes() if t.list_repr is not None else 1)
-        f2 = pbck.map_power(f, 2)
-        f_neg2 = pbck.map_power(f, -2)
-        m = pbck.map_product(f2, f_neg2)
+        f2 = nck.map_power(f, 2)
+        f_neg2 = nck.map_power(f, -2)
+        m = nck.map_product(f2, f_neg2)
         for t in trees:
-            self.assertEqual(pbck.counit(t), m(t),
+            self.assertEqual(nck.counit(t), m(t),
                              msg=f"f^2 * f^-2 ({t.list_repr})")
 
     def test_type_error_map_product(self):
         with self.assertRaises(TypeError):
-            pbck.map_product('a', pbck.counit)
+            nck.map_product('a', nck.counit)
         with self.assertRaises(TypeError):
-            pbck.map_product(pbck.counit, 'b')
+            nck.map_product(nck.counit, 'b')
 
     def test_type_error_map_power(self):
         with self.assertRaises(TypeError):
-            pbck.map_power('a', 2)
+            nck.map_power('a', 2)
         with self.assertRaises(TypeError):
-            pbck.map_power(pbck.counit, 2.5)
+            nck.map_power(nck.counit, 2.5)

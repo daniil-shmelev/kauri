@@ -14,37 +14,37 @@
 # =========================================================================
 
 """
-The ``kauri.pbck`` sub-package implements the planar (ordered) Butcher-Connes-Kreimer
-Hopf algebra :cite:`munthe2008hopf`
-:math:`(H, \\Delta_{PBCK}, \\mu, \\varepsilon_{PBCK}, \\emptyset, S_{PBCK})`, defined as follows.
+The ``kauri.nck`` sub-package implements the noncommutative Connes-Kreimer (NCK)
+Hopf algebra :cite:`foissy2002les`
+:math:`(H, \\Delta_{NCK}, \\mu, \\varepsilon_{NCK}, \\emptyset, S_{NCK})`, defined as follows.
 
 - :math:`H` is the set of all planar (ordered) rooted trees, where sibling order matters.
 - The unit :math:`\\emptyset` is the empty ordered forest.
-- The counit map is defined by :math:`\\varepsilon_{PBCK}(\\emptyset) = 1`,
-  :math:`\\varepsilon_{PBCK}(t) = 0` for all :math:`\\emptyset \\neq t \\in H`.
+- The counit map is defined by :math:`\\varepsilon_{NCK}(\\emptyset) = 1`,
+  :math:`\\varepsilon_{NCK}(t) = 0` for all :math:`\\emptyset \\neq t \\in H`.
 - Multiplication :math:`\\mu : H \\otimes H \\to H` is defined as the
   noncommutative (ordered) concatenation of forests.
-- Comultiplication :math:`\\Delta_{PBCK} : H \\to H \\otimes H` is defined as
+- Comultiplication :math:`\\Delta_{NCK} : H \\to H \\otimes H` is defined as
 
   .. math::
 
-      \\Delta_{PBCK}(t) = t \\otimes \\emptyset + \\emptyset \\otimes t + \\sum_{s \\subset t} [t \\setminus s] \\otimes s
+      \\Delta_{NCK}(t) = t \\otimes \\emptyset + \\emptyset \\otimes t + \\sum_{s \\subset t} [t \\setminus s] \\otimes s
 
   where the sum runs over all proper rooted subtrees :math:`s` of :math:`t`, and :math:`[t \\setminus s]`
   is the ordered forest remaining after erasing :math:`s` from :math:`t`, preserving sibling order.
-- The antipode :math:`S_{PBCK}` is defined by :math:`S_{PBCK}(\\bullet) = -\\bullet` and
+- The antipode :math:`S_{NCK}` is defined by :math:`S_{NCK}(\\bullet) = -\\bullet` and
 
   .. math::
 
-      S_{PBCK}(t) = -t - \\sum_{s \\subset t} S_{PBCK}([t \\setminus s]) \\, s.
+      S_{NCK}(t) = -t - \\sum_{s \\subset t} S_{NCK}([t \\setminus s]) \\, s.
 
 .. note::
 
-    Unlike the non-planar BCK algebra, the planar BCK algebra is neither
+    Unlike the non-planar BCK algebra, the NCK algebra is neither
     commutative nor cocommutative, so the antipode is **not** an involution
     (:math:`S^2 \\neq \\mathrm{id}` in general).
 """
 
-from .pbck import antipode, counit, coproduct, map_power, map_product
+from .nck import antipode, counit, coproduct, map_power, map_product
 
 __all__ = ['coproduct', 'counit', 'antipode', 'map_product', 'map_power']

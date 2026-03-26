@@ -349,7 +349,7 @@ def map_power(f: Map, exponent: int) -> Map:
         raise TypeError(
             "pgl.map_power with negative exponent requires a scalar-valued map. "
             "Got " + str(type(test_val)) + " for the single-vertex tree. "
-            "For tree-valued maps, use pbck.map_power instead."
+            "For tree-valued maps, use nck.map_power instead."
         )
     f_inv = _pgl_conv_inverse(f.func)
     return Map(lambda t: func_power(t, f_inv, -exponent, coproduct_impl, counit_impl, antipode_impl, singleton_reduce=True, product=_pgl_combine))

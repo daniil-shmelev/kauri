@@ -18,14 +18,14 @@ import unittest
 from kauri.trees import PlanarTree, ForestSum
 from kauri.gentrees import trees_of_order, planar_trees_of_order
 from kauri.planar_oddeven import id_sqrt, minus, plus
-import kauri.pbck as pbck
+import kauri.nck as nck
 import kauri.oddeven as oddeven
 
 
 class PlanarIdSqrtTests(unittest.TestCase):
 
     def setUp(self):
-        self.idsq = pbck.map_product(id_sqrt, id_sqrt)
+        self.idsq = nck.map_product(id_sqrt, id_sqrt)
 
     def test_id_sqrt_bullet(self):
         bullet = PlanarTree([])
@@ -53,7 +53,7 @@ class PlanarIdSqrtTests(unittest.TestCase):
 class PlanarPlusMinusTests(unittest.TestCase):
 
     def setUp(self):
-        self.pm = pbck.map_product(plus, minus)
+        self.pm = nck.map_product(plus, minus)
 
     def test_plus_times_minus_order_1(self):
         for t in planar_trees_of_order(1):

@@ -35,7 +35,7 @@ class Map:
 
     If ``anti=True``, the map is extended as an anti-homomorphism instead:
     ``f(t1 * t2 * ... * tk) = f(tk) * ... * f(t2) * f(t1)``.
-    This is required for antipodes of noncommutative Hopf algebras (e.g. PBCK, PGL).
+    This is required for antipodes of noncommutative Hopf algebras (e.g. NCK, PGL).
 
     :param func: A function taking as input a single tree and returning a scalar,
         Tree, Forest or ForestSum.

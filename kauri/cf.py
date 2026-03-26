@@ -10,9 +10,9 @@ Update rule (applied right-to-left on the manifold)::
 
     y_{n+1} = exp(h * sum_i beta_{J,i} F_i) ... exp(h * sum_i beta_{1,i} F_i) y_n
 
-The LB-series character is the ordered (planar BCK) convolution::
+The LB-series character is the ordered (NCK) convolution::
 
-    alpha = alpha_J *_pbck ... *_pbck alpha_1
+    alpha = alpha_J *_nck ... *_nck alpha_1
 
 where alpha_l is the elementary-weight character of the RK method ``(A, beta_l)``.
 BCH corrections are accounted for automatically by the noncommutative convolution.
@@ -20,7 +20,7 @@ BCH corrections are accounted for automatically by the noncommutative convolutio
 from .rk import RK, _check_planar_order, _check_planar_antisymmetric_order
 from .maps import Map
 from .generic_algebra import sign_factor
-from .pbck.pbck import map_product as pbck_map_product
+from .nck.nck import map_product as nck_map_product
 
 
 class CFMethod:
@@ -63,7 +63,7 @@ class CFMethod:
         """
         The LB-series character on ordered trees.
 
-        Computed as ``alpha_J *_pbck ... *_pbck alpha_1``.
+        Computed as ``alpha_J *_nck ... *_nck alpha_1``.
         The result is cached on first call.
 
         :rtype: Map
@@ -75,13 +75,13 @@ class CFMethod:
                     for l in range(self.J)]
         result = exp_maps[0]
         for l in range(1, self.J):
-            result = pbck_map_product(exp_maps[l], result)
+            result = nck_map_product(exp_maps[l], result)
         self._lb_character = result
         return result
 
     def symmetry_defect_map(self) -> Map:
         """
-        Symmetry defect ``D = (sign . alpha) *_pbck alpha``.
+        Symmetry defect ``D = (sign . alpha) *_nck alpha``.
 
         ``D(tau) = epsilon(tau)`` for all ``|tau| <= q`` iff the CF method
         has planar antisymmetric order >= *q*.
@@ -95,7 +95,7 @@ class CFMethod:
 
         alpha = self.lb_character()
         sign_alpha = Map(lambda t: sign_factor(t) * alpha(t))
-        self._symmetry_defect = pbck_map_product(sign_alpha, alpha)
+        self._symmetry_defect = nck_map_product(sign_alpha, alpha)
         return self._symmetry_defect
 
     def planar_order(self, tol: float = 1e-10, limit: int = 10) -> int:
