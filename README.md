@@ -183,11 +183,3 @@ If you found this library useful in your research, please consider citing:
   year={2025}
 }
 ```
-
-## References
-<a name="reference"></a>
-- Connes, A., & Kreimer, D. (1999). *Hopf algebras, renormalization and noncommutative geometry*. In *Quantum field theory: perspective and prospective* (pp. 59-109). Springer.
-- Calaque, D., Ebrahimi-Fard, K., & Manchon, D. (2011). *Two interacting Hopf algebras of trees: A Hopf-algebraic approach to composition and substitution of B-series*. Advances in Applied Mathematics, 47(2), 282-308.
-- Grossman, R., & Larson, R. G. (1989). *Hopf-algebraic structure of families of trees*. Journal of Algebra, 126(1), 184-210.
-- Munthe-Kaas, H. Z., & Wright, W. M. (2008). *On the Hopf algebraic structure of Lie group integrators*. Foundations of Computational Mathematics, 8(2), 227-257.
-- Beyer, T., & Hedetniemi, S. M. (1980). *Constant time generation of rooted trees*. SIAM Journal on Computing, 9(4), 706-712.
