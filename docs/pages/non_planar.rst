@@ -5,13 +5,16 @@ Non-planar (unordered) rooted trees treat children as a multiset — sibling ord
 does not matter, so ``Tree([[], [[]]])`` and ``Tree([[[]],[]])`` represent the
 same tree.
 
-The following pages cover non-planar tree types and generation:
+For the core types (:class:`~kauri.trees.Tree`, :class:`~kauri.trees.CommutativeForest`,
+:class:`~kauri.trees.ForestSum`, :class:`~kauri.trees.TensorProductSum`),
+see :doc:`tree_objects`.
+
+For tree generation, see :doc:`tree_generation`.
+
+Non-planar trees are also used in :doc:`maps`, :doc:`rk`, :doc:`bseries`,
+and the :doc:`hopf_algebras` (specifically :doc:`bck`, :doc:`cem`, and :doc:`gl`).
 
 .. toctree::
    :titlesonly:
 
-   non_planar/tree_objects
-   non_planar/tree_generation
-
-Non-planar trees are also used in :doc:`maps`, :doc:`rk`, :doc:`bseries`,
-and the :doc:`hopf_algebras` (specifically :doc:`bck`, :doc:`cem`, and :doc:`gl`).
+   oddeven

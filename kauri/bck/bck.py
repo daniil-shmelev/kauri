@@ -71,13 +71,12 @@ The counit :math:`\\varepsilon_{BCK}` of the BCK Hopf algebra.
 
 :type: Map
 
-Example usage::
-    
-    import kauri as kr
-    import kauri.bck as bck
+**Example usage:**
 
-    bck.counit(kr.Tree(None)) # Returns 1
-    bck.counit(kr.Tree([])) # Returns 0
+.. kauri-exec::
+
+    print(bck.counit(Tree(None)))  # Returns 1
+    print(bck.counit(Tree([])))  # Returns 0
 """
 
 def _safe_antipode(t):
@@ -92,13 +91,12 @@ The antipode :math:`S_{BCK}` of the BCK Hopf algebra.
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    import kauri as kr
-    import kauri.bck as bck
+.. kauri-exec::
 
-    t = kr.Tree([[[]],[]])
-    bck.antipode(t)
+    t = Tree([[[]],[]])
+    kr.display(bck.antipode(t))
 """
 
 def coproduct(t : Tree) -> TensorProductSum:
@@ -109,13 +107,12 @@ def coproduct(t : Tree) -> TensorProductSum:
     :type t: Tree
     :rtype: TensorProductSum
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.bck as bck
+    .. kauri-exec::
 
-        bck.coproduct(kr.Tree([])) # Returns 1 ∅ ⊗ []+1 [] ⊗ ∅
-        bck.coproduct(kr.Tree([[]])) # Returns 1 [[]] ⊗ ∅+1 ∅ ⊗ [[]]+1 [] ⊗ []
+        t = Tree([[[]],[]])
+        kr.display(bck.coproduct(t))
     """
     if not isinstance(t, Tree):
         hint = " For planar trees, use pbck.coproduct instead." if isinstance(t, PlanarTree) else ""
@@ -139,13 +136,12 @@ def map_product(f : Map, g : Map) -> Map:
     :type g: Map
     :rtype: Map
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.bck as bck
+    .. kauri-exec::
 
-        ident = kr.Map(lambda x : x)
-        counit = bck.map_product(ident, bck.antipode) # Equivalent to ident * bck.antipode
+        f = bck.map_product(ident, bck.antipode)
+        print(f(Tree([[]])))
     """
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in bck.map_product must be of type Map, not " + str(type(f)) + " and " + str(type(g)))
@@ -170,14 +166,12 @@ def map_power(f : Map, exponent : int) -> Map:
     :param exponent: exponent
     :type exponent: int
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.bck as bck
+    .. kauri-exec::
 
-        ident = kr.Map(lambda x : x)
-        S = bck.map_power(ident, -1) # antipode, equivalent to ident ** (-1)
-        ident_sq = bck.map_power(ident, 2) # identity squared, equivalent to ident ** 2
+        S = bck.map_power(ident, -1)  # antipode
+        print(S(Tree([[]])))
     """
     if not isinstance(f, Map):
         raise TypeError("f must be a Map, not " + str(type(f)))

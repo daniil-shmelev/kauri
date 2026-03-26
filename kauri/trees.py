@@ -128,12 +128,14 @@ class Tree:
         In :cite:`connes1999hopf`, this map is denoted by :math:`B_-`.
 
         :return: :math:`t_1 t_2 \\cdots t_k`
-        :rtype: Forest
+        :rtype: CommutativeForest
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[[]],[]])
-            t.unjoin() #Returns Tree([[]]) * Tree([])
+            kr.display(t, '\u2192', t.unjoin())
         """
         if self.list_repr is None:
             return EMPTY_FOREST
@@ -146,10 +148,12 @@ class Tree:
         :return: Number of nodes, :math:`|t|`
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[[]],[]])
-            t.nodes() #Returns 4
+            print(t.nodes())
         """
         return _nodes(self.unlabelled_repr)
 
@@ -161,11 +165,13 @@ class Tree:
         :return: Number of colors
         :rtype: int
 
-        Example usage::
+        **Example usage:**
 
-            Tree([]).colors() # Returns 1
-            Tree([0]).colors() # Returns 1
-            Tree([[9],1]).colors() # Returns 10
+        .. kauri-exec::
+
+            print(Tree([]).colors())
+            print(Tree([0]).colors())
+            print(Tree([[9],1]).colors())
         """
         if self.list_repr is None:
             return 0
@@ -179,10 +185,12 @@ class Tree:
         :return: Height
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[[]],[]])
-            t.height() #Returns 3
+            print(t.height())
         """
         return _height(self.unlabelled_repr)
 
@@ -193,10 +201,12 @@ class Tree:
         :return: Tree factorial, :math:`t!`
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[[]],[]])
-            t.factorial() #Returns 8
+            print(t.factorial())
         """
         return _factorial(self.unlabelled_repr)[0]
 
@@ -212,10 +222,12 @@ class Tree:
         :return: Symmetry factor, :math:`\\sigma(t)`
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[[]],[]])
-            t.sigma()
+            print(t.sigma())
         """
         return _sigma(self.unlabelled_repr)
 
@@ -237,10 +249,12 @@ class Tree:
         :return: :math:`\\alpha(t)`
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[[]],[]])
-            t.alpha()
+            print(t.alpha())
         """
         return self.beta() // self.factorial()
 
@@ -261,10 +275,12 @@ class Tree:
         :return: :math:`\\beta(t)`
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[[]],[]])
-            t.beta()
+            print(t.beta())
         """
         return math.factorial(self.nodes()) // self.sigma()
 
@@ -275,10 +291,12 @@ class Tree:
         :return: Density, :math:`t! / |t|!`
         :rtype: float
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[[]],[]])
-            t.density() #Returns 1/3
+            print(t.density())
         """
         return self.factorial() / math.factorial(self.nodes())
 
@@ -288,11 +306,6 @@ class Tree:
 
         :return: Signed tree, :math:`(-1)^{|t|} t`
         :rtype: ForestSum
-
-        Example usage::
-
-            t = Tree([[[]],[]])
-            t.sign()
         """
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
@@ -307,9 +320,12 @@ class Tree:
 
         :param other: A scalar, Tree, Forest or ForestSum
 
-        Example usage::
+        **Example usage:**
 
-            t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
+        .. kauri-exec::
+
+            t = 2 * Tree([[]]) * CommutativeForest([Tree([]), Tree([[],[]])])
+            kr.display(t)
         """
         if _is_scalar(other):
             out = ForestSum(( (other,self),  ))
@@ -334,9 +350,12 @@ class Tree:
 
         :param n: Exponent, a positive integer
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[]]) ** 3
+            kr.display(t)
         """
         if not isinstance(n, int):
             raise TypeError("Exponent in Tree.__pow__ must be an int, not " + str(type(n)))
@@ -355,9 +374,12 @@ class Tree:
         :param other: A scalar, Tree, Forest or ForestSum
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
 
-            t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
+        .. kauri-exec::
+
+            t = 2 + Tree([[]]) + CommutativeForest([Tree([]), Tree([[],[]])])
+            kr.display(t)
         """
         if _is_scalar(other):
             out = ForestSum((  (1, self), (other, EMPTY_FOREST)  ))
@@ -392,11 +414,13 @@ class Tree:
         :param other: Tree, Forest or ForestSum
         :rtype: bool
 
-        Example usage::
+        **Example usage:**
 
-            Tree([[],[]]) == Tree([[],[]]).as_forest() #True
-            Tree([[],[]]) == Tree([[],[]]).as_forest_sum() #True
-            Tree([[[]],[]]) == Tree([[],[[]]]) #True
+        .. kauri-exec::
+
+            print(Tree([[],[]]) == Tree([[],[]]).as_forest())
+            print(Tree([[],[]]) == Tree([[],[]]).as_forest_sum())
+            print(Tree([[[]],[]]) == Tree([[],[[]]]))
         """
         if _is_scalar(other):
             return self.as_forest_sum() == other * EMPTY_TREE
@@ -432,10 +456,12 @@ class Tree:
         :return: Sorted list representation
         :rtype: list
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[],[[]]])
-            t.sorted_list_repr() #Returns [[[]],[]]
+            print(t.sorted_list_repr())
         """
         return _sorted_list_repr(self.list_repr)
 
@@ -448,10 +474,12 @@ class Tree:
         :return: Level sequence
         :rtype: list
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[[]],[]])
-            t.level_sequence() #Returns [0, 1, 2, 1]
+            print(t.level_sequence())
         """
         return _list_repr_to_level_sequence(self.unlabelled_repr)
 
@@ -462,10 +490,12 @@ class Tree:
         :return: Sorted tree
         :rtype: Tree
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = Tree([[],[[]]])
-            t.sorted() #Returns Tree([[[]],[]])
+            kr.display(t, '\u2192', t.sorted())
         """
         return Tree(self.sorted_list_repr())
 
@@ -475,29 +505,31 @@ class Tree:
 
     def as_forest(self) -> 'Forest':
         """
-        Returns the tree t as a forest. Equivalent to Forest([t]).
+        Returns the tree t as a forest. Equivalent to ``CommutativeForest([t])``.
 
         :return: Tree as a forest
-        :rtype: Forest
+        :rtype: CommutativeForest
 
-        Example usage::
+        **Example usage:**
 
-            t = Tree([[],[[]]])
-            t.as_forest() #Returns Forest([Tree([[[]],[]])])
+        .. code-block:: python
+
+            >>> Tree([[],[[]]]).as_forest()
         """
         return Forest((self,))
 
     def as_forest_sum(self) -> 'ForestSum':
         """
-        Returns the tree t as a forest sum. Equivalent to ForestSum([Forest([t])]).
+        Returns the tree t as a forest sum. Equivalent to ``ForestSum([CommutativeForest([t])])``.
 
         :return: Tree as a forest sum
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
 
-            t = Tree([[],[[]]])
-            t.as_forest_sum() #Returns ForestSum([Forest([Tree([[[]],[]])])])
+        .. code-block:: python
+
+            >>> Tree([[],[[]]]).as_forest_sum()
         """
         return ForestSum(( (1, self), ))
 
@@ -509,10 +541,12 @@ class Tree:
         :return: Next tree
         :rtype: Tree
 
-        Example usage::
+        **Example usage:**
 
-                t = Tree([[],[]])
-                next(t) # returns Tree([[[[]]]])
+        .. kauri-exec::
+
+            t = Tree([[],[]])
+            kr.display(t, '\u2192', next(t))
         """
         if self._max_color > 0:
             warnings.warn("Calling next() on a labelled tree will ignore the labelling.")
@@ -532,9 +566,12 @@ class Tree:
         :return: Tensor product
         :rtype: TensorProductSum
 
-        Example usage::
+        **Example usage:**
 
-            Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
+        .. kauri-exec::
+
+            t = Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]]))
+            kr.display(t)
         """
         if _is_scalar(other):
             return TensorProductSum(( (other, self.as_forest(), EMPTY_FOREST), ))
@@ -551,9 +588,12 @@ class Tree:
         """
         Returns the unlabelled version of the tree.
 
-        Example usage::
+        **Example usage:**
 
-            Tree([[[3],1],[2],0]).unlabelled() # Returns Tree([[[]],[]])
+        .. kauri-exec::
+
+            t = Tree([[[3],1],[2],0])
+            kr.display(t, '\u2192', t.unlabelled())
         """
         return Tree(self.unlabelled_repr)
 
@@ -569,13 +609,15 @@ class CommutativeForest:
 
     :param tree_list: A list of trees contained in the forest
 
-    Example usage::
+    **Example usage:**
 
-            t1 = Tree([])
-            t2 = Tree([[]])
-            t3 = Tree([[[]],[]])
+    .. kauri-exec::
 
-            f = CommutativeForest([t1,t2,t3])
+        t1 = Tree([])
+        t2 = Tree([[]])
+        t3 = Tree([[[]],[]])
+        f = CommutativeForest([t1,t2,t3])
+        kr.display(f)
     """
 ######################################
     tree_list : Union[tuple, list] = tuple()
@@ -599,12 +641,14 @@ class CommutativeForest:
         Simplify the forest by removing redundant empty trees.
 
         :return: self
-        :rtype: Forest
+        :rtype: CommutativeForest
 
-        Example usage::
+        **Example usage:**
 
-            f = Tree([[],[[]]]) * Tree(None)
-            f.simplify() #Returns Tree([[],[[]]])
+        .. kauri-exec::
+
+            f1 = Tree([[],[[]]]) * Tree(None)
+            f2 = f1.simplify() # Tree([[],[[]]])
         """
         if len(self.tree_list) <= 1:
             return self
@@ -644,10 +688,12 @@ class CommutativeForest:
         :return: :math:`[t_1, t_2, \\cdots, t_k]`
         :rtype: Tree
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             f = Tree([]) * Tree([[]])
-            f.join() #Returns Tree([[],[[]]])
+            kr.display(f, '\u2192', f.join())
         """
         if not isinstance(root_color, int):
             raise TypeError("root_color must be int, not " + str(type(root_color)))
@@ -664,10 +710,12 @@ class CommutativeForest:
         :return: Number of nodes
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             f = Tree([]) * Tree([[]])
-            f.nodes() #Returns 3
+            print(f.nodes())
         """
         return sum(t.nodes() for t in self.tree_list)
 
@@ -679,9 +727,11 @@ class CommutativeForest:
         :return: Number of colors
         :rtype: int
 
-        Example usage::
+        **Example usage:**
 
-            (Tree([[9],0]) * Tree([3])).colors() # Returns 10
+        .. kauri-exec::
+
+            print((Tree([[9],0]) * Tree([3])).colors())
         """
         return max((t.colors() for t in self.tree_list), default=0)
 
@@ -693,10 +743,12 @@ class CommutativeForest:
         :return: Number of trees
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             f = Tree([]) * Tree([[]])
-            f.num_trees() #Returns 2
+            print(f.num_trees())
         """
         return len(self.tree_list)
 
@@ -708,10 +760,12 @@ class CommutativeForest:
         :return: :math:`\\prod_{i=1}^k t_i!`
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             f = Tree([[]]) * Tree([[],[]])
-            f.factorial() #Returns 6
+            print(f.factorial())
         """
         return math.prod(x.factorial() for x in self.tree_list)
 
@@ -722,13 +776,14 @@ class CommutativeForest:
         :return: Signed forest, :math:`(-1)^{|f|} f`
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             f1 = Tree([[]]) * Tree([[],[]])
-            f1.sign() #Returns - Tree([[]]) * Tree([[],[]])
-
-            f1 = Tree([]) * Tree([[],[]])
-            f1.sign() #Returns Tree([]) * Tree([[],[]])
+            kr.display(f1.sign())
+            f2 = Tree([]) * Tree([[],[]])
+            kr.display(f2.sign())
         """
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
@@ -743,9 +798,12 @@ class CommutativeForest:
 
         :param other: A scalar, Tree, Forest or ForestSum
 
-        Example usage::
+        **Example usage:**
 
-            t = 2 * Tree([[]]) * Forest([Tree([]), Tree([[],[]])])
+        .. kauri-exec::
+
+            t = 2 * Tree([[]]) * CommutativeForest([Tree([]), Tree([[],[]])])
+            kr.display(t)
         """
         if _is_scalar(other):
             out = ForestSum(( (other, self), ))
@@ -770,9 +828,12 @@ class CommutativeForest:
 
         :param n: Exponent, a positive integer
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = ( Tree([]) * Tree([[]]) ) ** 3
+            kr.display(t)
         """
         if not isinstance(n, int):
             raise TypeError("Exponent in Forest.__pow__ must be an int, not " + str(type(n)))
@@ -790,9 +851,12 @@ class CommutativeForest:
         :param other: A scalar, Tree, Forest or ForestSum
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
 
-            t = 2 + Tree([[]]) + Forest([Tree([]), Tree([[],[]])])
+        .. kauri-exec::
+
+            t = 2 + Tree([[]]) + CommutativeForest([Tree([]), Tree([[],[]])])
+            kr.display(t)
         """
         if _is_scalar(other):
             out = ForestSum((  (1, self), (other, EMPTY_FOREST)  ))
@@ -833,16 +897,17 @@ class CommutativeForest:
         :param other: Forest or ForestSum
         :rtype: bool
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t1 = Tree([])
             t2 = Tree([[]])
             t3 = Tree([[[]],[]])
             t4 = Tree([[],[[]]])
-
-            t1 * t2 == t2 * t1 #True
-            t1 * t2 == (t1 * t2).as_forest_sum() #True
-            t1 * t3 == t1 * t4 #True
+            print(t1 * t2 == t2 * t1)
+            print(t1 * t2 == (t1 * t2).as_forest_sum())
+            print(t1 * t3 == t1 * t4)
         """
         if _is_scalar(other):
             return self.as_forest_sum() == other * EMPTY_TREE
@@ -861,13 +926,14 @@ class CommutativeForest:
         """
         Returns the forest f as a forest sum. Equivalent to ``ForestSum([f])``.
 
-        :return: Forest as a forest sum
+        :return: CommutativeForest as a forest sum
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
 
-            f = Tree([[],[[]]]) * Tree([[]])
-            f.as_forest_sum() #Returns ForestSum([t])
+        .. code-block:: python
+
+            >>> (Tree([[],[[]]]) * Tree([[]])).as_forest_sum()
         """
         return ForestSum(( (1,self), ))
 
@@ -879,13 +945,14 @@ class CommutativeForest:
 
         :return: Singleton-reduced forest
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             f1 = Tree([]) * Tree([[],[]])
             f2 = Tree([]) * Tree([]) * Tree([])
-
-            f1.singleton_reduced() #Returns Tree([[],[]])
-            f2.singleton_reduced() #Returns Tree([])
+            kr.display(f1, '\u2192', f1.singleton_reduced())
+            kr.display(f2, '\u2192', f2.singleton_reduced())
         """
         if self.colors() > 1:
             warnings.warn("Singleton reduced representation will not respect colorings")
@@ -906,9 +973,12 @@ class CommutativeForest:
         :return: Tensor product
         :rtype: TensorProductSum
 
-        Example usage::
+        **Example usage:**
 
-            Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
+        .. kauri-exec::
+
+            tp = Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]]))
+            kr.display(tp)
         """
         if _is_scalar(other):
             return TensorProductSum(( (other, self, EMPTY_FOREST), ))
@@ -932,20 +1002,34 @@ Forest = CommutativeForest
 @dataclass(frozen=True)
 class ForestSum:
     """
-    A linear combination of forests.
+    A linear combination of forests. Works with both non-planar
+    (:class:`CommutativeForest`) and planar (:class:`NoncommutativeForest`) forests,
+    but all terms in a single ForestSum must use the same forest type.
+
+    ``OrderedForestSum`` is an alias for ``ForestSum``.
 
     :param term_list: A list or tuple containing tuples of coefficients and
         forests representing terms of the sum. If a term contains a tree, it
         will be converted to a forest on initialisation.
 
-    Example usage::
+    **Example usage:**
 
-            t1 = Tree([])
-            t2 = Tree([[]])
-            t3 = Tree([[[]],[]])
+    .. kauri-exec::
 
-            s = ForestSum([(1, t1), (-2, t1*t2), (1, t2*t3)])
-            s == t1 - 2 * t1 * t2 + t2 * t3 #True
+        t1 = Tree([])
+        t2 = Tree([[]])
+        t3 = Tree([[[]],[]])
+        s = ForestSum([(1, t1), (-2, t1*t2), (1, t2*t3)])
+        kr.display(s)
+
+    ForestSum also works with planar trees:
+
+    .. kauri-exec::
+
+        p1 = PlanarTree([])
+        p2 = PlanarTree([[]])
+        s = ForestSum([(1, p1), (-2, p1*p2)])
+        kr.display(s)
     """
 ######################################
     term_list : Union[tuple, list] = tuple()
@@ -1011,10 +1095,12 @@ class ForestSum:
         :return: Number of nodes
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
-            f.nodes() #Returns 6
+            print(f.nodes())
         """
         return sum(f.nodes() for c, f in self.term_list)
 
@@ -1026,9 +1112,11 @@ class ForestSum:
         :return: Number of colors
         :rtype: int
 
-        Example usage::
+        **Example usage:**
 
-            (Tree([[9],0]) * Tree([3]) + Tree([2])).colors() # Returns 10
+        .. kauri-exec::
+
+            print((Tree([[9],0]) * Tree([3]) + Tree([2])).colors())
         """
         return max((f.colors() for _, f in self.term_list), default=0)
 
@@ -1040,10 +1128,12 @@ class ForestSum:
         :return: Number of trees
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
-            f.num_trees() #Returns 3
+            print(f.num_trees())
         """
         return sum(f.num_trees() for c, f in self.term_list)
 
@@ -1055,10 +1145,12 @@ class ForestSum:
         :return: Number of forests
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             f = Tree([]) * Tree([[]]) + 2 * Tree([[],[]])
-            f.num_forests() #Returns 2
+            print(f.num_forests())
         """
         return len(self.term_list)
 
@@ -1071,10 +1163,12 @@ class ForestSum:
         :return: Reduced forest sum
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
 
-            s = Tree([[],[[]]]) * Tree(None) + Tree([]) + Tree([[]]) - Tree([[]])
-            s.simplify() #Returns Tree([[],[[]]]) + Tree([])
+        .. kauri-exec::
+
+            s1 = Tree([[],[[]]]) * Tree(None) + Tree([]) + Tree([[]]) - Tree([[]])
+            s2 = s1.simplify() # Tree([[],[[]]]) + Tree([])
         """
         merged = {}
         for c, f in self.term_list:
@@ -1097,10 +1191,12 @@ class ForestSum:
         :return: :math:`\\sum_{i=1}^m c_i \\prod_{j=1}^{k_i} t_{ij}!`
         :rtype: int
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             s = Tree([[],[[]]]) * Tree([]) + Tree([[]])
-            s.factorial() #Returns 10
+            print(s.factorial())
         """
         return sum(c * f.factorial() for c,f in self.term_list)
 
@@ -1112,10 +1208,12 @@ class ForestSum:
         :return: Signed forest sum
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             s = Tree([[[]],[]]) * Tree([[]]) + 2 * Tree([])
-            s.sign() #Returns Tree([[[]],[]]) * Tree([[]]) - 2 * Tree([])
+            kr.display(s.sign())
         """
         return ForestSum(tuple((-c if f.nodes() % 2 else c, f) for c,f in self.term_list))
 
@@ -1126,9 +1224,12 @@ class ForestSum:
         :param other: A scalar, Tree, Forest or ForestSum
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
 
-            t = 2 * Tree([[]]) * ForestSum([Tree([]), Tree([[],[]])], [1, -2])
+        .. kauri-exec::
+
+            s = ForestSum([(1, Tree([])), (-2, Tree([[],[]]))])
+            kr.display(2 * Tree([[]]) * s)
         """
         return self._mul_impl(other, reverse=False)
 
@@ -1162,9 +1263,12 @@ class ForestSum:
         :param n: Exponent, a positive integer
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t = ( Tree([]) * Tree([[]]) + Tree([[],[]]) ) ** 3
+            kr.display(t)
         """
         if not isinstance(n, int):
             raise TypeError("Exponent in ForestSum.__pow__ must be an int, not " + str(type(n)))
@@ -1188,9 +1292,12 @@ class ForestSum:
         :param other: A scalar, Tree, Forest or ForestSum
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
 
-            t = 2 + Tree([[]]) + ForestSum([Tree([]), Tree([[],[]])], [1, -2])
+        .. kauri-exec::
+
+            s = ForestSum([(1, Tree([])), (-2, Tree([[],[]]))])
+            kr.display(2 + Tree([[]]) + s)
         """
         if _is_scalar(other):
             empty = EMPTY_ORDERED_FOREST if _is_planar_obj(self) else EMPTY_FOREST
@@ -1233,15 +1340,16 @@ class ForestSum:
         :param other: ForestSum
         :rtype: bool
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t1 = Tree([])
             t2 = Tree([[]])
             t3 = Tree([[[]],[]])
             t4 = Tree([[],[[]]])
-
-            t1 * t2 + t3 == t3 + t2 * t1 # True
-            t1 * t2 + t3 == t1 * t2 + t4 # True
+            print(t1 * t2 + t3 == t3 + t2 * t1)
+            print(t1 * t2 + t3 == t1 * t2 + t4)
         """
         if _is_scalar(other):
             return self.equals(other * EMPTY_TREE)
@@ -1267,10 +1375,12 @@ class ForestSum:
         :return: Singleton-reduced forest sum
         :rtype: ForestSum
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             s1 = Tree([]) * Tree([[],[]]) + Tree([]) * Tree([]) * Tree([])
-            s1.singleton_reduced() #Returns Tree([[],[]]) + Tree([])
+            kr.display(s1, '\u2192', s1.singleton_reduced())
         """
         return ForestSum(tuple((c, f.singleton_reduced()) for c, f in self.term_list))
 
@@ -1286,9 +1396,12 @@ class ForestSum:
         :return: Tensor product
         :rtype: TensorProductSum
 
-        Example usage::
+        **Example usage:**
 
-            Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]])) # Returns 1 [] ⊗ [[]]+1 [] ⊗ [] [[], []]
+        .. kauri-exec::
+
+            tp = Tree([]) @ (Tree([[]]) + Tree([]) * Tree([[],[]]))
+            kr.display(tp)
         """
         if _is_scalar(other):
             empty = EMPTY_ORDERED_FOREST if _is_planar_obj(self) else EMPTY_FOREST
@@ -1346,16 +1459,20 @@ ZERO_FOREST_SUM = ForestSum(())
 @dataclass(frozen=True)
 class TensorProductSum:
     """
-    A linear combination of tensor products of forests.
+    A linear combination of tensor products of forests. Works with both non-planar
+    (:class:`CommutativeForest`) and planar (:class:`NoncommutativeForest`) forests.
 
     :param term_list: A list of tuples representing terms in the sum.
         Tuples must be of the form `(c, f1, f2)`, where `c` is an `int`
         or `float` and `f1, f2` are Forests, representing the term
         :math:`c \\cdot (f1 \\otimes f2)`.
 
-    Example usage::
+    **Example usage:**
 
-            tp = Tree([]) @ Tree([[]]) - 2 * Tree([[],[]]) @ Tree(None)
+    .. kauri-exec::
+
+        tp = Tree([]) @ Tree([[]]) - 2 * Tree([[],[]]) @ Tree(None)
+        kr.display(tp)
     """
     term_list: Union[tuple, list, None] #(c, f1, f2)
     count : Counter = None
@@ -1391,10 +1508,12 @@ class TensorProductSum:
         :return: Reduces tensor product sum
         :rtype: TensorProductSum
 
-        Example usage::
+        **Example usage:**
 
-            tp = Tree([[],[[]]]) @ (Tree([]) * Tree(None)) + Tree([]) @ Tree([[]]) - Tree([]) @ Tree([[]])
-            tp.simplify() #Returns 1 [[], [[]]] ⊗ []
+        .. kauri-exec::
+
+            tp1 = Tree([[],[[]]]) @ (Tree([]) * Tree(None)) + Tree([]) @ Tree([[]]) - Tree([]) @ Tree([[]])
+            tp2 = tp1.simplify() # Tree([[],[[]]]) @ Tree([])
         """
         new_term_list = []
 
@@ -1423,10 +1542,12 @@ class TensorProductSum:
         :return: Singleton-reduced tensor product sum
         :rtype: TensorProductSum
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             s1 = (Tree([]) * Tree([[],[]])) @ (Tree([]) * Tree([]) * Tree([]))
-            s1.singleton_reduced() #Returns Tree([[],[]]) @ Tree([])
+            kr.display(s1, '\u2192', s1.singleton_reduced())
         """
         return TensorProductSum(tuple((c, f1.singleton_reduced(), f2.singleton_reduced()) for c, f1, f2 in self.term_list))
 
@@ -1439,16 +1560,17 @@ class TensorProductSum:
         :param other: TensorProductSum
         :rtype: bool
 
-        Example usage::
+        **Example usage:**
+
+        .. kauri-exec::
 
             t1 = Tree([])
             t2 = Tree([[]])
             t3 = Tree([[[]],[]])
             t4 = Tree([[],[[]]])
-
-            t1 @ t2 + t2 @ t3 == t2 @ t3 + t1 @ t2 # True
-            t1 @ (t2 * t3) == t1 @ (t3 * t2) # True
-            t1 @ t3 == t1 @ t4 # True
+            print(t1 @ t2 + t2 @ t3 == t2 @ t3 + t1 @ t2)
+            print(t1 @ (t2 * t3) == t1 @ (t3 * t2))
+            print(t1 @ t3 == t1 @ t4)
         """
         if _is_scalar(other):
             if other == 0:
@@ -1527,9 +1649,11 @@ class TensorProductSum:
         :return: Number of colors
         :rtype: int
 
-        Example usage::
+        **Example usage:**
 
-            (Tree([[9],0]) @ Tree([3]) + Tree([2]) @ Tree([4])).colors() # Returns 10
+        .. kauri-exec::
+
+            print((Tree([[9],0]) @ Tree([3]) + Tree([2]) @ Tree([4])).colors())
         """
         return max((max(f1.colors(), f2.colors()) for _, f1, f2 in self.term_list), default=0)
 
@@ -1538,7 +1662,21 @@ class TensorProductSum:
 @total_ordering
 @dataclass(frozen=True)
 class PlanarTree:
-    """Ordered rooted tree; sibling order is part of identity."""
+    """Ordered rooted tree; sibling order is part of identity.
+
+    A single planar (ordered) rooted tree, initialised by its list representation.
+    Unlike ``Tree``, the order of the children matters: ``PlanarTree([[],[[]]])``
+    and ``PlanarTree([[[]],[]])`` represent **different** trees.
+
+    :param list_repr: The nested list representation of the tree
+
+    .. kauri-exec::
+
+        t1 = kr.PlanarTree([[],[[]]]) # An unlabelled planar tree
+        t2 = kr.PlanarTree([[1],[[3],2],0]) # A labelled planar tree
+        t3 = kr.PlanarTree([[1],[[3],2]]) # Same as t2 (missing label defaults to 0)
+        kr.display(t1, t2, t3)
+    """
 
     list_repr: Union[tuple, list, None] = None
     unlabelled_repr = None
@@ -1554,41 +1692,119 @@ class PlanarTree:
             object.__setattr__(self, "_max_color", _get_max_color(tuple_repr))
 
     def nodes(self) -> int:
-        """Returns the number of nodes in the planar tree, :math:`|t|`."""
+        """Returns the number of nodes in the planar tree, :math:`|t|`.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t1 = PlanarTree([[],[[]]])
+            t2 = PlanarTree([[[]],[]])
+            print(t1.nodes(), t2.nodes()) # Same node count, different planar trees
+        """
         return _nodes(self.unlabelled_repr)
 
     def factorial(self) -> int:
-        """Compute the tree factorial for a planar tree. Uses the same recursion as ``Tree.factorial()``."""
+        """Compute the tree factorial for a planar tree. Uses the same recursion as ``Tree.factorial()``.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t1 = PlanarTree([[],[[]]])
+            t2 = PlanarTree([[[]],[]])
+            print(t1.factorial(), t2.factorial()) # Same factorial, different planar trees
+        """
         return _factorial(self.unlabelled_repr)[0]
 
     def sigma(self) -> int:
-        """Symmetry factor of an ordered tree — always 1 (sibling order is part of identity)."""
+        """Symmetry factor of an ordered tree — always 1 (sibling order is part of identity).
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t = PlanarTree([[],[]])
+            print(t.sigma()) # Always 1 for planar (cf. Tree([[],[]]).sigma() == 2)
+        """
         return 1
 
     def height(self) -> int:
-        """Returns the height of the tree (longest root-to-leaf path length)."""
+        """Returns the height of the tree (longest root-to-leaf path length).
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t1 = PlanarTree([[],[[]]])
+            t2 = PlanarTree([[[]],[]])
+            print(t1.height(), t2.height()) # Same height, different planar trees
+        """
         return _height(self.unlabelled_repr)
 
     def density(self) -> float:
-        """Density of the tree, :math:`t! / |t|!`."""
+        """Density of the tree, :math:`t! / |t|!`.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t1 = PlanarTree([[],[[]]])
+            t2 = PlanarTree([[[]],[]])
+            print(t1.density(), t2.density()) # Same density, different planar trees
+        """
         return self.factorial() / math.factorial(self.nodes())
 
     def alpha(self) -> int:
-        """Number of monotone labellings (up to symmetry). Since sigma=1 for planar trees, equals ``beta() / factorial()``."""
+        """Number of monotone labellings (up to symmetry). Since sigma=1 for planar trees, equals ``beta() / factorial()``.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t = PlanarTree([[],[]])
+            print(t.alpha()) # cf. Tree([[],[]]).alpha() == 1
+        """
         return self.beta() // self.factorial()
 
     def beta(self) -> int:
-        """Number of distinct labellings (up to symmetry). Since sigma=1 for planar trees, equals ``nodes()!``."""
+        """Number of distinct labellings (up to symmetry). Since sigma=1 for planar trees, equals ``nodes()!``.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t = PlanarTree([[],[]])
+            print(t.beta()) # cf. Tree([[],[]]).beta() == 3
+        """
         return math.factorial(self.nodes())
 
     def unjoin(self) -> 'NoncommutativeForest':
-        """For a tree t = [t_1, ..., t_k], returns the forest t_1 ... t_k (the B- map)."""
+        """For a tree t = [t_1, ..., t_k], returns the forest t_1 ... t_k (the B- map).
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t1 = PlanarTree([[[]],[]])
+            t2 = PlanarTree([[],[[]]])
+            kr.display(t1, '→', t1.unjoin()) # [[]],[] -- left child is taller
+            kr.display(t2, '→', t2.unjoin()) # [],[[]] -- right child is taller
+        """
         if self.list_repr is None:
             return EMPTY_ORDERED_FOREST
         return NoncommutativeForest(tuple(PlanarTree(rep) for rep in self.list_repr[:-1]))
 
     def unlabelled(self) -> 'PlanarTree':
-        """Returns the unlabelled version of the tree."""
+        """Returns the unlabelled version of the tree.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t = PlanarTree([[[3],1],[2],0])
+            kr.display(t, '→', t.unlabelled())
+        """
         return PlanarTree(self.unlabelled_repr)
 
     def as_ordered_forest(self) -> 'OrderedForest':
@@ -1612,6 +1828,20 @@ class PlanarTree:
         return hash(self.list_repr)
 
     def __eq__(self, other):
+        """Compares the tree with another object and returns true if they represent
+        the same planar tree. Unlike ``Tree.__eq__``, sibling order matters.
+
+        :param other: PlanarTree, NoncommutativeForest or ForestSum
+        :rtype: bool
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            print(PlanarTree([[],[]]) == PlanarTree([[],[]]).as_ordered_forest())
+            print(PlanarTree([[[]],[]]) == PlanarTree([[],[[]]])) # Order matters!
+            print(PlanarTree([[],[]]) == PlanarTree([[],[]]))
+        """
         if isinstance(other, PlanarTree):
             return self.list_repr == other.list_repr
         if isinstance(other, (NoncommutativeForest, ForestSum)):
@@ -1673,7 +1903,16 @@ class PlanarTree:
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
     def colors(self) -> int:
-        """Returns the number of colors/labels in a labelled planar tree."""
+        """Returns the number of colors/labels in a labelled planar tree.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            print(PlanarTree([]).colors())
+            print(PlanarTree([0]).colors())
+            print(PlanarTree([[9],1]).colors())
+        """
         if self.list_repr is None:
             return 0
         return self._max_color + 1
@@ -1690,7 +1929,17 @@ class PlanarTree:
         return _to_svg(self)
 
     def level_sequence(self) -> list:
-        """Returns the level sequence of the planar tree (root at level 0)."""
+        """Returns the level sequence of the planar tree (root at level 0).
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t1 = PlanarTree([[],[[]]])
+            t2 = PlanarTree([[[]],[]])
+            print(t1.level_sequence()) # Different sequences for
+            print(t2.level_sequence()) # different planar trees
+        """
         return _list_repr_to_level_sequence(self.unlabelled_repr)
 
     def color_sequence(self):
@@ -1698,6 +1947,20 @@ class PlanarTree:
         return _list_repr_to_color_sequence(self.list_repr)
 
     def __matmul__(self, other):
+        """Returns the tensor product of a PlanarTree and a scalar, PlanarTree,
+        NoncommutativeForest or ForestSum.
+
+        :param other: Other
+        :return: Tensor product
+        :rtype: TensorProductSum
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t = PlanarTree([]) @ (PlanarTree([[]]) + PlanarTree([]) * PlanarTree([[],[]]))
+            kr.display(t)
+        """
         if _is_scalar(other):
             return TensorProductSum(((other, self.as_ordered_forest(), EMPTY_ORDERED_FOREST),))
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
@@ -1708,7 +1971,17 @@ class PlanarTree:
 
     def sorted_list_repr(self):
         """Returns the list representation. For planar trees this is the identity
-        (sibling order is part of the tree's identity)."""
+        (sibling order is part of the tree's identity).
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t1 = PlanarTree([[],[[]]])
+            t2 = PlanarTree([[[]],[]])
+            print(t1.sorted_list_repr()) # Preserves original order (unlike Tree)
+            print(t2.sorted_list_repr())
+        """
         return self.list_repr
 
     def equals(self, other_tree):
@@ -1727,10 +2000,12 @@ class PlanarTree:
         :return: Next planar tree
         :rtype: PlanarTree
 
-        Example usage::
+        **Example usage:**
 
-                t = PlanarTree([[],[]])
-                next(t) # returns PlanarTree([[[]]])
+        .. kauri-exec::
+
+            t = PlanarTree([[],[]])
+            kr.display(t, '\u2192', next(t))
         """
         if self.list_repr is None:
             return PlanarTree([])
@@ -1748,7 +2023,20 @@ class PlanarTree:
 
 @dataclass(frozen=True)
 class NoncommutativeForest:
-    """Noncommutative forest (word) of planar trees."""
+    """Noncommutative forest (word) of planar trees.
+
+    :param tree_list: A list of planar trees contained in the forest
+
+    **Example usage:**
+
+    .. kauri-exec::
+
+        t1 = PlanarTree([])
+        t2 = PlanarTree([[]])
+        f1 = NoncommutativeForest([t1,t2])
+        f2 = NoncommutativeForest([t2,t1])
+        kr.display(f1, f2) # Order matters: these are different forests
+    """
 
     tree_list: tuple[PlanarTree, ...] = tuple()
 
@@ -1765,7 +2053,15 @@ class NoncommutativeForest:
         return self.tree_list[index]
 
     def simplify(self) -> 'NoncommutativeForest':
-        """Removes empty trees from the forest, preserving order."""
+        """Removes empty trees from the forest, preserving order.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            f1 = PlanarTree([[],[[]]]) * PlanarTree(None)
+            f2 = f1.simplify() # PlanarTree([[],[[]]])
+        """
         if len(self.tree_list) <= 1:
             return self
         filtered = tuple(tree for tree in self.tree_list if tree.list_repr is not None)
@@ -1776,15 +2072,41 @@ class NoncommutativeForest:
         return NoncommutativeForest(filtered)
 
     def nodes(self) -> int:
-        """Returns the total number of nodes in the forest."""
+        """Returns the total number of nodes in the forest.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            f = PlanarTree([]) * PlanarTree([[]])
+            print(f.nodes())
+        """
         return sum(tree.nodes() for tree in self.tree_list)
 
     def num_trees(self) -> int:
-        """Returns the number of trees in the forest."""
+        """Returns the number of trees in the forest.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            f = PlanarTree([]) * PlanarTree([[]])
+            print(f.num_trees())
+        """
         return len(self.tree_list)
 
     def singleton_reduced(self) -> 'NoncommutativeForest':
-        """Remove single-node trees from the forest, preserving order."""
+        """Remove single-node trees from the forest, preserving order.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            f1 = PlanarTree([]) * PlanarTree([[],[]])
+            f2 = PlanarTree([]) * PlanarTree([]) * PlanarTree([])
+            kr.display(f1, '\u2192', f1.singleton_reduced())
+            kr.display(f2, '\u2192', f2.singleton_reduced())
+        """
         if self.colors() > 1:
             warnings.warn("Singleton reduced representation will not respect colorings")
         out = self.simplify()
@@ -1800,7 +2122,15 @@ class NoncommutativeForest:
         return self
 
     def factorial(self) -> int:
-        """Product of tree factorials: ``prod(t.factorial() for t in self.tree_list)``."""
+        """Product of tree factorials: ``prod(t.factorial() for t in self.tree_list)``.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            f = PlanarTree([[]]) * PlanarTree([[],[]])
+            print(f.factorial())
+        """
         return math.prod(t.factorial() for t in self.tree_list)
 
     def __repr__(self):
@@ -1813,7 +2143,14 @@ class NoncommutativeForest:
         return _to_svg(self)
 
     def colors(self) -> int:
-        """Returns the maximum number of colors across all trees in the forest."""
+        """Returns the maximum number of colors across all trees in the forest.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            print((PlanarTree([[9],0]) * PlanarTree([3])).colors())
+        """
         return max((t.colors() for t in self.tree_list), default=0)
 
     def equals(self, other):
@@ -1848,12 +2185,31 @@ class NoncommutativeForest:
         return NoncommutativeForest(trees).simplify()
 
     def __mul__(self, other):
+        """Multiplies a noncommutative forest by a scalar, PlanarTree, NoncommutativeForest or ForestSum.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t1 = PlanarTree([])
+            t2 = PlanarTree([[]])
+            kr.display(t1 * t2, t2 * t1) # Noncommutative: order matters
+        """
         return self._forest_mul(other, prepend=False)
 
     def __rmul__(self, other):
         return self._forest_mul(other, prepend=True)
 
     def __pow__(self, n):
+        """Returns the n-th power of a noncommutative forest by repeating its tree list n times.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t = ( PlanarTree([]) * PlanarTree([[]]) ) ** 3
+            kr.display(t)
+        """
         if not isinstance(n, int):
             raise TypeError("Exponent must be an int, not " + str(type(n)))
         if n < 0:
@@ -1863,6 +2219,15 @@ class NoncommutativeForest:
         return NoncommutativeForest(self.tree_list * n).simplify()
 
     def __add__(self, other):
+        """Adds a noncommutative forest to a scalar, PlanarTree, NoncommutativeForest or ForestSum.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t = 2 + PlanarTree([[]]) + NoncommutativeForest([PlanarTree([]), PlanarTree([[],[[]]]) ])
+            kr.display(t)
+        """
         if _is_scalar(other):
             return ForestSum(((1, self), (other, EMPTY_ORDERED_FOREST))).simplify()
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
@@ -1885,6 +2250,18 @@ class NoncommutativeForest:
         return ForestSum(((-1, self),))
 
     def __eq__(self, other):
+        """Compares the forest with another object. Unlike CommutativeForest,
+        order matters: ``t1 * t2 != t2 * t1`` when the trees differ.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            t1 = PlanarTree([])
+            t2 = PlanarTree([[]])
+            print(t1 * t2 == t1 * t2)
+            print(t1 * t2 == t2 * t1)
+        """
         if isinstance(other, NoncommutativeForest):
             return self.tree_list == other.tree_list
         if isinstance(other, (PlanarTree, ForestSum)):
@@ -1895,10 +2272,30 @@ class NoncommutativeForest:
         return hash(self.tree_list)
 
     def sign(self):
-        """Returns the forest signed by the number of nodes, :math:`(-1)^{|f|} f`."""
+        """Returns the forest signed by the number of nodes, :math:`(-1)^{|f|} f`.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            f1 = PlanarTree([[]]) * PlanarTree([[],[]])
+            kr.display(f1.sign())
+            f2 = PlanarTree([]) * PlanarTree([[],[]])
+            kr.display(f2.sign())
+        """
         return self.as_forest_sum() if self.nodes() % 2 == 0 else -self
 
     def __matmul__(self, other):
+        """Returns the tensor product of a NoncommutativeForest and a scalar, PlanarTree,
+        NoncommutativeForest or ForestSum.
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            tp = PlanarTree([]) @ (PlanarTree([[]]) + PlanarTree([]) * PlanarTree([[],[]]))
+            kr.display(tp)
+        """
         if _is_scalar(other):
             return TensorProductSum(((other, self, EMPTY_ORDERED_FOREST),))
         if isinstance(other, (PlanarTree, NoncommutativeForest)):
@@ -1912,7 +2309,17 @@ class NoncommutativeForest:
         return ForestSum(((1, self),))
 
     def join(self, root_color=0):
-        """Joins the forest into a single planar tree by connecting all trees to a new root (the B+ map)."""
+        """Joins the forest into a single planar tree by connecting all trees to a new root (the B+ map).
+
+        **Example usage:**
+
+        .. kauri-exec::
+
+            f1 = PlanarTree([]) * PlanarTree([[]])
+            f2 = PlanarTree([[]]) * PlanarTree([])
+            kr.display(f1, '\u2192', f1.join()) # Join preserves left-to-right order
+            kr.display(f2, '\u2192', f2.join())
+        """
         children = tuple(t.list_repr for t in self.tree_list if t.list_repr is not None)
         return PlanarTree(children + (root_color,))
 

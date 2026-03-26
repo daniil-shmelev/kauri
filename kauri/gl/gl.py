@@ -229,13 +229,12 @@ The counit :math:`\\varepsilon_{GL}` of the Grossman-Larson Hopf algebra.
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    import kauri as kr
-    import kauri.gl as gl
+.. kauri-exec::
 
-    gl.counit(kr.Tree([])) # Returns 1
-    gl.counit(kr.Tree([[]])) # Returns 0
+    print(gl.counit(Tree([])))  # Returns 1
+    print(gl.counit(Tree([[]])))  # Returns 0
 """
 
 def _safe_antipode(t):
@@ -250,13 +249,12 @@ The antipode :math:`S_{GL}` of the Grossman-Larson Hopf algebra.
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    import kauri as kr
-    import kauri.gl as gl
+.. kauri-exec::
 
-    t = kr.Tree([[],[]])
-    gl.antipode(t)
+    t = Tree([[],[]])
+    kr.display(gl.antipode(t))
 """
 
 
@@ -274,13 +272,12 @@ def coproduct(t: Tree) -> TensorProductSum:
     :type t: Tree
     :rtype: TensorProductSum
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.gl as gl
+    .. kauri-exec::
 
-        gl.coproduct(kr.Tree([])) # Returns 1 [] tensor []
-        gl.coproduct(kr.Tree([[]])) # Returns 1 [] tensor [[]]+1 [[]] tensor []
+        t = Tree([[[]],[]])
+        kr.display(gl.coproduct(t))
     """
     if not isinstance(t, Tree):
         hint = " For planar trees, use pgl.coproduct instead." if isinstance(t, PlanarTree) else ""
@@ -309,12 +306,11 @@ def product(s, t):
     :type t: Tree or ForestSum
     :rtype: ForestSum
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.gl as gl
+    .. kauri-exec::
 
-        gl.product(kr.Tree([[]]), kr.Tree([[]])) # Returns 1 [[], []] + 1 [[[]]]
+        kr.display(gl.product(Tree([[]]), Tree([[]])))
     """
     if isinstance(s, Tree):
         if s.list_repr is None:
@@ -354,13 +350,13 @@ def map_product(f: Map, g: Map) -> Map:
     :type g: Map
     :rtype: Map
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.gl as gl
+    .. kauri-exec::
 
-        f = kr.Map(lambda x : 1 if len(x.list_repr) == 1 else 0)
+        f = Map(lambda x: 1 if len(x.list_repr) == 1 else 0)
         g = gl.map_product(f, f)
+        print(g(Tree([[]])))
     """
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in gl.map_product must be of type Map, not "
@@ -382,13 +378,13 @@ def map_power(f: Map, exponent: int) -> Map:
     :type exponent: int
     :rtype: Map
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.gl as gl
+    .. kauri-exec::
 
-        f = kr.Map(lambda x : 1 if len(x.list_repr) == 1 else 0)
+        f = Map(lambda x: 1 if len(x.list_repr) == 1 else 0)
         f_sq = gl.map_power(f, 2)
+        print(f_sq(Tree([[]])))
     """
     if not isinstance(f, Map):
         raise TypeError("f must be a Map, not " + str(type(f)))

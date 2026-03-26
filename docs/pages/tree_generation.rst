@@ -6,14 +6,6 @@ Tree Generation
 Unlabelled Trees
 ----------------
 
-.. rubric:: All non-planar trees of order 4
-
-.. kauri-exec::
-
-   import kauri as kr
-   for t in kr.trees_of_order(4):
-       kr.display(t)
-
 .. autofunction:: kauri.gentrees.trees_of_order
 .. autofunction:: kauri.gentrees.trees_up_to_order
 
@@ -25,14 +17,6 @@ Colored Trees
 
 Planar Trees
 ------------
-
-.. rubric:: All planar trees of order 4
-
-.. kauri-exec::
-
-   import kauri as kr
-   for t in kr.planar_trees_of_order(4):
-       kr.display(t)
 
 .. autofunction:: kauri.gentrees.planar_trees_of_order
 .. autofunction:: kauri.gentrees.planar_trees_up_to_order

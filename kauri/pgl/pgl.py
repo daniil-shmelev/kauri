@@ -195,13 +195,12 @@ The counit :math:`\\varepsilon_{PGL}` of the planar Grossman-Larson Hopf algebra
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    from kauri.trees import PlanarTree
-    import kauri.pgl as pgl
+.. kauri-exec::
 
-    pgl.counit(PlanarTree([]))    # Returns 1
-    pgl.counit(PlanarTree([[]]))  # Returns 0
+    print(pgl.counit(PlanarTree([])))  # Returns 1
+    print(pgl.counit(PlanarTree([[]])))  # Returns 0
 """
 
 def _safe_antipode(t):
@@ -220,12 +219,12 @@ anti-homomorphism: :math:`S(t_1 t_2) = S(t_2) S(t_1)`. This map uses
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    from kauri.trees import PlanarTree
-    import kauri.pgl as pgl
+.. kauri-exec::
 
-    pgl.antipode(PlanarTree([[]]))  # Returns -1 * [/]
+    t = PlanarTree([[[]],[]])
+    kr.display(pgl.antipode(t))
 """
 
 
@@ -246,13 +245,12 @@ def coproduct(t: PlanarTree) -> TensorProductSum:
     :type t: PlanarTree
     :rtype: TensorProductSum
 
-    Example usage::
+    **Example usage:**
 
-        from kauri.trees import PlanarTree
-        import kauri.pgl as pgl
+    .. kauri-exec::
 
-        pgl.coproduct(PlanarTree([]))   # bullet tensor bullet
-        pgl.coproduct(PlanarTree([[]]))  # bullet tensor / + / tensor bullet
+        t = PlanarTree([[[]],[]])
+        kr.display(pgl.coproduct(t))
     """
     if not isinstance(t, PlanarTree):
         hint = " For non-planar trees, use gl.coproduct instead." if isinstance(t, Tree) else ""
@@ -278,12 +276,11 @@ def product(s, t):
     :type t: PlanarTree or ForestSum
     :rtype: ForestSum
 
-    Example usage::
+    **Example usage:**
 
-        from kauri.trees import PlanarTree
-        import kauri.pgl as pgl
+    .. kauri-exec::
 
-        pgl.product(PlanarTree([[]]), PlanarTree([[]]))
+        kr.display(pgl.product(PlanarTree([[]]), PlanarTree([[]])))
     """
     if isinstance(s, PlanarTree):
         if s.list_repr is None:

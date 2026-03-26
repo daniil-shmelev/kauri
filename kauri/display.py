@@ -61,8 +61,11 @@ def _shift_items_x(items, offset):
         elif kind == 'edge':
             shifted.append(('edge', item[1] + offset, item[2],
                             item[3] + offset, item[4]))
+        elif kind == 'text':
+            shifted.append(('text', item[1] + offset, item[2],
+                            item[3], item[4]))
         else:
-            shifted.append(item)
+            raise ValueError("Unknown render item kind: " + repr(kind))
     return shifted
 
 
@@ -369,6 +372,12 @@ def _layout_single(obj, scale, rationalise):
             items, w, h = _layout_tree(level_seq, color_seq, 0, 0, scale)
             items = _shift_items_x(items, w / 2)
             return items, w, h
+    elif isinstance(obj, str):
+        fs = FONT_SIZE * scale
+        cw = CHAR_WIDTH_FACTOR
+        w = len(obj) * fs * cw
+        items = [('text', w / 2, 0, obj, fs)]
+        return items, w, LEVEL_SPACING * scale
     else:
         raise TypeError("Cannot display object of type " + str(type(obj)))
 
@@ -415,27 +424,28 @@ def _in_jupyter():
 # ── Public API ───────────────────────────────────────────────────────────
 
 def display(*objects: Union[Tree, Forest, ForestSum, TensorProductSum,
-                           PlanarTree, NoncommutativeForest],
+                           PlanarTree, NoncommutativeForest, str],
             scale: float = 1.0,
             fig_size: tuple = None,
             file_name: str = None,
             use_plt: bool = None,
             rationalise: bool = False) -> None:
     """
-    Display a Tree, Forest, ForestSum, TensorProductSum, PlanarTree, or NoncommutativeForest.
+    Display one or more tree-algebra objects, optionally with string labels.
 
     In Jupyter, renders inline SVG.
 
     Multiple arguments are rendered side by side in a single image,
-    analogous to ``print(a, b, c)``.
+    analogous to ``print(a, b, c)``.  Strings are rendered as text
+    labels between objects, e.g. ``display(t, "\u2192", t.unjoin())``.
 
-    :param objects: One or more objects to display
+    :param objects: One or more objects or strings to display
     :param scale: Scale factor for SVG output (default 1.0)
     :param file_name: If provided, saves SVG to ``file_name.svg``
     :param rationalise: If True, rationalise float coefficients
     """
     _VALID_TYPES = (Tree, Forest, ForestSum, TensorProductSum,
-                    PlanarTree, NoncommutativeForest)
+                    PlanarTree, NoncommutativeForest, str)
 
     if not objects:
         raise TypeError("display() requires at least one argument.")
@@ -444,9 +454,9 @@ def display(*objects: Union[Tree, Forest, ForestSum, TensorProductSum,
         if not isinstance(obj, _VALID_TYPES):
             raise TypeError("Cannot display object of type " + str(type(obj))
                             + ". Object must be Tree, Forest, ForestSum, TensorProductSum,"
-                            + " PlanarTree, or NoncommutativeForest.")
-
-    for obj in objects:
+                            + " PlanarTree, NoncommutativeForest, or str.")
+        if isinstance(obj, str):
+            continue
         if isinstance(obj, ForestSum) and len(obj.term_list) == 0:
             continue
         if isinstance(obj, TensorProductSum) and (obj.term_list is None or len(obj.term_list) == 0):

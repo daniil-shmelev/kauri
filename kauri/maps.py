@@ -81,11 +81,11 @@ class Map:
         :type exponent: int
         :rtype: Map
 
-        Example usage::
+        **Example usage:**
 
-            import kauri as kr
+        .. kauri-exec::
 
-            ident = kr.Map(lambda x : x)
+            ident = Map(lambda x : x)
             S = ident ** (-1) # BCK antipode
             ident_sq = ident ** 2 # identity squared
         """
@@ -142,12 +142,11 @@ class Map:
         :param other: Map | int | float
         :rtype: Map
 
-        Example usage::
+        **Example usage:**
 
-            import kauri as kr
-            import kauri.bck as bck
+        .. kauri-exec::
 
-            ident = kr.Map(lambda x : x)
+            ident = Map(lambda x : x)
             counit = ident * bck.antipode
             ident_2 = 2 * ident # ident_2(t) = 2 * t for any tree t
         """
@@ -168,12 +167,11 @@ class Map:
         :param other: Map | int | float
         :rtype: Map
 
-        Example usage::
+        **Example usage:**
 
-            import kauri as kr
-            import kauri.cem as cem
+        .. kauri-exec::
 
-            ident = kr.Map(lambda x : x)
+            ident = Map(lambda x : x)
             counit = ident ^ cem.antipode
             ident_2 = 2 ^ ident # ident_2(t) = 2 * t for any tree t
         """
@@ -203,9 +201,9 @@ class Map:
         :type other: Map
         :rtype: Map
 
-        Example usage::
+        **Example usage:**
 
-            import kauri.bck as bck
+        .. kauri-exec::
 
             m1 = 2 * bck.antipode
             m2 = bck.antipode + bck.antipode # Same as m1
@@ -245,15 +243,14 @@ class Map:
         :type other: Map
         :rtype: Map
 
-        Example usage::
+        **Example usage:**
 
-            import kauri as kr
-            import kauri.bck as bck
+        .. kauri-exec::
 
-            t = kr.Tree([[]])
+            t = Tree([[]])
 
-            (bck.antipode & bck.antipode)(t)
-            bck.antipode(bck.antipode(t)) #Same as above
+            kr.display((bck.antipode & bck.antipode)(t))
+            kr.display(bck.antipode(bck.antipode(t))) #Same as above
         """
         if not isinstance(other, Map):
             raise TypeError("Cannot compose Map with object of type " + str(type(other)))

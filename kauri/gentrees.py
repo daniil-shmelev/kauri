@@ -33,13 +33,13 @@ def trees_up_to_order(order : int) -> Generator[Tree, None, None]:
         order of the tree does not exceed :math:`n`.
     :rtype: Tree
 
-    Example usage::
+    **Example usage:**
 
-            import kauri as kr
-            import kauri.bck as bck
+    .. kauri-exec::
 
-            for t in kr.trees_up_to_order(4):
-                display(bck.antipode(t))
+        trees = list(trees_up_to_order(5))
+        for i in range(0, len(trees), 10):
+            kr.display(*trees[i:i+10])
     """
     if not isinstance(order, int):
         raise TypeError("order must be an int, not " + str(type(order)))
@@ -60,13 +60,11 @@ def trees_of_order(order : int) -> Generator[Tree, None, None]:
     :yields: The next tree in lexicographic order, as long as the order of the tree is :math:`n`.
     :rtype: Tree
 
-    Example usage::
+    **Example usage:**
 
-            import kauri as kr
-            import kauri.bck as bck
+    .. kauri-exec::
 
-            for t in kr.trees_of_order(4):
-                display(bck.antipode(t))
+        kr.display(*trees_of_order(5))
     """
     if not isinstance(order, int):
         raise TypeError("order must be an int, not " + str(type(order)))
@@ -108,6 +106,14 @@ def planar_trees_of_order(order: int):
     Yields planar rooted trees of fixed order.
 
     Order 0 contains only the empty planar tree.
+
+    **Example usage:**
+
+    .. kauri-exec::
+
+        trees = list(planar_trees_of_order(5))
+        for i in range(0, len(trees), 10):
+            kr.display(*trees[i:i+10])
     """
     from .trees import EMPTY_PLANAR_TREE, PlanarTree, validate_order
 
@@ -121,7 +127,16 @@ def planar_trees_of_order(order: int):
 
 
 def planar_trees_up_to_order(order: int):
-    """Yields planar rooted trees of all orders from 0 through order."""
+    """Yields planar rooted trees of all orders from 0 through order.
+
+    **Example usage:**
+
+    .. kauri-exec::
+
+        trees = list(planar_trees_up_to_order(5))
+        for i in range(0, len(trees), 10):
+            kr.display(*trees[i:i+10])
+    """
     from .trees import validate_order
 
     validate_order(order)
@@ -171,6 +186,14 @@ def colored_trees_of_order(order: int, d: int):
     :type d: int
     :yields: Colored trees
     :rtype: Tree
+
+    **Example usage:**
+
+    .. kauri-exec::
+
+        trees = list(colored_trees_of_order(4, 2))
+        for i in range(0, len(trees), 10):
+            kr.display(*trees[i:i+10])
     """
     _validate_num_colors(d)
     for shape in trees_of_order(order):
@@ -187,6 +210,14 @@ def colored_trees_up_to_order(order: int, d: int):
     :type d: int
     :yields: Colored trees
     :rtype: Tree
+
+    **Example usage:**
+
+    .. kauri-exec::
+
+        trees = list(colored_trees_up_to_order(4, 2))
+        for i in range(0, len(trees), 10):
+            kr.display(*trees[i:i+10])
     """
     _validate_num_colors(d)
     for shape in trees_up_to_order(order):
@@ -206,6 +237,14 @@ def colored_planar_trees_of_order(order: int, d: int):
     :type d: int
     :yields: Colored planar trees
     :rtype: PlanarTree
+
+    **Example usage:**
+
+    .. kauri-exec::
+
+        trees = list(colored_planar_trees_of_order(4, 2))
+        for i in range(0, len(trees), 10):
+            kr.display(*trees[i:i+10])
     """
     from .trees import PlanarTree, EMPTY_PLANAR_TREE, validate_order
 
@@ -228,6 +267,14 @@ def colored_planar_trees_up_to_order(order: int, d: int):
     :type d: int
     :yields: Colored planar trees
     :rtype: PlanarTree
+
+    **Example usage:**
+
+    .. kauri-exec::
+
+        trees = list(colored_planar_trees_up_to_order(4, 2))
+        for i in range(0, len(trees), 10):
+            kr.display(*trees[i:i+10])
     """
     from .trees import validate_order
 

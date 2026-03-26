@@ -166,17 +166,18 @@ def elementary_differential(tree : Tree,
     :param y: Symbolic variables y
     :type y: sympy.Matrix
 
-    Example usage::
+    **Example usage:**
 
-            import kauri as kr
-            import sympy as sp
+    .. kauri-exec::
 
-            y1, y2 = sp.symbols('y1 y2')
-            y = sp.Matrix([y1, y2])
-            f = sp.Matrix([y1 ** 2, y1 * y2])
+        import sympy as sp
 
-            t = kr.Tree([[[]],[]])
-            elementary_differential(t, f, y) # Returns sp.Matrix([[4 * y1**5 ], [ 4 * y1**4 * y2]])
+        y1, y2 = sp.symbols('y1 y2')
+        y = sp.Matrix([y1, y2])
+        f = sp.Matrix([y1 ** 2, y1 * y2])
+
+        t = Tree([[[]],[]])
+        print(elementary_differential(t, f, y))
     """
     if not isinstance(tree, Tree):
         raise TypeError("The argument 'tree' must be of type Tree, not " + str(type(tree)))
@@ -209,20 +210,21 @@ class BSeries:
     :param order: The truncation order of the B-Series
     :type order: int
 
-    Example usage::
+    **Example usage:**
 
-            import kauri as kr
-            import sympy as sp
+    .. kauri-exec::
 
-            y1 = sp.symbols('y1')
-            y = sp.Matrix([y1])
-            f = sp.Matrix([y1 ** 2])
+        import sympy as sp
 
-            m = kr.rk4.elementary_weights_map()
-            bs = BSeries(y, f, m, 5)
+        y1 = sp.symbols('y1')
+        y = sp.Matrix([y1])
+        f = sp.Matrix([y1 ** 2])
 
-            print(bs.series()) # Print the B-Series as a sympy expression
-            print(bs(1, 0.1)) # Evaluate the B-Series at y = 1, h = 0.1
+        m = rk4.elementary_weights_map()
+        bs = BSeries(y, f, m, 5)
+
+        print(bs.series()) # Print the B-Series as a sympy expression
+        print(bs([1], 0.1)) # Evaluate the B-Series at y = [1], h = 0.1
     """
 
     def __init__(self, y : sp.Matrix, f : sp.Matrix, weights : Map, order : int):

@@ -130,34 +130,17 @@ def rk_symbolic_weight(
         string if `mathematica_code` is True.
     :rtype: sympy.core.add.Add | string
 
-    Example usage::
+    **Example usage:**
 
-            t = Tree([[],[]])
-            rk_symbolic_weight(t, 2) # Returns b0*(a00 + a01)**2 + b1*(a10 + a11)**2
-            rk_symbolic_weight(t, 2, explicit = True) # Returns a10**2*b1
+    .. kauri-exec::
 
-            a_mask = [[1,0],[0,1]]
-            b_mask = [0,1]
-            rk_symbolic_weight(t, 2, a_mask = a_mask, b_mask = b_mask) #Returns a11**2*b1
+        t = Tree([[],[]])
+        print(rk_symbolic_weight(t, 2))
+        print(rk_symbolic_weight(t, 2, explicit = True))
 
-    .. code-block:: python
-
-        #Generate order conditions as mathematica equations and write to text file
-
-        order_conditions = [Tree([]) - 1.,
-                            Tree([[]]) - 1./2,
-                            Tree([[],[]]) - 1./3]
-
-        strs = []
-
-        for i,t in enumerate(order_conditions):
-            cond = rk_symbolic_weight(t, 3, explicit = True, mathematica_code = True, rationalise = True)
-            str_ = "eq" + str(i) + " = " + cond + " == 0; \\n"
-            strs.append(str_)
-
-        with open("mathematica_code.txt", "w") as text_file:
-            for s in strs:
-                text_file.write(s)
+        a_mask = [[1,0],[0,1]]
+        b_mask = [0,1]
+        print(rk_symbolic_weight(t, 2, a_mask = a_mask, b_mask = b_mask))
 
     """
     if not isinstance(t, (int, float, TreeLike, ForestLike, ForestSumLike)):
@@ -218,30 +201,17 @@ def rk_order_cond(
         string if `mathematica_code` is True.
     :rtype: sympy.core.add.Add | string
 
-    Example usage::
+    **Example usage:**
 
-            t = Tree([[],[]])
-            rk_order_cond(t, 2) # Returns b0*(a00 + a01)**2 + b1*(a10 + a11)**2 - 1/3
-            rk_order_cond(t, 2, explicit = True) # Returns a10**2*b1 - 1/3
+    .. kauri-exec::
 
-            a_mask = [[1,0],[0,1]]
-            b_mask = [0,1]
-            rk_order_cond(t, 2, a_mask = a_mask, b_mask = b_mask) #Returns a11**2*b1 - 1/3
+        t = Tree([[],[]])
+        print(rk_order_cond(t, 2))
+        print(rk_order_cond(t, 2, explicit = True))
 
-    .. code-block:: python
-
-        #Generate order conditions as mathematica equations and write to text file
-
-        strs = []
-
-        for i,t in enumerate(trees_of_order(4)):
-            cond = rk_symbolic_weight(t, 3, explicit = True, mathematica_code = True, rationalise = True)
-            str_ = "eq" + str(i) + " = " + cond + " == 0; \\n"
-            strs.append(str_)
-
-        with open("mathematica_code.txt", "w") as text_file:
-            for s in strs:
-                text_file.write(s)
+        a_mask = [[1,0],[0,1]]
+        b_mask = [0,1]
+        print(rk_order_cond(t, 2, a_mask = a_mask, b_mask = b_mask))
 
     """
     if not isinstance(t, (int, float, TreeLike, ForestLike, ForestSumLike)):

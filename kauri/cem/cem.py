@@ -153,13 +153,12 @@ The counit :math:`\\varepsilon_{CEM}` of the CEM Hopf algebra.
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    from kauri import Tree
-    import kauri.cem as cem
+.. kauri-exec::
 
-    cem.counit(Tree([])) # Returns 1
-    cem.counit(Tree([[]])) # Returns 0
+    print(cem.counit(Tree([])))  # Returns 1
+    print(cem.counit(Tree([[]])))  # Returns 0
 """
 
 def _safe_antipode(t):
@@ -176,13 +175,12 @@ The antipode :math:`S_{CEM}` of the CEM Hopf algebra.
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    from kauri import Tree
-    import kauri.cem as cem
+.. kauri-exec::
 
     t = Tree([[[]],[]])
-    cem.antipode(t)
+    kr.display(cem.antipode(t))
 """
 
 def coproduct(t : Tree) -> TensorProductSum:
@@ -193,13 +191,12 @@ def coproduct(t : Tree) -> TensorProductSum:
     :type t: Tree
     :rtype: TensorProductSum
 
-    Example usage::
+    **Example usage:**
 
-        from kauri import Tree
-        import kauri.cem as cem
+    .. kauri-exec::
 
-        cem.coproduct(Tree([])) # Returns 1 [] ⊗ []
-        cem.coproduct(Tree([[]])) # Returns 1 [] ⊗ [[]]+1 [[]] ⊗ []
+        t = Tree([[[]],[]])
+        kr.display(cem.coproduct(t))
     """
     if not isinstance(t, Tree):
         hint = " The CEM algebra is only defined for non-planar trees." if isinstance(t, PlanarTree) else ""
@@ -225,13 +222,12 @@ def map_product(f : Map, g : Map) -> Map:
     :type g: Map
     :rtype: Map
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.cem as cem
+    .. kauri-exec::
 
-        ident = kr.Map(lambda x : x)
-        counit = cem.map_product(ident, cem.antipode) # Equivalent to ident ^ cem.antipode
+        f = cem.map_product(ident, cem.antipode)
+        print(f(Tree([[]])))
     """
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in cem.map_product must be of type Map, not " + str(type(f)) + " and " + str(type(g)))
@@ -253,14 +249,12 @@ def map_power(f : Map, exponent : int) -> Map:
     :param exponent: exponent
     :type exponent: int
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.cem as cem
+    .. kauri-exec::
 
-        ident = kr.Map(lambda x : x)
-        S = cem.map_power(ident, -1) # antipode
-        ident_sq = cem.map_power(ident, 2) # identity squared
+        S = cem.map_power(ident, -1)  # antipode
+        print(S(Tree([[]])))
     """
 
     if not isinstance(f, Map):

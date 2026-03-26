@@ -121,13 +121,12 @@ The counit :math:`\\varepsilon` of the planar BCK Hopf algebra.
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    from kauri.trees import PlanarTree
-    import kauri.pbck as pbck
+.. kauri-exec::
 
-    pbck.counit(PlanarTree(None))  # Returns 1
-    pbck.counit(PlanarTree([]))    # Returns 0
+    print(pbck.counit(PlanarTree(None)))  # Returns 1
+    print(pbck.counit(PlanarTree([])))  # Returns 0
 """
 
 def _safe_antipode(t):
@@ -146,13 +145,12 @@ anti-homomorphism: :math:`S(t_1 t_2) = S(t_2) S(t_1)`. This map uses
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    from kauri.trees import PlanarTree
-    import kauri.pbck as pbck
+.. kauri-exec::
 
-    pbck.antipode(PlanarTree([]))    # Returns -1 * [bullet]
-    pbck.antipode(PlanarTree([[]]))  # Returns -1 * [/] + 1 * [bullet, bullet]
+    t = PlanarTree([[[]],[]])
+    kr.display(pbck.antipode(t))
 """
 
 
@@ -164,13 +162,12 @@ def coproduct(t: PlanarTree) -> TensorProductSum:
     :type t: PlanarTree
     :rtype: TensorProductSum
 
-    Example usage::
+    **Example usage:**
 
-        from kauri.trees import PlanarTree
-        import kauri.pbck as pbck
+    .. kauri-exec::
 
-        pbck.coproduct(PlanarTree(None))  # Returns 1 [] tensor []
-        pbck.coproduct(PlanarTree([]))    # Returns unit coproduct terms
+        t = PlanarTree([[[]],[]])
+        kr.display(pbck.coproduct(t))
     """
     if not isinstance(t, PlanarTree):
         hint = " For non-planar trees, use bck.coproduct instead." if isinstance(t, Tree) else ""
@@ -201,14 +198,13 @@ def map_product(f: Map, g: Map) -> Map:
     :type g: Map
     :rtype: Map
 
-    Example usage::
+    **Example usage:**
 
-        from kauri.trees import PlanarTree
-        from kauri.maps import Map
-        import kauri.pbck as pbck
+    .. kauri-exec::
 
         f = Map(lambda x: 1 if x.list_repr is None else 0)
         g = pbck.map_product(f, f)
+        print(g(PlanarTree([[]])))
     """
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in pbck.map_product must be of type Map, not "
@@ -231,14 +227,13 @@ def map_power(f: Map, exponent: int) -> Map:
     :type exponent: int
     :rtype: Map
 
-    Example usage::
+    **Example usage:**
 
-        from kauri.trees import PlanarTree
-        from kauri.maps import Map
-        import kauri.pbck as pbck
+    .. kauri-exec::
 
         f = Map(lambda x: 1 if x.list_repr is None else x.nodes())
         f_sq = pbck.map_power(f, 2)
+        print(f_sq(PlanarTree([[]])))
     """
     if not isinstance(f, Map):
         raise TypeError("f must be a Map, not " + str(type(f)))
