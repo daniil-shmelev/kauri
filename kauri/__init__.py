@@ -17,6 +17,8 @@
 Algebraic manipulation of rooted trees for the analysis of B-series and Runge-Kutta schemes.
 """
 
+__version__ = "1.0.0"
+
 __all__ = [
     # Core types
     "Tree", "Forest", "CommutativeForest", "NoncommutativeForest",

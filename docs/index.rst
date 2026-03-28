@@ -11,7 +11,7 @@ B-series, and Runge--Kutta methods. Install it with
 
 - **Getting started:** :doc:`/pages/getting_started` -- create trees, compute coproducts, check RK order conditions
 - **Core types:** :doc:`/pages/fundamentals` -- Tree, Forest, ForestSum, Maps, Display
-- **Hopf algebras:** :doc:`/pages/hopf_algebras` -- BCK, CEM, Grossman--Larson (non-planar & planar)
+- **Hopf algebras:** :doc:`/pages/hopf_algebras` -- BCK, CEM, GL, NCK, PGL, MKW
 - **Analysis:** :doc:`/pages/analysis` -- B-series, Runge--Kutta schemes, commutator-free methods
 
 .. toctree::

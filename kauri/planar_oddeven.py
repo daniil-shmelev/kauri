@@ -93,11 +93,11 @@ where the product is the convolution in the NCK Hopf algebra
 
 
 # ---------------------------------------------------------------------------
-# Extend PBCK coproduct to ForestSum
+# Extend NCK coproduct to ForestSum
 # ---------------------------------------------------------------------------
 
 def _extend_coproduct_to_forestsum(fs):
-    """Extend the PBCK coproduct from trees to a ForestSum.
+    """Extend the NCK coproduct from trees to a ForestSum.
 
     For a forest f = t1·t2·…·tk the coproduct is the ordered product
     Δ(t1)·Δ(t2)·…·Δ(tk), and this is extended linearly over the sum.
@@ -119,7 +119,7 @@ def _extend_coproduct_to_forestsum(fs):
 #
 #   τ⁻ = μ ∘ (S̄ ⊗ Id) ∘ Δ(Id^{1/2}(τ))
 #
-# where S̄(τ) := (-1)^{|τ|} S(τ) and S is the PBCK antipode (an
+# where S̄(τ) := (-1)^{|τ|} S(τ) and S is the NCK antipode (an
 # anti-homomorphism, so we use anti_forest_apply).
 
 @cache
