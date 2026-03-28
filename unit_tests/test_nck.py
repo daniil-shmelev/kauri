@@ -27,8 +27,9 @@ import unittest
 from kauri.trees import PlanarTree, NoncommutativeForest, OrderedForest, ForestSum, EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST
 from kauri.maps import Map
 import kauri.nck as nck
-from kauri.nck.nck import _forest_sum_mul_tree
+from kauri.nck.nck import _forest_sum_mul_tree, coproduct_impl
 from kauri.generic_algebra import anti_forest_apply
+from math import comb
 
 PT = PlanarTree
 
@@ -305,3 +306,153 @@ class TestMapPower(unittest.TestCase):
             nck.map_power('a', 2)
         with self.assertRaises(TypeError):
             nck.map_power(nck.counit, 2.5)
+
+
+# ===========================================================================
+# Reference tests: Foissy (2008), arxiv 0707.1204
+# Lines 134-139: NCK coproduct examples
+# part2.tex lines 120-122: NCK corolla coproduct formula
+# ===========================================================================
+
+# Tree definitions for reference tests
+bullet   = PT([])
+chain2   = PT([[]])
+cherry   = PT([[], []])
+chain3   = PT([[[]]])
+corolla3 = PT([[], [], []])
+lheavy   = PT([[[]], []])
+rheavy   = PT([[], [[]]])
+b_cherry = PT([[[], []]])
+chain4   = PT([[[[]]]])
+corolla4 = PT([[], [], [], []])
+
+# Shorthand list_reprs
+B   = bullet.list_repr
+C2  = chain2.list_repr
+CH  = cherry.list_repr
+C3  = chain3.list_repr
+CO3 = corolla3.list_repr
+LH  = lheavy.list_repr
+RH  = rheavy.list_repr
+C4  = chain4.list_repr
+CO4 = corolla4.list_repr
+
+
+def _ofk(*reprs):
+    """Build an ordered forest key (preserving order)."""
+    return tuple(reprs)
+
+
+def _tps_dict(tps):
+    """Convert TensorProductSum to {(left_key, right_key): coeff} dict."""
+    d = {}
+    for c, l, r in tps.term_list:
+        lk = _ofk(*(t.list_repr for t in l.tree_list
+                     if t.list_repr is not None))
+        rk = _ofk(*(t.list_repr for t in r.tree_list
+                     if t.list_repr is not None))
+        key = (lk, rk)
+        d[key] = d.get(key, 0) + c
+    return {k: v for k, v in d.items() if v != 0}
+
+
+class NCKCoproductReferenceTests(unittest.TestCase):
+    """NCK coproduct examples from Foissy (2008), arxiv 0707.1204."""
+
+    def _check(self, result, expected):
+        got = _tps_dict(result)
+        self.assertEqual(got, expected)
+
+    def test_lheavy_coproduct(self):
+        r"""Lines 134-136: Delta(tquatredeux) = PlanarTree([[[]], []])"""
+        result = coproduct_impl(lheavy)
+        self._check(result, {
+            ((LH,), ()):   1,
+            ((), (LH,)):   1,
+            ((C2, B), (B,)):  1,
+            ((C2,), (C2,)):  1,
+            ((B,), (C3,)):   1,
+            ((B, B), (C2,)):  1,
+            ((B,), (CH,)):   1,
+        })
+
+    def test_rheavy_coproduct(self):
+        r"""Lines 137-139: Delta(tquatretrois) = PlanarTree([[], [[]]])"""
+        result = coproduct_impl(rheavy)
+        self._check(result, {
+            ((RH,), ()):    1,
+            ((), (RH,)):    1,
+            ((B, C2), (B,)):  1,
+            ((C2,), (C2,)):  1,
+            ((B,), (C3,)):   1,
+            ((B, B), (C2,)):  1,
+            ((B,), (CH,)):   1,
+        })
+
+    def test_nck_noncommutativity(self):
+        """Lines 134-139: NCK coproduct distinguishes planar structure."""
+        d1 = _tps_dict(coproduct_impl(lheavy))
+        d2 = _tps_dict(coproduct_impl(rheavy))
+        self.assertNotEqual(d1, d2,
+                            msg="NCK coproduct should distinguish planar structure")
+        self.assertIn(((C2, B), (B,)), d1)
+        self.assertNotIn(((C2, B), (B,)), d2)
+        self.assertIn(((B, C2), (B,)), d2)
+        self.assertNotIn(((B, C2), (B,)), d1)
+
+
+class NCKCorollaCoproductTests(unittest.TestCase):
+    """NCK corolla coproduct from Foissy (2008), part2.tex lines 120-122."""
+
+    corolla_reprs = [B, C2, CH, CO3, CO4]
+
+    def _check(self, result, expected):
+        got = _tps_dict(result)
+        self.assertEqual(got, expected)
+
+    def test_chain2_coproduct(self):
+        result = coproduct_impl(chain2)
+        self._check(result, {
+            ((C2,), ()):   1,
+            ((), (C2,)):   1,
+            ((B,), (B,)):  1,
+        })
+
+    def test_cherry_coproduct(self):
+        result = coproduct_impl(cherry)
+        self._check(result, {
+            ((CH,), ()):      1,
+            ((), (CH,)):      1,
+            ((B,), (C2,)):    2,
+            ((B, B), (B,)):   1,
+        })
+
+    def test_corolla3_coproduct(self):
+        result = coproduct_impl(corolla3)
+        self._check(result, {
+            ((CO3,), ()):        1,
+            ((), (CO3,)):        1,
+            ((B,), (CH,)):       3,
+            ((B, B), (C2,)):     3,
+            ((B, B, B), (B,)):   1,
+        })
+
+    def test_corolla4_coproduct(self):
+        result = coproduct_impl(corolla4)
+        self._check(result, {
+            ((CO4,), ()):            1,
+            ((), (CO4,)):            1,
+            ((B,), (CO3,)):          4,
+            ((B, B), (CH,)):         6,
+            ((B, B, B), (C2,)):      4,
+            ((B, B, B, B), (B,)):    1,
+        })
+
+    def test_corolla_formula_general(self):
+        """Verify binomial pattern: B+(bullet^n) has n+2 terms for n=1..4."""
+        corollas = [chain2, cherry, corolla3, corolla4]
+        for i, t in enumerate(corollas):
+            n = i + 1
+            d = _tps_dict(coproduct_impl(t))
+            self.assertEqual(len(d), n + 2,
+                             msg=f"B+(bullet^{n}) should have {n+2} terms")

@@ -17,14 +17,13 @@
 The planar Grossman-Larson Hopf algebra module
 """
 from functools import cache
-from itertools import product as iter_product
+from itertools import product as iter_product, combinations, combinations_with_replacement
 from collections import defaultdict
 
 from ..maps import Map
 from ..trees import (Tree, PlanarTree, NoncommutativeForest, OrderedForest, ForestSum,
                      TensorProductSum, EMPTY_ORDERED_FOREST, ZERO_FOREST_SUM, _is_scalar)
-from ..generic_algebra import forest_apply, func_product, func_power
-from ..gl.gl import _graft_helper
+from ..generic_algebra import func_product, func_power
 
 
 def _pgl_combine(a, b):
@@ -38,25 +37,80 @@ def _pgl_combine(a, b):
 # Internal helpers: grafting product
 # ---------------------------------------------------------------------------
 
+def _interleave(existing, new):
+    """Generate all interleavings of two sequences, preserving internal order of each."""
+    m, p = len(existing), len(new)
+    if p == 0:
+        yield tuple(existing)
+        return
+    if m == 0:
+        yield tuple(new)
+        return
+    total = m + p
+    for positions in combinations(range(total), p):
+        pos_set = set(positions)
+        result = []
+        ei, ni = 0, 0
+        for i in range(total):
+            if i in pos_set:
+                result.append(new[ni])
+                ni += 1
+            else:
+                result.append(existing[ei])
+                ei += 1
+        yield tuple(result)
+
+
+def _planar_graft_helper(s_repr, vertex_branches, current_idx):
+    """Recursively graft branches at specified vertices of s,
+    generating all planar interleavings.
+
+    Returns a list of (new_repr, next_idx) pairs.
+    """
+    root_color = s_repr[-1]
+    children = s_repr[:-1]
+    new_branches = vertex_branches.get(current_idx, [])
+
+    next_idx = current_idx + 1
+
+    # Process each child recursively — each may produce multiple results
+    child_option_lists = []
+    for child_repr in children:
+        options = _planar_graft_helper(child_repr, vertex_branches, next_idx)
+        next_idx = options[0][1]
+        child_option_lists.append([opt[0] for opt in options])
+
+    # Cartesian product of all child options (lazy iteration)
+    child_combos = iter_product(*child_option_lists) if child_option_lists else [()]
+
+    # For each combo, interleave with new branches at all positions
+    results = []
+    for combo in child_combos:
+        for interleaved in _interleave(combo, new_branches):
+            results.append((interleaved + (root_color,), next_idx))
+
+    return results
+
+
 def _pgl_product_trees(s, t):
     """Compute planar GL grafting product s . t for two PlanarTrees.
 
-    Returns a list of PlanarTrees (with repetitions).  For each assignment
-    of t's branches to vertices of s, one result tree is produced by
-    appending the assigned branches to the right of existing children.
-    The list has |V(s)|^k entries where k = number of children of t's root.
+    Returns a list of PlanarTrees (with repetitions).  For each monotone
+    assignment of t's branches to vertices of s (preserving left-to-right
+    order), all planar interleavings of new branches among existing children
+    are generated.
     """
     branch_reprs = t.list_repr[:-1]
     k = len(branch_reprs)
     n = s.nodes()
 
     results = []
-    for assignment in iter_product(range(n), repeat=k):
+    for assignment in combinations_with_replacement(range(n), k):
         vb = defaultdict(list)
         for i, v in enumerate(assignment):
             vb[v].append(branch_reprs[i])
-        result_repr, _ = _graft_helper(s.list_repr, vb, 0)
-        results.append(PlanarTree(result_repr))
+        for result_repr, _ in _planar_graft_helper(s.list_repr, vb, 0):
+            results.append(PlanarTree(result_repr))
 
     return results
 
@@ -265,8 +319,9 @@ def product(s, t):
     The planar Grossman-Larson grafting product.
 
     For trees :math:`s` and :math:`t = B_+(b_1, \\ldots, b_k)`, sums over all
-    ways of assigning each :math:`b_i` to a vertex of :math:`s`, appending
-    assigned branches to the right of existing children.
+    monotone assignments of :math:`b_1, \\ldots, b_k` to vertices of :math:`s`
+    (preserving left-to-right order), interleaving assigned branches at all
+    positions among existing children.
 
     Extends bilinearly to ForestSum arguments.
 

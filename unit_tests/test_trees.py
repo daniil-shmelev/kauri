@@ -16,6 +16,8 @@
 import unittest
 from kauri import Tree, Forest, ForestSum, trees_of_order, trees_up_to_order
 from kauri import Tree as T
+import math
+from fractions import Fraction
 
 trees = [T(None),
          T([]),
@@ -241,3 +243,276 @@ class TreeTests(unittest.TestCase):
             self.assertFalse(last_tree > current_tree, repr(last_tree) + " and " + repr(current_tree))
             self.assertTrue(current_tree == current_tree, repr(current_tree))
             last_tree = current_tree
+
+
+# ===========================================================================
+# Reference tests verified against published literature
+#
+# [1] C. Brouder, "Runge-Kutta methods and renormalization",
+#     Eur. Phys. J. C 12 (2000), 521-534. (arxiv: hep-th/9904014)
+# [2] Y. Hadjimichael et al., "Strong stability preserving explicit
+#     Runge-Kutta methods of maximal effective order",
+#     SIAM J. Numer. Anal. 51 (2013), 2149-2165. (arxiv: 1207.2902)
+# [3] W.G. Faris, "Rooted tree graphs and the Butcher group",
+#     (arxiv: 2101.09364)
+# ===========================================================================
+
+# Order 1
+bullet = T([])
+
+# Order 2
+chain2 = T([[]])
+
+# Order 3
+cherry = T([[], []])
+chain3 = T([[[]]])
+
+# Order 4
+corolla3 = T([[], [], []])
+t43      = T([[], [[]]])
+b_cherry = T([[[], []]])
+chain4   = T([[[[]]]])
+
+# Order 5
+corolla4    = T([[], [], [], []])
+bullets_c2  = T([[], [], [[]]])
+bullet_ch   = T([[], [[], []]])
+bullet_c3   = T([[], [[[]]]])
+two_chain2s = T([[[]], [[]]])
+b_corolla3  = T([[[], [], []]])
+b_t43       = T([[[], [[]]]])
+bb_cherry   = T([[[[], []]]])
+chain5      = T([[[[[]]]]])
+
+
+class BrouderFactorialTests(unittest.TestCase):
+    """[1] Tree factorial values, lines 302-304."""
+
+    def test_chain2(self):
+        self.assertEqual(chain2.factorial(), 2)
+
+    def test_chain3(self):
+        self.assertEqual(chain3.factorial(), 6)
+
+    def test_chain4(self):
+        self.assertEqual(chain4.factorial(), 24)
+
+    def test_b_cherry(self):
+        self.assertEqual(b_cherry.factorial(), 12)
+
+    def test_corolla3(self):
+        self.assertEqual(corolla3.factorial(), 4)
+
+
+class BrouderAlphaTests(unittest.TestCase):
+    """[1] Alpha values for order-4 trees, lines 500-501."""
+
+    def test_chain4(self):
+        self.assertEqual(chain4.alpha(), 1)
+
+    def test_b_cherry(self):
+        self.assertEqual(b_cherry.alpha(), 1)
+
+    def test_t43(self):
+        self.assertEqual(t43.alpha(), 3)
+
+    def test_corolla3(self):
+        self.assertEqual(corolla3.alpha(), 1)
+
+
+class BrouderSumIdentityTests(unittest.TestCase):
+    """[1] Sum identities over all trees of order n, lines 927, 1056, 1071."""
+
+    def _trees(self, n):
+        return list(trees_of_order(n))
+
+    def test_sum_alpha_equals_factorial(self):
+        """Line 927: sum_{|t|=n} alpha(t) = (n-1)!"""
+        for n in range(1, 8):
+            trees_ = self._trees(n)
+            total = sum(t.alpha() for t in trees_)
+            expected = math.factorial(n - 1)
+            self.assertEqual(total, expected,
+                             msg=f"sum alpha(t) for n={n}")
+
+    def test_sum_alpha_over_factorial(self):
+        """Line 1056: sum_{|t|=n} alpha(t)/t! = (n-1)!/2^{n-1}"""
+        for n in range(1, 8):
+            trees_ = self._trees(n)
+            total = sum(Fraction(t.alpha(), t.factorial()) for t in trees_)
+            expected = Fraction(math.factorial(n - 1), 2 ** (n - 1))
+            self.assertEqual(total, expected,
+                             msg=f"sum alpha(t)/t! for n={n}")
+
+    def test_sum_alpha_times_factorial(self):
+        """Line 1071: sum_{|t|=n} alpha(t)*t! = n^{n-1}"""
+        for n in range(1, 8):
+            trees_ = self._trees(n)
+            total = sum(t.alpha() * t.factorial() for t in trees_)
+            expected = n ** (n - 1)
+            self.assertEqual(total, expected,
+                             msg=f"sum alpha(t)*t! for n={n}")
+
+
+class HadjimichaelDensityTests(unittest.TestCase):
+    """[2] Density gamma(t) for all trees through order 5, Table 3.1."""
+
+    def test_bullet(self):
+        self.assertEqual(bullet.factorial(), 1)
+
+    def test_chain2(self):
+        self.assertEqual(chain2.factorial(), 2)
+
+    def test_cherry(self):
+        self.assertEqual(cherry.factorial(), 3)
+
+    def test_chain3(self):
+        self.assertEqual(chain3.factorial(), 6)
+
+    def test_corolla3(self):
+        self.assertEqual(corolla3.factorial(), 4)
+
+    def test_t43(self):
+        self.assertEqual(t43.factorial(), 8)
+
+    def test_b_cherry(self):
+        self.assertEqual(b_cherry.factorial(), 12)
+
+    def test_chain4(self):
+        self.assertEqual(chain4.factorial(), 24)
+
+    def test_corolla4(self):
+        self.assertEqual(corolla4.factorial(), 5)
+
+    def test_bullets_chain2(self):
+        self.assertEqual(bullets_c2.factorial(), 10)
+
+    def test_bullet_cherry(self):
+        self.assertEqual(bullet_ch.factorial(), 15)
+
+    def test_bullet_chain3(self):
+        self.assertEqual(bullet_c3.factorial(), 30)
+
+    def test_two_chain2s(self):
+        self.assertEqual(two_chain2s.factorial(), 20)
+
+    def test_b_corolla3(self):
+        self.assertEqual(b_corolla3.factorial(), 20)
+
+    def test_b_t43(self):
+        self.assertEqual(b_t43.factorial(), 40)
+
+    def test_bb_cherry(self):
+        self.assertEqual(bb_cherry.factorial(), 60)
+
+    def test_chain5(self):
+        self.assertEqual(chain5.factorial(), 120)
+
+
+class FarisSigmaOrder4Tests(unittest.TestCase):
+    """[3] Symmetry factor sigma(tau) for order-4 trees, line 1097."""
+
+    def test_corolla3(self):
+        self.assertEqual(corolla3.sigma(), 6)
+
+    def test_t43(self):
+        self.assertEqual(t43.sigma(), 1)
+
+    def test_b_cherry(self):
+        self.assertEqual(b_cherry.sigma(), 2)
+
+    def test_chain4(self):
+        self.assertEqual(chain4.sigma(), 1)
+
+
+class FarisSigmaOrder5Tests(unittest.TestCase):
+    """[3] Symmetry factor sigma(tau) for order-5 trees, lines 1641-1649."""
+
+    def test_corolla4(self):
+        self.assertEqual(corolla4.sigma(), 24)
+
+    def test_bullets_chain2(self):
+        self.assertEqual(bullets_c2.sigma(), 2)
+
+    def test_two_chain2s(self):
+        self.assertEqual(two_chain2s.sigma(), 2)
+
+    def test_bullet_cherry(self):
+        self.assertEqual(bullet_ch.sigma(), 2)
+
+    def test_bullet_chain3(self):
+        self.assertEqual(bullet_c3.sigma(), 1)
+
+    def test_b_corolla3(self):
+        self.assertEqual(b_corolla3.sigma(), 6)
+
+    def test_b_t43(self):
+        self.assertEqual(b_t43.sigma(), 1)
+
+    def test_bb_cherry(self):
+        self.assertEqual(bb_cherry.sigma(), 2)
+
+    def test_chain5(self):
+        self.assertEqual(chain5.sigma(), 1)
+
+
+class FarisAlphaOrder5Tests(unittest.TestCase):
+    """[3] Alpha = n!/(sigma*tau!) for order-5 trees, lines 1641-1649."""
+
+    def test_corolla4(self):
+        self.assertEqual(corolla4.alpha(), 1)
+
+    def test_bullets_chain2(self):
+        self.assertEqual(bullets_c2.alpha(), 6)
+
+    def test_two_chain2s(self):
+        self.assertEqual(two_chain2s.alpha(), 3)
+
+    def test_bullet_cherry(self):
+        self.assertEqual(bullet_ch.alpha(), 4)
+
+    def test_bullet_chain3(self):
+        self.assertEqual(bullet_c3.alpha(), 4)
+
+    def test_b_corolla3(self):
+        self.assertEqual(b_corolla3.alpha(), 1)
+
+    def test_b_t43(self):
+        self.assertEqual(b_t43.alpha(), 3)
+
+    def test_bb_cherry(self):
+        self.assertEqual(bb_cherry.alpha(), 1)
+
+    def test_chain5(self):
+        self.assertEqual(chain5.alpha(), 1)
+
+
+class FarisBetaOrder5Tests(unittest.TestCase):
+    """[3] Beta = n!/sigma(tau) for order-5 trees, lines 1641-1649."""
+
+    def test_corolla4(self):
+        self.assertEqual(corolla4.beta(), 5)
+
+    def test_bullets_chain2(self):
+        self.assertEqual(bullets_c2.beta(), 60)
+
+    def test_two_chain2s(self):
+        self.assertEqual(two_chain2s.beta(), 60)
+
+    def test_bullet_cherry(self):
+        self.assertEqual(bullet_ch.beta(), 60)
+
+    def test_bullet_chain3(self):
+        self.assertEqual(bullet_c3.beta(), 120)
+
+    def test_b_corolla3(self):
+        self.assertEqual(b_corolla3.beta(), 20)
+
+    def test_b_t43(self):
+        self.assertEqual(b_t43.beta(), 120)
+
+    def test_bb_cherry(self):
+        self.assertEqual(bb_cherry.beta(), 60)
+
+    def test_chain5(self):
+        self.assertEqual(chain5.beta(), 120)

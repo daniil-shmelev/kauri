@@ -143,33 +143,33 @@ class TestProduct(unittest.TestCase):
                              msg=f"{t.list_repr} . bullet should be {t.list_repr}")
 
     def test_product_chain_chain(self):
-        """chain_2 . chain_2 = cherry + chain_3 in planar GL.
+        """chain_2 . chain_2 = 2*cherry + chain_3 in planar GL.
 
         chain_2 has 2 vertices (root + leaf) and chain_2 has 1 branch (bullet).
-        Vertex 0 (root): append after existing child -> cherry [[], []].
-        Vertex 1 (leaf): append after no children -> chain_3 [[[]]].
+        Vertex 0 (root): interleave bullet among 1 existing child at 2 positions,
+          both yield cherry -> coefficient 2.
+        Vertex 1 (leaf): no existing children -> chain_3 [[[]]].
         """
         result = pgl.product(PT([[]]), PT([[]]))
         expected = (
-            ForestSum(((1, PT([[],[]]).as_ordered_forest()),))
+            ForestSum(((2, PT([[],[]]).as_ordered_forest()),))
             + ForestSum(((1, PT([[[]]]).as_ordered_forest()),))
         )
         self.assertEqual(expected, result)
 
     def test_product_differs_from_nonplanar(self):
-        """Planar GL product splits terms that non-planar GL merges.
+        """Planar GL product uses monotone assignments + interleaving.
 
         Non-planar: cherry . chain_2 = 1*trident + 2*B+(bullet,chain_2)
-          (because B+(chain_2,bullet) == B+(bullet,chain_2) unordered)
-        Planar: cherry . chain_2 = 1*trident + 1*B+(bullet,chain_2) + 1*B+(chain_2,bullet)
-          (the two orderings are distinct planar trees)
+        Planar: cherry . chain_2 = 3*trident + 1*B+(bullet,chain_2) + 1*B+(chain_2,bullet)
+          The root has 2 existing children; interleaving 1 new branch among
+          them gives C(3,1) = 3 positions, all yielding trident.
         """
         result = pgl.product(PT([[],[]]), PT([[]]))
         terms = {}
         for c, f in result.term_list:
             terms[f] = terms.get(f, 0) + c
-        # All three are distinct planar trees with coefficient 1
-        self.assertEqual(terms[PT([[],[],[]]).as_ordered_forest()], 1)
+        self.assertEqual(terms[PT([[],[],[]]).as_ordered_forest()], 3)
         self.assertEqual(terms[PT([[],[[]]]).as_ordered_forest()], 1)
         self.assertEqual(terms[PT([[[]],[]]).as_ordered_forest()], 1)
 
@@ -233,9 +233,9 @@ class TestAntipode(unittest.TestCase):
 
 
 class TestAntipodeInvolution(unittest.TestCase):
-    """S^2 = id holds for cocommutative Hopf algebras.
-    The planar GL coproduct is cocommutative (S <-> S^c is a bijection
-    on subsets), so S^2 = id despite the product being noncommutative."""
+    """S^2 = id for primitive elements (chains with 0 or 1 child).
+    For non-primitive trees, S^2 != id in PGL because the planar
+    interleaving product inflates coefficients for multi-child vertices."""
 
     def test_involution_primitives(self):
         """S^2 = id for primitive elements (chains): S = -id so S^2 = id."""
@@ -244,12 +244,12 @@ class TestAntipodeInvolution(unittest.TestCase):
             self.assertEqual(_as_fs(t), s2,
                              msg=f"S^2({t.list_repr}) should equal t")
 
-    def test_involution_all(self):
-        """S^2 = id for all test trees (cocommutative => involution)."""
-        for t in trees:
+    def test_not_involution_multi_child(self):
+        """S^2 != id for trees with 2+ children (non-primitive)."""
+        for t in [PT([[],[]]), PT([[],[],[]]), PT([[],[[]]]), PT([[[]],[]])]:
             s2 = pgl.antipode(pgl.antipode(t))
-            self.assertEqual(_as_fs(t), s2,
-                             msg=f"S^2({t.list_repr}) should equal t")
+            self.assertNotEqual(_as_fs(t), s2,
+                                msg=f"S^2({t.list_repr}) should NOT equal t")
 
 
 class TestCounitOfAntipode(unittest.TestCase):
@@ -338,3 +338,110 @@ class TestMapPower(unittest.TestCase):
             pgl.map_power('a', 2)
         with self.assertRaises(TypeError):
             pgl.map_power(pgl.counit, 2.5)
+
+
+# ===========================================================================
+# Reference tests: Hoffman (2007), arxiv 0710.3739
+# Lines 720-779: PGL product examples
+# ===========================================================================
+
+# Tree definitions for reference tests
+bullet   = PT([])
+chain2   = PT([[]])
+cherry   = PT([[], []])
+corolla3 = PT([[], [], []])
+lheavy   = PT([[[]], []])
+rheavy   = PT([[], [[]]])
+b_cherry = PT([[[], []]])
+
+
+def _fs_dict(fs):
+    """Convert ForestSum to {forest_key: coeff} dict.
+
+    For PGL, trees are planar so list_repr IS canonical (no sorting needed).
+    Keys are tuples of tree list_reprs in forest order.
+    """
+    d = {}
+    for c, f in fs.term_list:
+        key = tuple(t.list_repr for t in f.tree_list
+                    if t.list_repr is not None)
+        d[key] = d.get(key, 0) + c
+    return {k: v for k, v in d.items() if v != 0}
+
+
+CO3 = corolla3.list_repr
+LH  = lheavy.list_repr
+RH  = rheavy.list_repr
+BC  = b_cherry.list_repr
+
+
+class PGLProductReferenceTests(unittest.TestCase):
+    """PGL product examples from Hoffman (2007), arxiv 0710.3739."""
+
+    def _check(self, result, expected):
+        got = _fs_dict(result)
+        self.assertEqual(got, expected)
+
+    def test_cherry_circ_chain2(self):
+        r"""Lines 720-744: cherry o chain2
+
+        cherry = B+(<><>) has BBA <><> with 2 components.
+        chain2 has BBA <> with 1 symbol.
+        Asymmetric shuffle of <><> into <> gives 6 BBAs (line 716):
+            3*<><><> + <><< >> + << >><> + << ><>>
+
+        Result: 3*corolla3 + rheavy + lheavy + B+(cherry)
+
+        kauri: pgl.product(chain2, cherry) = Hoffman's cherry o chain2.
+        """
+        result = pgl.product(chain2, cherry)
+        self._check(result, {
+            (CO3,):  3,
+            (RH,):   1,
+            (LH,):   1,
+            (BC,):   1,
+        })
+
+    def test_chain2_circ_cherry(self):
+        r"""Lines 758-779: chain2 o cherry
+
+        chain2 = B+(<>) has BBA <> with 1 component.
+        cherry has BBA <><> with 2 symbols.
+        Asymmetric shuffle of <> into <><> gives 5 BBAs (line 755-756):
+            3*<><><> + <><< >> + << >><>
+
+        Result: 3*corolla3 + rheavy + lheavy
+
+        kauri: pgl.product(cherry, chain2) = Hoffman's chain2 o cherry.
+        """
+        result = pgl.product(cherry, chain2)
+        self._check(result, {
+            (CO3,):  3,
+            (RH,):   1,
+            (LH,):   1,
+        })
+
+    def test_pgl_noncommutativity(self):
+        """Lines 720-779: PGL product is noncommutative.
+
+        cherry o chain2 has B+(cherry) term; chain2 o cherry does not.
+        Both share 3*corolla3 + rheavy + lheavy.
+        """
+        d1 = _fs_dict(pgl.product(chain2, cherry))  # cherry o chain2
+        d2 = _fs_dict(pgl.product(cherry, chain2))  # chain2 o cherry
+        self.assertNotEqual(d1, d2,
+                            msg="PGL product should be noncommutative")
+        self.assertIn((BC,), d1)
+        self.assertNotIn((BC,), d2)
+
+    def test_bullet_is_unit(self):
+        """Line 707 context: bullet is two-sided unit for PGL product.
+
+        If T has no children (T = bullet), then T o T' = T'.
+        kauri: pgl.product(t, bullet) should return t.
+        """
+        for t in [bullet, chain2, cherry]:
+            result = pgl.product(t, bullet)
+            d = _fs_dict(result)
+            self.assertEqual(d, {(t.list_repr,): 1},
+                             msg=f"bullet o {t.list_repr} should be identity")

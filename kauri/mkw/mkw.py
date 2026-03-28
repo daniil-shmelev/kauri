@@ -179,21 +179,67 @@ def coproduct_impl(t):
 # Antipode
 # ---------------------------------------------------------------------------
 
-def _shuffle_forest_apply(forest, func):
-    """Apply func to each tree in forest, combine via iterated shuffle.
+@cache
+def _forest_antipode(forest):
+    """MKW antipode applied to an ordered forest basis element.
 
-    Returns a ForestSum. This is the MKW (shuffle-based) extension of a
-    tree-level map to forests, analogous to forest_apply for NCK.
+    For single-tree forests, delegates to ``antipode_impl``.
+    For multi-tree forests, uses the forest coproduct
+
+    .. math::
+
+        \\Delta_{\\text{forest}}(\\omega)
+          = (\\mathrm{id} \\otimes B_-)
+            \\bigl(\\Delta(B_+(\\omega)) - B_+(\\omega) \\otimes 1\\bigr)
+
+    and the recursive formula
+
+    .. math::
+
+        S(\\omega) = -\\omega
+          - \\sum' S(\\text{left}) \\shuffle B_-(\\text{right}).
     """
-    trees = [t for t in forest.tree_list if t.list_repr is not None]
+    trees = tuple(t for t in forest.tree_list if t.list_repr is not None)
+
     if not trees:
         return EMPTY_ORDERED_FOREST.as_forest_sum()
 
-    result = func(trees[0])
-    for i in range(1, len(trees)):
-        fi = func(trees[i])
-        result = _shuffle_forestsums(result, fi)
-    return result
+    if len(trees) == 1:
+        return antipode_impl(trees[0])
+
+    # B₊(ω): graft all trees onto a new root (color 0)
+    parent_repr = tuple(t.list_repr for t in trees) + (0,)
+    parent = PlanarTree(parent_repr)
+    cp = coproduct_impl(parent)
+
+    the_forest = OrderedForest(trees)
+    out = ForestSum(((-1, the_forest),))
+
+    for c, left, right in cp.term_list:
+        right_tree = right[0]
+
+        # Skip τ ⊗ 1  and  1 ⊗ τ
+        if right_tree.list_repr is None or right_tree == parent:
+            continue
+
+        # B₋(right_tree): extract children as an ordered forest
+        right_children = tuple(
+            PlanarTree(r) for r in right_tree.list_repr[:-1])
+
+        if not right_children:
+            # B₋(leaf) = empty → this is the ω ⊗ 1 term, skip
+            continue
+
+        right_forest = OrderedForest(right_children)
+
+        # Recursively compute S(left_forest)
+        s_left = _forest_antipode(left)
+
+        # S(left) ⊔⊔ B₋(right)
+        term = _shuffle_forestsum_with_forest(s_left, right_forest)
+        out = out - c * term
+
+    return out.simplify()
 
 
 @cache
@@ -212,9 +258,7 @@ def antipode_impl(t):
         if right_tree.list_repr is None or right_tree == t:
             continue
 
-        # S is a homomorphism (MKW is commutative), extended via shuffle
-        s_left = _shuffle_forest_apply(left_forest, antipode_impl)
-        # Multiply S(left) by right_tree using shuffle
+        s_left = _forest_antipode(left_forest)
         right_fs = right_tree.as_ordered_forest()
         term = _shuffle_forestsum_with_forest(s_left, right_fs)
         out = out - c * term

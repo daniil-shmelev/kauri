@@ -11,13 +11,13 @@ References:
 
 import unittest
 from kauri.trees import (PlanarTree, OrderedForest, ForestSum,
-                         EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST)
+                         TensorProductSum, EMPTY_PLANAR_TREE, EMPTY_ORDERED_FOREST)
 from kauri.maps import Map
 from kauri.gentrees import planar_trees_of_order
 import kauri.mkw as mkw
 import kauri.nck as nck
 from kauri.mkw.mkw import (shuffle_forests, _shuffle_forestsum_with_forest,
-                           _shuffle_forest_apply, coproduct_impl, antipode_impl)
+                           _forest_antipode, coproduct_impl, antipode_impl)
 
 PT = PlanarTree
 bullet = PT([])
@@ -238,7 +238,7 @@ class AntipodeTests(unittest.TestCase):
         cp = coproduct_impl(t)
         result = ForestSum(())
         for c, left, right in cp:
-            s_left = _shuffle_forest_apply(left, antipode_impl)
+            s_left = _forest_antipode(left)
             right_tree = right[0]
             if right_tree.list_repr is None:
                 result = result + c * s_left
@@ -311,6 +311,398 @@ class CounitTests(unittest.TestCase):
         self.assertEqual(mkw.counit(bullet), 0)
         self.assertEqual(mkw.counit(chain2), 0)
         self.assertEqual(mkw.counit(cherry), 0)
+
+
+# ===========================================================================
+# Reference tests: Munthe-Kaas & Wright (2008), arxiv math/0603023
+# Table 2: Shuffle products, Table 5: Coproduct, Table 6: Antipode
+# ===========================================================================
+
+OF = OrderedForest
+
+# Additional tree definitions for reference tests
+chain4   = PT([[[[]]]])
+b_cherry = PT([[[], []]])
+b_bc2    = PT([[], [[]]])
+b_c2b    = PT([[[]], []])
+b_bbb    = PT([[], [], []])
+
+# Shorthand list_reprs for expected dicts
+B   = bullet.list_repr
+C2  = chain2.list_repr
+C3  = chain3.list_repr
+CH  = cherry.list_repr
+C4  = chain4.list_repr
+BC  = b_cherry.list_repr
+BB  = b_bc2.list_repr
+CB  = b_c2b.list_repr
+BBB = b_bbb.list_repr
+
+
+def _fs_dict(fs):
+    """Convert ForestSum to {forest_key: coeff} dict for comparison."""
+    d = {}
+    for c, f in fs.term_list:
+        key = tuple(t.list_repr for t in f.tree_list
+                    if t.list_repr is not None)
+        d[key] = d.get(key, 0) + c
+    return {k: v for k, v in d.items() if v != 0}
+
+
+def _tps_dict(tps):
+    """Convert TensorProductSum to {(left_key, right_key): coeff} dict."""
+    d = {}
+    for c, l, r in tps.term_list:
+        lk = tuple(t.list_repr for t in l.tree_list
+                   if t.list_repr is not None)
+        rk = tuple(t.list_repr for t in r.tree_list
+                   if t.list_repr is not None)
+        d[(lk, rk)] = d.get((lk, rk), 0) + c
+    return {k: v for k, v in d.items() if v != 0}
+
+
+def _of(*trees_arg):
+    """Build an OrderedForest from PlanarTree arguments."""
+    if not trees_arg:
+        return EMPTY_ORDERED_FOREST
+    return OF(trees_arg)
+
+
+# ---------------------------------------------------------------------------
+# Table 2: Shuffle products
+# ---------------------------------------------------------------------------
+
+class ShuffleReferenceTests(unittest.TestCase):
+    """Shuffle product values from Table 2 of Munthe-Kaas & Wright (2008)."""
+
+    def _check(self, f1, f2, expected):
+        result = _fs_dict(shuffle_forests(f1, f2))
+        self.assertEqual(result, expected,
+                         msg=f"shuffle({f1}, {f2})")
+
+    def test_bullet_bullet(self):
+        self._check(_of(bullet), _of(bullet),
+                    {(B, B): 2})
+
+    def test_bullet_bullet_bullet(self):
+        self._check(_of(bullet), _of(bullet, bullet),
+                    {(B, B, B): 3})
+
+    def test_bullet_chain2(self):
+        self._check(_of(bullet), _of(chain2),
+                    {(C2, B): 1, (B, C2): 1})
+
+    def test_bullet_3bullets(self):
+        self._check(_of(bullet), _of(bullet, bullet, bullet),
+                    {(B, B, B, B): 4})
+
+    def test_bullet_bullet_chain2(self):
+        self._check(_of(bullet), _of(bullet, chain2),
+                    {(B, B, C2): 2, (B, C2, B): 1})
+
+    def test_bullet_chain2_bullet(self):
+        self._check(_of(bullet), _of(chain2, bullet),
+                    {(C2, B, B): 2, (B, C2, B): 1})
+
+    def test_bullet_chain3(self):
+        self._check(_of(bullet), _of(chain3),
+                    {(B, C3): 1, (C3, B): 1})
+
+    def test_bullet_cherry(self):
+        self._check(_of(bullet), _of(cherry),
+                    {(B, CH): 1, (CH, B): 1})
+
+    def test_2bullets_2bullets(self):
+        self._check(_of(bullet, bullet), _of(bullet, bullet),
+                    {(B, B, B, B): 6})
+
+    def test_2bullets_chain2(self):
+        self._check(_of(bullet, bullet), _of(chain2),
+                    {(B, B, C2): 1, (B, C2, B): 1, (C2, B, B): 1})
+
+    def test_chain2_chain2(self):
+        self._check(_of(chain2), _of(chain2),
+                    {(C2, C2): 2})
+
+
+# ---------------------------------------------------------------------------
+# Table 5: Coproduct (tree entries)
+# ---------------------------------------------------------------------------
+
+class CoproductReferenceTests(unittest.TestCase):
+    """MKW coproduct values from Table 5 of Munthe-Kaas & Wright (2008)."""
+
+    def _check(self, tree, expected):
+        result = _tps_dict(coproduct_impl(tree))
+        self.assertEqual(result, expected,
+                         msg=f"coproduct({tree.list_repr})")
+
+    def test_bullet(self):
+        self._check(bullet, {
+            ((B,), ()): 1,
+            ((), (B,)): 1,
+        })
+
+    def test_chain2(self):
+        self._check(chain2, {
+            ((C2,), ()): 1,
+            ((B,), (B,)): 1,
+            ((), (C2,)): 1,
+        })
+
+    def test_chain3(self):
+        self._check(chain3, {
+            ((C3,), ()): 1,
+            ((B,), (C2,)): 1,
+            ((C2,), (B,)): 1,
+            ((), (C3,)): 1,
+        })
+
+    def test_cherry(self):
+        self._check(cherry, {
+            ((CH,), ()): 1,
+            ((B, B), (B,)): 1,
+            ((B,), (C2,)): 1,
+            ((), (CH,)): 1,
+        })
+
+    def test_chain4(self):
+        self._check(chain4, {
+            ((C4,), ()): 1,
+            ((C3,), (B,)): 1,
+            ((C2,), (C2,)): 1,
+            ((B,), (C3,)): 1,
+            ((), (C4,)): 1,
+        })
+
+    def test_b_cherry(self):
+        self._check(b_cherry, {
+            ((BC,), ()): 1,
+            ((CH,), (B,)): 1,
+            ((B, B), (C2,)): 1,
+            ((B,), (C3,)): 1,
+            ((), (BC,)): 1,
+        })
+
+    def test_b_bc2(self):
+        self._check(b_bc2, {
+            ((BB,), ()): 1,
+            ((B, C2), (B,)): 1,
+            ((B, B), (C2,)): 2,
+            ((B,), (C3,)): 1,
+            ((B,), (CH,)): 1,
+            ((), (BB,)): 1,
+        })
+
+    def test_b_c2b(self):
+        self._check(b_c2b, {
+            ((CB,), ()): 1,
+            ((C2, B), (B,)): 1,
+            ((C2,), (C2,)): 1,
+            ((B,), (CH,)): 1,
+            ((), (CB,)): 1,
+        })
+
+    def test_b_bbb(self):
+        self._check(b_bbb, {
+            ((BBB,), ()): 1,
+            ((B, B, B), (B,)): 1,
+            ((B, B), (C2,)): 1,
+            ((B,), (CH,)): 1,
+            ((), (BBB,)): 1,
+        })
+
+
+# ---------------------------------------------------------------------------
+# Table 6: Antipode (tree entries)
+# ---------------------------------------------------------------------------
+
+class AntipodeTreeReferenceTests(unittest.TestCase):
+    """MKW tree antipode values from Table 6 of Munthe-Kaas & Wright (2008)."""
+
+    def _check(self, tree, expected):
+        result = _fs_dict(antipode_impl(tree))
+        self.assertEqual(result, expected,
+                         msg=f"S({tree.list_repr})")
+
+    def test_bullet(self):
+        self._check(bullet, {(B,): -1})
+
+    def test_chain2(self):
+        self._check(chain2, {(C2,): -1, (B, B): 2})
+
+    def test_chain3(self):
+        self._check(chain3, {
+            (C3,): -1,
+            (B, C2): 2,
+            (C2, B): 2,
+            (B, B, B): -6,
+        })
+
+    def test_cherry(self):
+        self._check(cherry, {
+            (CH,): -1,
+            (B, C2): 1,
+            (C2, B): 1,
+            (B, B, B): -3,
+        })
+
+    def test_chain4(self):
+        self._check(chain4, {
+            (C4,): -1,
+            (B, C3): 2,
+            (C3, B): 2,
+            (C2, C2): 2,
+            (B, B, C2): -6,
+            (B, C2, B): -6,
+            (C2, B, B): -6,
+            (B, B, B, B): 24,
+        })
+
+    def test_b_cherry(self):
+        self._check(b_cherry, {
+            (BC,): -1,
+            (B, C3): 1,
+            (C3, B): 1,
+            (B, CH): 1,
+            (CH, B): 1,
+            (B, B, C2): -3,
+            (B, C2, B): -3,
+            (C2, B, B): -3,
+            (B, B, B, B): 12,
+        })
+
+    def test_b_bc2(self):
+        self._check(b_bc2, {
+            (BB,): -1,
+            (B, C3): 1,
+            (C3, B): 1,
+            (B, CH): 1,
+            (CH, B): 1,
+            (B, B, C2): -2,
+            (B, C2, B): -3,
+            (C2, B, B): -4,
+            (B, B, B, B): 12,
+        })
+
+    def test_b_c2b(self):
+        self._check(b_c2b, {
+            (CB,): -1,
+            (B, CH): 1,
+            (CH, B): 1,
+            (C2, C2): 2,
+            (B, B, C2): -4,
+            (B, C2, B): -3,
+            (C2, B, B): -2,
+            (B, B, B, B): 12,
+        })
+
+    def test_b_bbb(self):
+        self._check(b_bbb, {
+            (BBB,): -1,
+            (B, CH): 1,
+            (CH, B): 1,
+            (B, B, C2): -1,
+            (B, C2, B): -1,
+            (C2, B, B): -1,
+            (B, B, B, B): 4,
+        })
+
+
+# ---------------------------------------------------------------------------
+# Table 6: Antipode (forest entries)
+# ---------------------------------------------------------------------------
+
+class AntipodeForestReferenceTests(unittest.TestCase):
+    """MKW forest antipode values from Table 6 of Munthe-Kaas & Wright (2008)."""
+
+    def _check(self, forest, expected):
+        result = _fs_dict(_forest_antipode(forest))
+        self.assertEqual(result, expected,
+                         msg=f"S({[t.list_repr for t in forest.tree_list]})")
+
+    def test_bullet_bullet(self):
+        self._check(_of(bullet, bullet), {(B, B): 1})
+
+    def test_bullet_chain2(self):
+        self._check(_of(bullet, chain2), {
+            (C2, B): 1,
+            (B, B, B): -3,
+        })
+
+    def test_chain2_bullet(self):
+        self._check(_of(chain2, bullet), {
+            (B, C2): 1,
+            (B, B, B): -3,
+        })
+
+    def test_3bullets(self):
+        self._check(_of(bullet, bullet, bullet), {(B, B, B): -1})
+
+    def test_bullet_chain3(self):
+        self._check(_of(bullet, chain3), {
+            (C3, B): 1,
+            (B, B, C2): -1,
+            (B, C2, B): -2,
+            (C2, B, B): -3,
+            (B, B, B, B): 12,
+        })
+
+    def test_chain3_bullet(self):
+        self._check(_of(chain3, bullet), {
+            (B, C3): 1,
+            (B, B, C2): -3,
+            (B, C2, B): -2,
+            (C2, B, B): -1,
+            (B, B, B, B): 12,
+        })
+
+    def test_bullet_cherry(self):
+        self._check(_of(bullet, cherry), {
+            (CH, B): 1,
+            (B, C2, B): -1,
+            (C2, B, B): -2,
+            (B, B, B, B): 6,
+        })
+
+    def test_cherry_bullet(self):
+        self._check(_of(cherry, bullet), {
+            (B, CH): 1,
+            (B, B, C2): -2,
+            (B, C2, B): -1,
+            (B, B, B, B): 6,
+        })
+
+    def test_chain2_chain2(self):
+        self._check(_of(chain2, chain2), {
+            (C2, C2): 1,
+            (B, B, C2): -2,
+            (B, C2, B): -2,
+            (C2, B, B): -2,
+            (B, B, B, B): 12,
+        })
+
+    def test_bb_chain2(self):
+        self._check(_of(bullet, bullet, chain2), {
+            (C2, B, B): -1,
+            (B, B, B, B): 4,
+        })
+
+    def test_b_chain2_b(self):
+        self._check(_of(bullet, chain2, bullet), {
+            (B, C2, B): -1,
+            (B, B, B, B): 4,
+        })
+
+    def test_chain2_bb(self):
+        self._check(_of(chain2, bullet, bullet), {
+            (B, B, C2): -1,
+            (B, B, B, B): 4,
+        })
+
+    def test_4bullets(self):
+        self._check(_of(bullet, bullet, bullet, bullet),
+                    {(B, B, B, B): 1})
 
 
 if __name__ == '__main__':

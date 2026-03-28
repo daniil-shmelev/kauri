@@ -32,9 +32,10 @@ defined as follows.
       \\Delta_{PGL}(t) = \\sum_{S \\subseteq \\{1,\\ldots,k\\}}
           B_+(t_i : i \\in S) \\otimes B_+(t_j : j \\notin S)
 
-- The product :math:`\\cdot_{PGL}` (planar grafting) sums over all ways of attaching the
-  children of the right tree to vertices of the left tree, appending assigned
-  branches to the right of existing children. The product is noncommutative.
+- The product :math:`\\cdot_{PGL}` (planar grafting) sums over all monotone
+  assignments of the children of the right tree to vertices of the left tree
+  (preserving left-to-right order), interleaving assigned branches at all
+  positions among existing children. The product is noncommutative.
 - The antipode :math:`S_{PGL}(\\bullet) = \\bullet` and
 
   .. math::
