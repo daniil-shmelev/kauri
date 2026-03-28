@@ -12,4 +12,3 @@ commutator-free methods, and related tools.
    rk
    oddeven
    cf
-   manifold_ees
