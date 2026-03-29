@@ -1,0 +1,52 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="479.6" height="76.0" viewBox="0 0 479.6 76.0">
+<line x1="23.0" y1="68.0" x2="13.0" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="33.0" y1="48.0" x2="33.0" y2="28.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="23.0" y1="68.0" x2="33.0" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="135.6" y1="68.0" x2="125.6" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="145.6" y1="48.0" x2="145.6" y2="28.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="135.6" y1="68.0" x2="145.6" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="219.0" y1="68.0" x2="209.0" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="219.0" y1="68.0" x2="229.0" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="292.4" y1="48.0" x2="292.4" y2="28.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="292.4" y1="68.0" x2="292.4" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="385.2" y1="68.0" x2="385.2" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="431.2" y1="68.0" x2="431.2" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<circle cx="13.0" cy="48.0" r="4.0" fill="black" />
+<circle cx="33.0" cy="28.0" r="4.0" fill="black" />
+<circle cx="33.0" cy="48.0" r="4.0" fill="black" />
+<circle cx="23.0" cy="68.0" r="4.0" fill="black" />
+<circle cx="125.6" cy="48.0" r="4.0" fill="black" />
+<circle cx="145.6" cy="28.0" r="4.0" fill="black" />
+<circle cx="145.6" cy="48.0" r="4.0" fill="black" />
+<circle cx="135.6" cy="68.0" r="4.0" fill="black" />
+<circle cx="176.6" cy="68.0" r="4.0" fill="black" />
+<circle cx="209.0" cy="48.0" r="4.0" fill="black" />
+<circle cx="229.0" cy="48.0" r="4.0" fill="black" />
+<circle cx="219.0" cy="68.0" r="4.0" fill="black" />
+<circle cx="260.0" cy="68.0" r="4.0" fill="black" />
+<circle cx="292.4" cy="28.0" r="4.0" fill="black" />
+<circle cx="292.4" cy="48.0" r="4.0" fill="black" />
+<circle cx="292.4" cy="68.0" r="4.0" fill="black" />
+<circle cx="337.8" cy="68.0" r="4.0" fill="black" />
+<circle cx="352.8" cy="68.0" r="4.0" fill="black" />
+<circle cx="385.2" cy="48.0" r="4.0" fill="black" />
+<circle cx="385.2" cy="68.0" r="4.0" fill="black" />
+<circle cx="416.2" cy="68.0" r="4.0" fill="black" />
+<circle cx="431.2" cy="48.0" r="4.0" fill="black" />
+<circle cx="431.2" cy="68.0" r="4.0" fill="black" />
+<circle cx="463.6" cy="68.0" r="4.0" fill="black" />
+<text x="49.2" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">⊗</text>
+<text x="64.6" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">∅</text>
+<text x="80.8" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">+</text>
+<text x="94.0" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">∅</text>
+<text x="109.4" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">⊗</text>
+<text x="162.6" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">+</text>
+<text x="192.8" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">⊗</text>
+<text x="246.0" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">+</text>
+<text x="276.2" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">⊗</text>
+<text x="309.4" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">+</text>
+<text x="322.6" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">2</text>
+<text x="369.0" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">⊗</text>
+<text x="402.2" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">+</text>
+<text x="447.4" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">⊗</text>
+</svg>

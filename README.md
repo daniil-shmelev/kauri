@@ -1,8 +1,8 @@
 <p align="center">
   <picture>
-    <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/logo_dark.png" media="(prefers-color-scheme: dark)">
-    <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/logo_light.png" media="(prefers-color-scheme: light)">
-    <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/master/docs/_static/logo_light.png" width="350" alt="Logo">
+    <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/main/docs/_static/logo_dark.png" media="(prefers-color-scheme: dark)">
+    <source srcset="https://raw.githubusercontent.com/daniil-shmelev/kauri/main/docs/_static/logo_light.png" media="(prefers-color-scheme: light)">
+    <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/main/docs/_static/logo_light.png" width="350" alt="Logo">
   </picture>
 </p>
 
@@ -36,7 +36,7 @@ Full documentation is available at [https://kauri.readthedocs.io](https://kauri.
 | Munthe-Kaas-Wright (MKW) | -- | `kauri.mkw` |
 
 Each algebra provides: `coproduct`, `counit`, `antipode`, `map_product`, `map_power`.
-Additionally, `kauri.mkw` provides `shuffle_product`.
+Additionally, `kauri.gl` and `kauri.pgl` provide `product`, and `kauri.mkw` provides `shuffle_product`.
 
 ### Tree types
 
@@ -100,6 +100,20 @@ kr.display(cp)
   <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/main/docs/_static/example_gl_coproduct.svg" width="266" alt="GL coproduct example">
 </picture>
 
+### CEM coproduct
+
+```python
+import kauri.cem as cem
+
+t = kr.Tree([[], [[]]])
+cp = cem.coproduct(t)
+kr.display(cp)
+```
+
+<picture>
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/main/docs/_static/example_cem_coproduct.svg" width="551" alt="CEM coproduct example">
+</picture>
+
 ### NCK coproduct
 
 ```python
@@ -112,6 +126,35 @@ kr.display(cp)
 
 <picture>
   <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/main/docs/_static/example_nck_coproduct.svg" width="495" alt="NCK coproduct example">
+</picture>
+
+### PGL product
+
+```python
+import kauri.pgl as pgl
+
+t1 = kr.PlanarTree([[]])
+t2 = kr.PlanarTree([[], []])
+p = pgl.product(t1, t2)
+kr.display(p)
+```
+
+<picture>
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/main/docs/_static/example_pgl_product.svg" width="236" alt="PGL product example">
+</picture>
+
+### MKW coproduct
+
+```python
+import kauri.mkw as mkw
+
+pt = kr.PlanarTree([[], [[]]])
+cp = mkw.coproduct(pt)
+kr.display(cp)
+```
+
+<picture>
+  <img src="https://raw.githubusercontent.com/daniil-shmelev/kauri/main/docs/_static/example_mkw_coproduct.svg" width="480" alt="MKW coproduct example">
 </picture>
 
 ### Trees of order 4

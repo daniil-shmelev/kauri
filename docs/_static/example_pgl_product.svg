@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="236.4" height="76.0" viewBox="0 0 236.4 76.0">
+<line x1="47.4" y1="68.0" x2="27.4" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="47.4" y1="68.0" x2="47.4" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="47.4" y1="68.0" x2="67.4" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="108.4" y1="68.0" x2="98.4" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="118.4" y1="48.0" x2="118.4" y2="28.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="108.4" y1="68.0" x2="118.4" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="149.4" y1="48.0" x2="149.4" y2="28.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="159.4" y1="68.0" x2="149.4" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="159.4" y1="68.0" x2="169.4" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="210.4" y1="48.0" x2="200.4" y2="28.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="210.4" y1="48.0" x2="220.4" y2="28.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<line x1="210.4" y1="68.0" x2="210.4" y2="48.0" stroke="black" stroke-width="1.5" stroke-linecap="round" />
+<circle cx="27.4" cy="48.0" r="4.0" fill="black" />
+<circle cx="47.4" cy="48.0" r="4.0" fill="black" />
+<circle cx="67.4" cy="48.0" r="4.0" fill="black" />
+<circle cx="47.4" cy="68.0" r="4.0" fill="black" />
+<circle cx="98.4" cy="48.0" r="4.0" fill="black" />
+<circle cx="118.4" cy="28.0" r="4.0" fill="black" />
+<circle cx="118.4" cy="48.0" r="4.0" fill="black" />
+<circle cx="108.4" cy="68.0" r="4.0" fill="black" />
+<circle cx="149.4" cy="28.0" r="4.0" fill="black" />
+<circle cx="149.4" cy="48.0" r="4.0" fill="black" />
+<circle cx="169.4" cy="48.0" r="4.0" fill="black" />
+<circle cx="159.4" cy="68.0" r="4.0" fill="black" />
+<circle cx="200.4" cy="28.0" r="4.0" fill="black" />
+<circle cx="220.4" cy="28.0" r="4.0" fill="black" />
+<circle cx="210.4" cy="48.0" r="4.0" fill="black" />
+<circle cx="210.4" cy="68.0" r="4.0" fill="black" />
+<text x="12.2" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">3</text>
+<text x="84.4" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">+</text>
+<text x="135.4" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">+</text>
+<text x="186.4" y="68.0" font-size="14.0" font-family="sans-serif" text-anchor="middle" dominant-baseline="central">+</text>
+</svg>
