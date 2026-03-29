@@ -6,8 +6,6 @@
   </picture>
 </p>
 
-<h2 align="center">Kauri</h2>
-
 ![PyPI - Version](https://img.shields.io/pypi/v/kauri)
 ![PyPI - Downloads](https://img.shields.io/pypi/dm/kauri)
 ![CI - Test](https://github.com/daniil-shmelev/kauri/actions/workflows/tests.yml/badge.svg)
