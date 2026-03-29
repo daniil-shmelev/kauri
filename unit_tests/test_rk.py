@@ -14,7 +14,14 @@
 # =========================================================================
 
 import unittest
-from kauri import *
+from kauri import (
+    Tree, bck, exact_weights, trees_up_to_order,
+    rk_symbolic_weight, rk_order_cond,
+    rk4, euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
+    ralston_rk3, ralston_rk4, nystrom_rk5, backward_euler,
+    implicit_midpoint, crank_nicolson, gauss6, radau_iia, lobatto6,
+    EES25, EES27,
+)
 from kauri import Tree as T
 
 trees = [T(None),

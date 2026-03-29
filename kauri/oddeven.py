@@ -17,21 +17,27 @@ This module provides instances of ``kauri.Map`` related to the odd-even
 decomposition applied to the BCK Hopf algebra :cite:`shmelev2025ees, aguiar2006combinatorial`.
 """
 
+__all__ = ['id_sqrt', 'minus', 'plus']
+
 from .trees import Tree
 from .bck import antipode
-from .generic_algebra import _apply
+from .generic_algebra import apply_map
 from .maps import Map, ident, sign
 from functools import cache
 
 @cache
 def _id_sqrt(self): #Id^{1/2}
+    if not isinstance(self, Tree):
+        raise TypeError(
+            f"oddeven.id_sqrt expects a Tree, not {type(self)}. "
+            "Use planar_oddeven.id_sqrt for PlanarTree.")
     if self.equals(Tree(None)):
         return Tree(None) * 1
     if self.equals(Tree([])):
         return Tree([]) * 0.5
     else:
         out = (ident ** 2)(self) - 2 * self
-        out = _apply(out, _id_sqrt)
+        out = apply_map(out, _id_sqrt)
         out = (self - out) * 0.5
         out = out.simplify()
         return out
@@ -41,16 +47,30 @@ id_sqrt.__doc__ = """
 The square root of the identity map, :math:`\\mathrm{Id}^{1/2}`. The unique
 multiplicative map such that :math:`\\mathrm{Id}^{1/2} \\cdot \\mathrm{Id}^{1/2} = \\mathrm{Id}`
 :cite:`shmelev2025ees`.
+
+**Example usage:**
+
+.. kauri-exec::
+
+    for t in kr.trees_of_order(4):
+        kr.display(t, "\\u2192", oddeven.id_sqrt(t), rationalise=True)
 """
 minus = ((sign & antipode) * ident) & id_sqrt
 minus.__doc__ = """
 The minus operation, defined by :cite:`shmelev2025ees`
 
 .. math::
-    
+
     \\tau^- = \\mu \\circ (\\overline{S} \\otimes \\mathrm{Id}) \\circ \\Delta \\circ \\mathrm{Id}^{1/2}(\\tau)
 
 where :math:`\\overline{S}(\\tau) := (-1)^{|\\tau|}S(\\tau)`.
+
+**Example usage:**
+
+.. kauri-exec::
+
+    for t in kr.trees_of_order(4):
+        kr.display(t, "\\u2192", oddeven.minus(t), rationalise=True)
 """
 plus = ident * (minus & antipode)
 plus.__doc__ = """
@@ -58,6 +78,12 @@ The plus operation, defined by :cite:`shmelev2025ees`
 
 .. math::
 
-    \\tau^- = \\mu \\circ (\\mathrm{Id} \\otimes (\\cdot)^- \\circ S) \\circ \\Delta(\\tau)
+    \\tau^+ = \\mu \\circ (\\mathrm{Id} \\otimes (\\cdot)^- \\circ S) \\circ \\Delta(\\tau)
 
+**Example usage:**
+
+.. kauri-exec::
+
+    for t in kr.trees_of_order(4):
+        kr.display(t, "\\u2192", oddeven.plus(t), rationalise=True)
 """

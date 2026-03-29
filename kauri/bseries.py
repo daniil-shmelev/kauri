@@ -75,7 +75,7 @@ and the symmetric-adjoint method is given by
 
     bs_adjoint = kr.BSeries(y, f, bs1.weights ** (-1) & kr.sign, 5)
 
-where `kr.sign` is the :class:`Map` sending `t` to `-t`.
+where `kr.sign` is the :class:`Map` sending `t` to `(-1)^|t| * t`.
 
 """
 import itertools
@@ -85,6 +85,7 @@ from typing import Union
 import sympy as sp
 
 from kauri import Tree, trees_up_to_order, Map
+from kauri.trees import _is_scalar
 
 def _check_f_y(f, y):
     # Checks that f and y are correctly specified
@@ -165,17 +166,18 @@ def elementary_differential(tree : Tree,
     :param y: Symbolic variables y
     :type y: sympy.Matrix
 
-    Example usage::
+    **Example usage:**
 
-            import kauri as kr
-            import sympy as sp
+    .. kauri-exec::
 
-            y1, y2 = sp.symbols('y1 y2')
-            y = sp.Matrix([y1, y2])
-            f = sp.Matrix([y1 ** 2, y1 * y2])
+        import sympy as sp
 
-            t = kr.Tree([[[]],[]])
-            elementary_differential(t, f, y) # Returns sp.Matrix([[4 * y1**5 ], [ 4 * y1**4 * y2]])
+        y1, y2 = sp.symbols('y1 y2')
+        y = sp.Matrix([y1, y2])
+        f = sp.Matrix([y1 ** 2, y1 * y2])
+
+        t = Tree([[[]],[]])
+        print(elementary_differential(t, f, y))
     """
     if not isinstance(tree, Tree):
         raise TypeError("The argument 'tree' must be of type Tree, not " + str(type(tree)))
@@ -208,20 +210,21 @@ class BSeries:
     :param order: The truncation order of the B-Series
     :type order: int
 
-    Example usage::
+    **Example usage:**
 
-            import kauri as kr
-            import sympy as sp
+    .. kauri-exec::
 
-            y1 = sp.symbols('y1')
-            y = sp.Matrix([y1])
-            f = sp.Matrix([y1 ** 2])
+        import sympy as sp
 
-            m = kr.rk4.elementary_weights_map()
-            bs = BSeries(y, f, m, 5)
+        y1 = sp.symbols('y1')
+        y = sp.Matrix([y1])
+        f = sp.Matrix([y1 ** 2])
 
-            print(bs.series()) # Print the B-Series as a sympy expression
-            print(bs(1, 0.1)) # Evaluate the B-Series at y = 1, h = 0.1
+        m = rk4.elementary_weights_map()
+        bs = BSeries(y, f, m, 5)
+
+        print(bs.series()) # Print the B-Series as a sympy expression
+        print(bs([1], 0.1)) # Evaluate the B-Series at y = [1], h = 0.1
     """
 
     def __init__(self, y : sp.Matrix, f : sp.Matrix, weights : Map, order : int):
@@ -248,7 +251,7 @@ class BSeries:
 
     def __call__(self, y : list, h : Union[int, float]) -> list:
         """
-        Evalutes the B-series at the given values for y and h.
+        Evaluates the B-series at the given values for y and h.
 
         :param y: List of values to substitute for y
         :type y: list
@@ -262,19 +265,19 @@ class BSeries:
             raise ValueError("y must be a list, not " + str(type(y)))
         if len(y) != self.dim:
             raise ValueError("List of values for y is of incorrect length. Expected " + str(self.dim) + " got " + str(len(y)))
-        if not isinstance(h, (int, float)):
-            raise ValueError("h must be an int or float, not " + str(type(h)))
+        if not _is_scalar(h):
+            raise ValueError("h must be a numeric scalar, not " + str(type(h)))
 
         out = self.symbolic_expr.subs(self.h, h)
         for i in range(self.dim):
             out = out.subs(self.y[i], y[i])
         return [float(x) for x in out]
 
-    def series(self) -> sp.Matrix:
+    def series(self) -> sp.MatrixBase:
         """
         Returns the truncated B-series as a sympy Matrix.
 
-        :rtype: sympy.Matrix
+        :rtype: sympy.MatrixBase
         """
         return self.symbolic_expr
 

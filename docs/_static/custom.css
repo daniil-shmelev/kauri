@@ -1,0 +1,4 @@
+/* Center SVG tree visualizations from kauri-exec */
+div[style*="margin-bottom:1.5em"] {
+    text-align: center;
+}

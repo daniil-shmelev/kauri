@@ -22,6 +22,8 @@ from math import sqrt
 
 from .rk import RK
 
+_EES_TOL = 1e-10
+
 euler = RK([[0]], [1], 'Euler')
 euler.__doc__ = """
 The Euler method
@@ -180,7 +182,7 @@ Nyström's RK5 method
         1/3 & 1/3 & 0 & 0 & 0 & 0 & 0 \\\\
         2/5 & 4/25 & 6/25 & 0 & 0 & 0 & 0 \\\\
         1 & 1/4 & -3 & 15/4 & 0 & 0 & 0 \\\\
-        2/5 & 2/27 & 10/9 & -50/81 & 8/81 & 0 & 0 \\\\
+        2/3 & 2/27 & 10/9 & -50/81 & 8/81 & 0 & 0 \\\\
         4/5 & 2/25 & 12/25 & 2/15 & 8/75 & 0 & 0 \\\\
         \\hline
         & 23/192 & 0 & 125/192 & 0 & -27/64 & 125/192
@@ -248,7 +250,7 @@ Kuntzmann & Butcher method of order 6, based on Gaussian quadrature
     \\begin{array}{c|ccc}
         \\frac{1}{2} - \\frac{\\sqrt{15}}{10} & \\frac{5}{36} & \\frac{2}{9} - \\frac{\\sqrt{15}}{15} & \\frac{5}{36} - \\frac{\\sqrt{15}}{30} \\\\
         \\frac{1}{2} & \\frac{5}{36} + \\frac{\\sqrt{15}}{24} & \\frac{2}{9} & \\frac{5}{36} - \\frac{\\sqrt{15}}{24} \\\\
-        \\frac{1}{2} - \\frac{\\sqrt{15}}{10} & \\frac{5}{36} + \\frac{\\sqrt{15}}{30} & \\frac{2}{9} + \\frac{\\sqrt{15}}{15} & \\frac{5}{36} \\\\
+        \\frac{1}{2} + \\frac{\\sqrt{15}}{10} & \\frac{5}{36} + \\frac{\\sqrt{15}}{30} & \\frac{2}{9} + \\frac{\\sqrt{15}}{15} & \\frac{5}{36} \\\\
         \\hline
          & \\frac{5}{18} & \\frac{4}{9} & \\frac{5}{18}
     \\end{array}
@@ -284,7 +286,13 @@ lobatto6 = RK([
                ],
               [1/12, 5/12, 5/12, 1/12], 'Lobatto 6')
 lobatto6.__doc__ = """
-Butcher’s Lobatto formula of order 6
+Butcher’s Lobatto formula of order 6.
+
+.. note::
+    This uses an equivalent but non-standard Butcher tableau where the last column of A
+    is zero. The elementary weights and numerical solution are identical to the standard
+    Lobatto IIIA(4) tableau, but the A matrix does not satisfy the standard Lobatto IIIA
+    property :math:`a_{s,j} = b_j`.
 
 .. math::
 
@@ -320,6 +328,10 @@ def EES25(x):
     :param x: Parameter of the :math:`EES(2,5)` scheme.
     :rtype: kauri.RK
     """
+    if abs(x - 1) < _EES_TOL:
+        raise ValueError(f"EES25(x) is not defined for x = {x} (division by zero in a21).")
+    if abs(1 - 4*x**2) < _EES_TOL:
+        raise ValueError(f"EES25(x) is not defined for x = {x} (division by zero in a31, a32).")
     b1 = x
     b2 = 1/2
     b3 = 1/2 - x
@@ -339,10 +351,20 @@ def EES27(x, plus=True):
     The Explicit and Effectively Symmetric scheme of order 2 and antisymmetric order 7,
     :math:`EES(2,7;x)`. For the Butcher tableau, see :cite:`shmelev2025ees`.
 
-    :param x: Parameter of the :math:`EES(2,5)` scheme.
+    :param x: Parameter of the :math:`EES(2,7)` scheme.
     :param plus: If True, takes :math:`+\\sqrt{2}` in the Butcher tableau, otherwise :math:`-\\sqrt{2}`.
     :rtype: kauri.RK
     """
+    if abs(2*x - 1) < _EES_TOL:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in alpha, beta).")
+    if abs(x - 1) < _EES_TOL:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in a21, a31, a41).")
+    if abs(2*x**2 - 1) < _EES_TOL:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in a41, a43).")
+    if abs(2*x**2 - 4*x + 1) < _EES_TOL:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in beta, a43).")
+    if abs(4*x**2 - 4*x - 1) < _EES_TOL:
+        raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in alpha, beta).")
     sqrt2 = sqrt(2) if plus else - sqrt(2)
 
     b1 = x

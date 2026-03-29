@@ -56,3 +56,5 @@ The ``kauri.cem`` sub-package implements the Calaque, Ebrahimi-Fard and Manchon 
 """
 
 from .cem import antipode, counit, coproduct, map_power, map_product
+
+__all__ = ['coproduct', 'counit', 'antipode', 'map_product', 'map_power']

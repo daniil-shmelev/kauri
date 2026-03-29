@@ -54,5 +54,3 @@ Implicit Methods
     :no-value:
 .. autodata:: lobatto6
     :no-value:
-
-.. include:: ../refs.rst

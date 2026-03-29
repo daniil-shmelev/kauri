@@ -26,17 +26,43 @@ from scipy.optimize import root
 import matplotlib.pyplot as plt
 from tqdm import tqdm
 
-from .gentrees import trees_of_order
-from .trees import Tree, Forest, ForestSum
+from .gentrees import trees_of_order, planar_trees_of_order
+from .trees import Tree, Forest, ForestSum, PlanarTree, _is_scalar
+from ._protocols import TreeLike, ForestLike, ForestSumLike
 from .maps import Map, sign
-from .generic_algebra import _apply
+from .generic_algebra import apply_map, sign_factor
 from .bck import counit
+
+
+def _check_planar_order(char_func, tol, limit):
+    """Check classical order of *char_func* on ordered trees."""
+    n = 0
+    while True:
+        for t in planar_trees_of_order(n):
+            if abs(char_func(t) - 1. / t.factorial()) > tol:
+                return n - 1
+        if n >= limit:
+            raise RuntimeError(f"Order equals or exceeds limit of {limit}")
+        n += 1
+
+
+def _check_planar_antisymmetric_order(defect_func, tol, limit):
+    """Check antisymmetric order of *defect_func* on ordered trees."""
+    n = 0
+    while True:
+        for t in planar_trees_of_order(n):
+            expected = 1 if t.list_repr is None else 0
+            if abs(defect_func(t) - expected) > tol:
+                return n - 1
+        if n >= limit:
+            raise RuntimeError(f"Order equals or exceeds limit of {limit}")
+        n += 1
 
 def _internal_symbolic(i, t_rep, a, b, s):
     return sum(a[i,j] * _derivative_symbolic(j, t_rep, a, b, s) for j in range(s))
 
 def _derivative_symbolic(i, t_rep, a, b, s):
-    if t_rep in (None, []): # Empty and singleton tree
+    if t_rep is None or len(t_rep) == 1:
         return 1
     out = 1
     for subtree in t_rep[:-1]:
@@ -93,7 +119,7 @@ def rk_symbolic_weight(
     :param explicit: If true, assumes the Runge--Kutta scheme is explicit, i.e. :math:`a_{ij} = 0` for :math:`i \\leq j`.
     :type explicit: bool
     :param a_mask: A two-dimensional array specifying which coefficients of the Runge--Kutta parameter matrix :math:`A`
-        are non-zero. If not None, sets :math:`a_{ij} = 0` for all :math:`i,j` such that ``A_mask[i][j] = 0``.
+        are non-zero. If not None, sets :math:`a_{ij} = 0` for all :math:`i,j` such that ``a_mask[i][j] = 0``.
     :param b_mask: A one-dimensional array or list specifying which coefficients of the Runge--Kutta parameter vector :math:`b`
         are non-zero. If not None, sets :math:`b_i = 0` for all :math:`i` such that ``b_mask[i] = 0``.
     :param mathematica_code: If true, outputs the expression as mathematica code.
@@ -104,38 +130,21 @@ def rk_symbolic_weight(
         string if `mathematica_code` is True.
     :rtype: sympy.core.add.Add | string
 
-    Example usage::
+    **Example usage:**
 
-            t = Tree([[],[]])
-            RK_symbolic_weight(t, 2) # Returns b0*(a00 + a01)**2 + b1*(a10 + a11)**2
-            RK_symbolic_weight(t, 2, explicit = True) # Returns a10**2*b1
+    .. kauri-exec::
 
-            A_mask = [[1,0],[0,1]]
-            b_mask = [0,1]
-            RK_symbolic_weight(t, 2, A_mask = A_mask, b_mask = b_mask) #Returns a11**2*b1
+        t = Tree([[],[]])
+        print(rk_symbolic_weight(t, 2))
+        print(rk_symbolic_weight(t, 2, explicit = True))
 
-    .. code-block:: python
-
-        #Generate order conditions as mathematica equations and write to text file
-
-        order_conditions = [Tree([]) - 1.,
-                            Tree([[]]) - 1./2,
-                            Tree([[],[]]) - 1./3]
-
-        strs = []
-
-        for i,t in enumerate(order_conditions):
-            cond = RK_symbolic_weight(t, 3, explicit = True, mathematica_code = True, rationalise = True)
-            str_ = "eq" + str(i) + " = " + cond + " == 0; \\n"
-            strs.append(str_)
-
-        with open("mathematica_code.txt", "w") as text_file:
-            for s in strs:
-                text_file.write(s)
+        a_mask = [[1,0],[0,1]]
+        b_mask = [0,1]
+        print(rk_symbolic_weight(t, 2, a_mask = a_mask, b_mask = b_mask))
 
     """
-    if not isinstance(t, (int, float, Tree, Forest, ForestSum)):
-        raise TypeError("t must be a Tree, Forest, ForestSum, int or float, not " + str(type(t)))
+    if not isinstance(t, (int, float, TreeLike, ForestLike, ForestSumLike)):
+        raise TypeError("t must be a Tree, Forest, ForestSum (or planar equivalent), int or float, not " + str(type(t)))
     if not isinstance(s, int):
         raise TypeError("Number of stages s must be an int, not " + str(type(s)))
     if not isinstance(explicit, bool):
@@ -143,17 +152,17 @@ def rk_symbolic_weight(
     if not (isinstance(a_mask, list) or a_mask is None):
         raise TypeError("a_mask must be a list, not " + str(type(a_mask)))
     if not (isinstance(b_mask, list) or b_mask is None):
-        raise TypeError("b_mask must be a list, not " + str(type(a_mask)))
+        raise TypeError("b_mask must be a list, not " + str(type(b_mask)))
     if not isinstance(mathematica_code, bool):
         raise TypeError("mathematica_code must be a bool, not " + str(type(mathematica_code)))
     if not isinstance(rationalise, bool):
         raise TypeError("rationalise must be a bool, not " + str(type(rationalise)))
 
     t_ = t
-    if isinstance(t, (int, float)):
+    if _is_scalar(t):
         t_ = t * Tree(None).as_forest_sum()
 
-    out = _apply(t_, lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
+    out = apply_map(t_, lambda x : _rk_symbolic_weight(x, s, explicit, a_mask, b_mask))
 
     if rationalise:
         out = sympy.nsimplify(out, tolerance=1e-10, rational = True)
@@ -181,7 +190,7 @@ def rk_order_cond(
     :param explicit: If true, assumes the Runge--Kutta scheme is explicit, i.e. :math:`a_{ij} = 0` for :math:`i \\leq j`.
     :type explicit: bool
     :param a_mask: A two-dimensional array specifying which coefficients of the Runge--Kutta parameter matrix :math:`A`
-        are non-zero. If not None, sets :math:`a_{ij} = 0` for all :math:`i,j` such that ``A_mask[i][j] = 0``.
+        are non-zero. If not None, sets :math:`a_{ij} = 0` for all :math:`i,j` such that ``a_mask[i][j] = 0``.
     :param b_mask: A one-dimensional array or list specifying which coefficients of the Runge--Kutta parameter vector :math:`b`
         are non-zero. If not None, sets :math:`b_i = 0` for all :math:`i` such that ``b_mask[i] = 0``.
     :param mathematica_code: If true, outputs the expression as mathematica code.
@@ -192,34 +201,21 @@ def rk_order_cond(
         string if `mathematica_code` is True.
     :rtype: sympy.core.add.Add | string
 
-    Example usage::
+    **Example usage:**
 
-            t = Tree([[],[]])
-            RK_order_cond(t, 2) # Returns b0*(a00 + a01)**2 + b1*(a10 + a11)**2 - 1/3
-            RK_order_cond(t, 2, explicit = True) # Returns a10**2*b1 - 1/3
+    .. kauri-exec::
 
-            A_mask = [[1,0],[0,1]]
-            b_mask = [0,1]
-            RK_order_cond(t, 2, A_mask = A_mask, b_mask = b_mask) #Returns a11**2*b1 - 1/3
+        t = Tree([[],[]])
+        print(rk_order_cond(t, 2))
+        print(rk_order_cond(t, 2, explicit = True))
 
-    .. code-block:: python
-
-        #Generate order conditions as mathematica equations and write to text file
-
-        strs = []
-
-        for i,t in enumerate(trees_of_order(4)):
-            cond = RK_symbolic_weight(t, 3, explicit = True, mathematica_code = True, rationalise = True)
-            str_ = "eq" + str(i) + " = " + cond + " == 0; \\n"
-            strs.append(str_)
-
-        with open("mathematica_code.txt", "w") as text_file:
-            for s in strs:
-                text_file.write(s)
+        a_mask = [[1,0],[0,1]]
+        b_mask = [0,1]
+        print(rk_order_cond(t, 2, a_mask = a_mask, b_mask = b_mask))
 
     """
-    if not isinstance(t, (int, float, Tree, Forest, ForestSum)):
-        raise TypeError("t must be a Tree, Forest, ForestSum, int or float, not " + str(type(t)))
+    if not isinstance(t, (int, float, TreeLike, ForestLike, ForestSumLike)):
+        raise TypeError("t must be a Tree, Forest, ForestSum (or planar equivalent), int or float, not " + str(type(t)))
 
     return rk_symbolic_weight(t - 1. / t.factorial(), s, explicit, a_mask, b_mask, mathematica_code, rationalise)
 
@@ -244,7 +240,7 @@ class RK:
         if not isinstance(a, (list, np.ndarray)):
             raise TypeError("a must be a list or array, not " + str(type(a)))
         if not isinstance(b, (list, np.ndarray)):
-            raise TypeError("b must be a list or array, not " + str(type(a)))
+            raise TypeError("b must be a list or array, not " + str(type(b)))
 
         self.name = name
         self.s = len(b)
@@ -256,13 +252,10 @@ class RK:
         self.c = [sum(a[i][j] for j in range(self.s)) for i in range(self.s)]
 
         self.explicit = self._check_explicit()
-        self.deriv_dict = {}  # {repr(None) : 1, repr([]) : 1}
+        self.deriv_dict = {}
         for i in range(self.s):
-            self.deriv_dict[(i, repr(None))] = 1
-            self.deriv_dict[(i, repr([]))] = 1
+            self.deriv_dict[(i, None)] = 1
 
-        self.np_a = np.array(a)
-        self.np_b = np.array(b)
 
     def __repr__(self):
         out = "["
@@ -453,11 +446,13 @@ class RK:
         if not isinstance(t0, float):
             raise TypeError("t0 must be a float, not " + str(type(t0)))
         if not isinstance(t_end, float):
-            raise TypeError("t_end must be a float, not " + str(type(t0)))
+            raise TypeError("t_end must be a float, not " + str(type(t_end)))
         if not callable(f):
             raise TypeError("f must be callable")
         if not isinstance(n, int):
             raise TypeError("n must be an int, not " + str(type(n)))
+        if n <= 0:
+            raise ValueError("n must be a positive integer, got " + str(n))
         if not isinstance(tol, float):
             raise TypeError("tol must be a float, not " + str(type(tol)))
         if not isinstance(max_iter, int):
@@ -497,44 +492,6 @@ class RK:
             plt.plot(t_vals, np.array(y_vals)[:, plot_dims], **plot_kwargs)
 
         return t_vals, y_vals
-
-    # def __add__(self, other : 'RK') -> 'RK':
-    #     """
-    #     Returns the sum of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
-    #
-    #     .. math::
-    #
-    #         \\begin{array}{c|cc}
-    #             c_1 & A_1 & 0 \\\\
-    #             c_2 & 0 & A_2\\\\
-    #             \\hline
-    #              & b_1 & b_2
-    #         \\end{array}
-    #
-    #     :rtype: RK
-    #     """
-    #     if not isinstance(other, RK):
-    #         raise TypeError("Cannot add RK and object of type " + str(type(other)))
-    #
-    #     s1 = other.s
-    #     a1 = other.a
-    #     b1 = other.b
-    #
-    #     s2 = self.s
-    #     a2 = self.a
-    #     b2 = self.b
-    #
-    #     a = [[a1[i][j] for j in range(s1)] + [0 for _ in range(s2)] for i in range(s1)]
-    #     a += [[0 for _ in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
-    #     b = b1 + b2
-    #
-    #     return RK(a, b)
-    #
-    # def __neg__(self):
-    #     return RK(self.a, [-self.b[i] for i in range(self.s)])
-    #
-    # def __sub__(self, other):
-    #     return self + other.__neg__()
 
     def __mul__(self, other : 'RK') -> 'RK':
         """
@@ -595,28 +552,30 @@ class RK:
         if exponent == 0:
             return RK([[0]], [0])
 
-        expn_ = exponent
         if exponent < 0:
-            out = self._inverse()
+            base = self._inverse()
             expn_ = -exponent
         else:
-            out = copy.deepcopy(self)
+            base = copy.deepcopy(self)
+            expn_ = exponent
 
+        out = base
         for _ in range(expn_-1):
-            out = out * self
+            out = out * base
         return out
 
     def _internal_weights(self, i, t_rep):
         return sum(self.a[i][j] * self._derivative_weights(j, t_rep) for j in range(self.s))
 
     def _derivative_weights(self, i, t_rep):
-        if (i, repr(t_rep)) in self.deriv_dict:
-            return self.deriv_dict[(i, repr(t_rep))]
+        key = (i, t_rep)
+        if key in self.deriv_dict:
+            return self.deriv_dict[key]
 
         out = 1
         for subtree in t_rep[:-1]:
             out *= self._internal_weights(i, subtree)
-        self.deriv_dict[(i, repr(t_rep))] = out
+        self.deriv_dict[key] = out
         return out
 
     def _elementary_weights(self, t_rep):
@@ -661,7 +620,7 @@ class RK:
         Returns the order of the RK scheme.
 
         :param tol: Tolerance for evaluating order conditions. An order condition of the form ``self.elementary_weights(t) = 1./t.factorial()``
-            is considered to be satisfied if ``abs( self.elementary_weights(t) - 1./t.factorial() ) > tol``
+            is considered to be satisfied if ``abs( self.elementary_weights(t) - 1./t.factorial() ) < tol``
         :type tol: float
         :param limit: Highest admissible order. If the order equals or exceeds this limit, a runtime error
             will be raised.
@@ -707,3 +666,44 @@ class RK:
             if n >= limit:
                 raise RuntimeError("Order equals or exceeds limit of " + str(limit))
             n += 1
+
+    def planar_order(self, tol: float = 1e-10, limit: int = 10) -> int:
+        """
+        Returns the order of the RK scheme on ordered (planar) trees.
+
+        Checks ``Phi(tau) = 1/gamma(tau)`` for all ordered trees tau.
+
+        :param tol: Tolerance for evaluating order conditions.
+        :type tol: float
+        :param limit: Highest admissible order.
+        :type limit: int
+        :rtype: int
+        """
+        if not isinstance(tol, float):
+            raise TypeError("tol must be a float, not " + str(type(tol)))
+        return _check_planar_order(
+            lambda t: self._elementary_weights(t.list_repr), tol, limit)
+
+    def planar_antisymmetric_order(self, tol: float = 1e-10, limit: int = 10) -> int:
+        """
+        Returns the antisymmetric order of the RK scheme on ordered (planar)
+        trees, using the NCK Hopf algebra.
+
+        Checks ``D(tau) = ((sign . Phi) *_nck Phi)(tau) - epsilon(tau) = 0``
+        for all ordered trees tau.
+
+        :param tol: Tolerance for evaluating order conditions.
+        :type tol: float
+        :param limit: Highest admissible order.
+        :type limit: int
+        :rtype: int
+        """
+        if not isinstance(tol, float):
+            raise TypeError("tol must be a float, not " + str(type(tol)))
+
+        from .nck.nck import map_product as nck_map_product
+
+        ew = self.elementary_weights_map()
+        sign_ew = Map(lambda t: sign_factor(t) * ew(t))
+        m = nck_map_product(sign_ew, ew)
+        return _check_planar_antisymmetric_order(m, tol, limit)

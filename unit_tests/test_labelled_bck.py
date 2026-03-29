@@ -14,7 +14,7 @@
 # =========================================================================
 
 import unittest
-from kauri import *
+from kauri import Tree, Map, ident, exact_weights, bck
 from kauri import Tree as T
 
 labelled_trees = [T(None),

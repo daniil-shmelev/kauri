@@ -14,40 +14,89 @@
 # =========================================================================
 
 """
-Front-end for the BCK module
+The BCK Hopf algebra module
 """
-from ..bck_impl import _counit, _coproduct, _antipode
+from functools import cache
 from ..maps import Map
-from ..trees import Tree, TensorProductSum
+from ..trees import (Tree, PlanarTree, TensorProductSum,
+                     EMPTY_TREE, EMPTY_FOREST, EMPTY_FOREST_SUM)
+from ..generic_algebra import forest_apply
 
-counit = Map(_counit)
+
+def counit_impl(t):
+    # Return 1 if t is the empty tree, otherwise 0
+    return 1 if t.list_repr is None else 0
+
+@cache
+def antipode_impl(t):
+    if t.list_repr is None:
+        return EMPTY_FOREST_SUM # Antipode of empty tree is the empty tree
+    cp = coproduct_impl(t)
+    out = -t.as_forest_sum() # First term, -t
+    for c, branches, subtree_ in cp: # Remaining terms
+        subtree = subtree_[0] # Convert from Forest to Tree
+        if subtree.equals(t) or subtree.equals(EMPTY_TREE):
+            continue # We've already included the -t term at the start, so move on
+        out = out - c * forest_apply(branches, antipode_impl) * subtree
+
+    return out.simplify()
+
+@cache
+def coproduct_impl(t):
+    if not isinstance(t, Tree):
+        hint = " Use nck.coproduct for planar trees, or nck.map_power/nck.map_product for Map operations." if isinstance(t, PlanarTree) else ""
+        raise TypeError("BCK coproduct expects a Tree, not " + str(type(t)) + "." + hint)
+    # This follows the recursive definition of https://arxiv.org/pdf/hep-th/9808042
+    # using B_- and B_+
+    if t == Tree(None):
+        return TensorProductSum(( (1, EMPTY_FOREST, EMPTY_FOREST), )) # Tree(None) @ Tree(None)
+    if len(t.list_repr) == 1:
+        return TensorProductSum(( (1, EMPTY_FOREST, t.as_forest()), (1, t.as_forest(), EMPTY_FOREST) )) # Tree(None) @ t + t @ Tree(None)
+
+    root_color = t.list_repr[-1]
+    branches = t.unjoin()
+
+    cp_prod = 1
+    for subtree in branches:
+        cp = coproduct_impl(subtree)
+        cp_prod = cp_prod * cp
+
+    # Return t \otimes \emptyset + (id \otimes B_+)[\Delta(B_-(t))]
+    out = t @ Tree(None) + TensorProductSum(tuple((c, f1, f2.join(root_color)) for c, f1, f2 in cp_prod))
+    return out.simplify()
+
+counit = Map(counit_impl)
 counit.__doc__ = """
 The counit :math:`\\varepsilon_{BCK}` of the BCK Hopf algebra.
 
 :type: Map
 
-Example usage::
-    
-    import kauri as kr
-    import kauri.bck as bck
+**Example usage:**
 
-    bck.counit(kr.Tree(None)) # Returns 1
-    bck.counit(kr.Tree([])) # Returns 0
+.. kauri-exec::
+
+    print(bck.counit(Tree(None)))  # Returns 1
+    print(bck.counit(Tree([])))  # Returns 0
 """
 
-antipode = Map(_antipode)
+def _safe_antipode(t):
+    if not isinstance(t, Tree):
+        hint = " For planar trees, use nck.antipode instead." if isinstance(t, PlanarTree) else ""
+        raise TypeError("Argument to bck.antipode must be a Tree, not " + str(type(t)) + "." + hint)
+    return antipode_impl(t)
+
+antipode = Map(_safe_antipode)
 antipode.__doc__ = """
 The antipode :math:`S_{BCK}` of the BCK Hopf algebra.
 
 :type: Map
 
-Example usage::
+**Example usage:**
 
-    import kauri as kr
-    import kauri.bck as bck
+.. kauri-exec::
 
-    t = kr.Tree([[[]],[]])
-    bck.antipode(t)
+    t = Tree([[[]],[]])
+    kr.display(bck.antipode(t))
 """
 
 def coproduct(t : Tree) -> TensorProductSum:
@@ -58,17 +107,17 @@ def coproduct(t : Tree) -> TensorProductSum:
     :type t: Tree
     :rtype: TensorProductSum
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.bck as bck
+    .. kauri-exec::
 
-        bck.coproduct(kr.Tree([])) # Returns 1 ∅ ⊗ []+1 [] ⊗ ∅
-        bck.coproduct(kr.Tree([[]])) # Returns 1 [[]] ⊗ ∅+1 ∅ ⊗ [[]]+1 [] ⊗ []
+        t = Tree([[[]],[]])
+        kr.display(bck.coproduct(t))
     """
     if not isinstance(t, Tree):
-        raise TypeError("Argument to bck.coproduct must be a Tree, not " + str(type(t)))
-    return _coproduct(t)
+        hint = " For planar trees, use nck.coproduct instead." if isinstance(t, PlanarTree) else ""
+        raise TypeError("Argument to bck.coproduct must be a Tree, not " + str(type(t)) + "." + hint)
+    return coproduct_impl(t)
 
 def map_product(f : Map, g : Map) -> Map:
     """
@@ -87,13 +136,12 @@ def map_product(f : Map, g : Map) -> Map:
     :type g: Map
     :rtype: Map
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.bck as bck
+    .. kauri-exec::
 
-        ident = kr.Map(lambda x : x)
-        counit = bck.map_product(ident, bck.antipode) # Equivalent to indent * bck.antipode
+        f = bck.map_product(ident, bck.antipode)
+        print(f(Tree([[]])))
     """
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in bck.map_product must be of type Map, not " + str(type(f)) + " and " + str(type(g)))
@@ -107,7 +155,7 @@ def map_power(f : Map, exponent : int) -> Map:
 
         (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta_{BCK} (t)
 
-    and negative powers are defined as :math:`f^{-n} = f^n \\circ S_{BCK}`,
+    and negative powers are defined as :math:`f^{-n} = (f \\circ S_{BCK})^n`,
     where :math:`S_{BCK}` is the BCK antipode.
 
     .. note::
@@ -118,14 +166,12 @@ def map_power(f : Map, exponent : int) -> Map:
     :param exponent: exponent
     :type exponent: int
 
-    Example usage::
+    **Example usage:**
 
-        import kauri as kr
-        import kauri.bck as bck
+    .. kauri-exec::
 
-        ident = kr.Map(lambda x : x)
-        S = bck.map_power(ident, -1) # antipode, equivalent to ident ** (-1)
-        ident_sq = bck.map_power(ident, 2) # identity squared, equivalent to ident ** 2
+        S = bck.map_power(ident, -1)  # antipode
+        print(S(Tree([[]])))
     """
     if not isinstance(f, Map):
         raise TypeError("f must be a Map, not " + str(type(f)))

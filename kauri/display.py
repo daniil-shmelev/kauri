@@ -14,19 +14,29 @@
 # =========================================================================
 
 """
-The display function plots objects of type :class:`Tree`, :class:`Forest`, :class:`ForestSum`
-or :class:`TensorProductSum`.
+SVG rendering for Tree, Forest, ForestSum and TensorProductSum objects.
 """
+import warnings
 from typing import Union
 
-import matplotlib.pyplot as plt
-import plotly.graph_objects as go
-
-from .trees import Tree, ForestSum, Forest, TensorProductSum
+from .trees import (Tree, ForestSum, Forest, TensorProductSum,
+                    PlanarTree, NoncommutativeForest, _is_scalar)
 from .utils import _branch_level_sequences, _str
 
-EMPTY_FONTSIZE = 10
-TENSOR_FONTSIZE = 14
+# ── Configuration constants ──────────────────────────────────────────────
+NODE_RADIUS = 4
+EDGE_WIDTH = 1.5
+LEVEL_SPACING = 20
+SIBLING_GAP = 10
+TREE_GAP = 5
+TERM_GAP = 18
+COEFF_GAP = 6
+TENSOR_GAP = 14
+DISPLAY_GAP = 20
+FONT_SIZE = 14
+PADDING = 8
+CHAR_WIDTH_FACTOR = 0.6   # estimated character width as fraction of font size
+NODE_STROKE_WIDTH = 1.0
 
 COLORS = ['black',
           'firebrick',
@@ -38,423 +48,443 @@ COLORS = ['black',
           'dodgerblue',
           'deeppink']
 
-def _get_node_coords(layout, x=0, y=0, scale=0.2):
-    gap = scale / 2
-    if layout == []:
-        return [], 0
-    if layout == [0]:
-        return [(x, y)], gap
 
-    coords = [(x, y)]
-    branch_layouts = _branch_level_sequences(layout)
+# ── Helpers ──────────────────────────────────────────────────────────────
 
-    branch_coords = []
+def _shift_items_x(items, offset):
+    """Shift all x-coordinates in render items by offset."""
+    shifted = []
+    for item in items:
+        kind = item[0]
+        if kind == 'node':
+            shifted.append(('node', item[1] + offset, item[2], item[3]))
+        elif kind == 'edge':
+            shifted.append(('edge', item[1] + offset, item[2],
+                            item[3] + offset, item[4]))
+        elif kind == 'text':
+            shifted.append(('text', item[1] + offset, item[2],
+                            item[3], item[4]))
+        else:
+            raise ValueError("Unknown render item kind: " + repr(kind))
+    return shifted
+
+
+# ── Layer 1: Layout ──────────────────────────────────────────────────────
+
+def _layout_tree(level_seq, color_seq, x_center, y_base, scale):
+    """Recursively compute layout items for a single tree.
+
+    Returns (items, width, height) where items are render primitives and
+    y grows *upward* (root at bottom).
+    """
+    gap = SIBLING_GAP * scale
+    level_sp = LEVEL_SPACING * scale
+
+    if level_seq == []:
+        return [], 0, 0
+    if level_seq == [0]:
+        return [('node', x_center, y_base, color_seq[0])], gap, level_sp
+
+    items = []
+    branches = _branch_level_sequences(level_seq)
+
+    # Split color_seq into per-branch sequences
+    branch_colors = []
+    idx = 1
+    for branch in branches:
+        branch_colors.append(color_seq[idx:idx + len(branch)])
+        idx += len(branch)
+
+    # Layout each branch
+    branch_items = []
     branch_widths = []
-    for branch in branch_layouts:
-        c, w = _get_node_coords(branch, x, y + 1, scale)
-        branch_coords.append(c)
-        branch_widths.append(w)
+    branch_heights = []
+    for branch, bcols in zip(branches, branch_colors):
+        b_items, b_w, b_h = _layout_tree(branch, bcols, 0, y_base + level_sp, scale)
+        branch_items.append(b_items)
+        branch_widths.append(b_w)
+        branch_heights.append(b_h)
 
-    width = sum(branch_widths) + (len(branch_widths) - 1) * gap
-    pos = - width / 2
-    for i in range(len(branch_coords)):
-        branch_coords[i] = [(c[0] + pos + branch_widths[i] / 2, c[1]) for c in branch_coords[i]]
+    total_width = sum(branch_widths) + (len(branch_widths) - 1) * gap
+    total_width = max(total_width, gap)
+
+    # Position branches left-to-right centred on x_center
+    pos = x_center - total_width / 2
+    for i in range(len(branch_items)):
+        offset_x = pos + branch_widths[i] / 2
+        items.extend(_shift_items_x(branch_items[i], offset_x))
+        # Edge from root to branch root (branch root is always at local
+        # (0, y_base+level_sp), shifted by offset_x)
+        if branch_items[i]:
+            items.append(('edge', x_center, y_base,
+                          offset_x, y_base + level_sp))
         pos += branch_widths[i] + gap
 
-    for c in branch_coords:
-        coords += c
+    # Add root node
+    items.append(('node', x_center, y_base, color_seq[0]))
 
-    return coords, width
+    max_height = level_sp
+    if branch_heights:
+        max_height = max(branch_heights) + level_sp
 
-###############################################################
-#Plotly
-###############################################################
+    return items, total_width, max_height
 
-def _get_tree_traces(layout, coords, scale=0.2):
-    traces = []
-    if layout == []:
-        return traces
 
-    xroot, yroot = coords[0]
+def _layout_forest(forest, x_start, y_base, scale, show_empty=False):
+    """Lay out a forest (sequence of trees) left-to-right.
 
-    branch_layouts = []
-    branch_coords = []
-    for idx, i in enumerate(layout[1:]):
-        if i == 1:
-            branch_layouts.append([0])
-            branch_coords.append([coords[idx+1]])
-        else:
-            branch_layouts[-1].append(i - 1)
-            branch_coords[-1].append(coords[idx+1])
+    Returns (items, width, height).
+    """
+    gap = TREE_GAP * scale
+    cw = CHAR_WIDTH_FACTOR
 
-    for lay, c in zip(branch_layouts, branch_coords):
-        # Add edge line
-        traces.append(go.Scatter(
-            x=[xroot, c[0][0]],
-            y=[yroot, c[0][1]],
-            mode='lines',
-            line={"color" : 'black'},
-            showlegend=False,
-            hoverinfo='skip'
-        ))
-        traces.extend(_get_tree_traces(lay, c, scale))
+    if show_empty and len(forest.tree_list) == 1 and forest.tree_list[0].list_repr is None:
+        fs = FONT_SIZE * scale
+        items = [('text', x_start + fs * cw / 2, y_base, '\u2205', fs)]
+        return items, fs * cw, LEVEL_SPACING * scale
 
-    return traces
+    items = []
+    x = x_start
+    max_height = 0
 
-def _display_plotly_forest(f, x, y, h, scale, traces, gap, empty = False):
-
-    if empty and f == Tree(None):
-        traces.append(go.Scatter(
-            x=[x], y=[y], text=["\u2205"], mode='text',
-            showlegend=False
-        ))
-        x += 2*gap
-        return x, h, traces
-
-    for t in f.tree_list:
+    for t in forest.tree_list:
         level_seq = t.level_sequence()
         color_seq = t.color_sequence()
-        c_, w = _get_node_coords(level_seq, x, 0, scale)
-        c_ = [(cx + w / 2, cy) for cx, cy in c_]
+        if level_seq == []:
+            continue
+        t_items, t_w, t_h = _layout_tree(level_seq, color_seq, 0, y_base, scale)
+        items.extend(_shift_items_x(t_items, x + t_w / 2))
+        x += t_w + gap
+        max_height = max(max_height, t_h)
 
-        # Edges
-        traces.extend(_get_tree_traces(level_seq, c_, scale))
+    width = max(x - x_start - gap, 0) if items else 0
+    if max_height == 0:
+        max_height = LEVEL_SPACING * scale
+    return items, width, max_height
 
-        # Nodes
-        traces.append(go.Scatter(
-            x=[p[0] for p in c_],
-            y=[p[1] for p in c_],
-            mode='markers',
-            marker={'color' : [COLORS[i] for i in color_seq]},
-            showlegend=False,
-            hoverinfo='skip'
-        ))
 
-        x += w + gap
-        if len(c_) > 0:
-            h_ = max(cy for _, cy in c_)
-            h = max(h, h_)
+def _format_coeff(c, is_first, rationalise):
+    """Format coefficient for display, suppressing trivial '1' coefficients."""
+    try:
+        abs_c = abs(c)
+        is_neg = bool(c < 0)
+    except TypeError:
+        # Symbolic coefficient (e.g., sympy.Symbol) — treat as non-negative
+        return _str(c, rationalise)
+    if abs_c == 1:
+        if is_first:
+            return '' if not is_neg else '\u2212'
+        else:
+            return ''  # sign handled by +/- operator
+    else:
+        s = _str(abs_c, rationalise)
+        if is_first and is_neg:
+            return '\u2212' + s
+        return s
 
-    return x, h, traces
 
-def _display_plotly(forest_sum,
-                    scale=0.7,
-                    fig_size=(1500, 50),
-                    file_name=None,
-                    rationalise = True):
-    gap = scale / 2
-    traces = []
+def _layout_coeff_op(items, x, c, is_first, scale, rationalise):
+    """Lay out the operator (+/−) and coefficient for a single term.
 
+    Returns the new x position after emitting any text items.
+    """
+    term_gap = TERM_GAP * scale
+    coeff_gap = COEFF_GAP * scale
+    fs = FONT_SIZE * scale
+    cw = CHAR_WIDTH_FACTOR
+
+    if not is_first:
+        try:
+            op = '+' if bool(c >= 0) else '\u2212'
+        except TypeError:
+            op = '+'  # symbolic coefficient — treat as positive
+        items.append(('text', x + term_gap / 2, 0, op, fs))
+        x += term_gap
+
+    coeff_str = _format_coeff(c, is_first, rationalise)
+    if coeff_str:
+        items.append(('text', x + len(coeff_str) * fs * cw / 2, 0, coeff_str, fs))
+        x += len(coeff_str) * fs * cw + coeff_gap
+
+    return x
+
+
+def _layout_forest_sum(forest_sum, scale, rationalise=False):
+    """Lay out a ForestSum left-to-right.
+
+    Returns (items, total_width, total_height).
+    """
     if not isinstance(forest_sum, ForestSum):
-        if isinstance(forest_sum, (int, float)):
+        if _is_scalar(forest_sum):
             forest_sum = Tree(None) * forest_sum
         else:
             forest_sum = forest_sum.as_forest_sum()
 
-    x, y = 0, 0
-    h = 0
+    if len(forest_sum.term_list) == 0:
+        fs = FONT_SIZE * scale
+        items = [('text', 0, 0, '0', fs)]
+        return items, fs * 0.5, fs
+
+    items = []
+    x = 0
+    max_height = 0
+    coeff_gap = COEFF_GAP * scale
 
     for i, (c, f) in enumerate(forest_sum.term_list):
-        if i > 0:
-            c = abs(c)
+        x = _layout_coeff_op(items, x, c, i == 0, scale, rationalise)
 
-        # Add coefficient as text
-        traces.append(go.Scatter(
-            x=[x], y=[y], text=[_str(c, rationalise)], mode='text',
-            showlegend=False
-        ))
+        f_items, f_w, f_h = _layout_forest(f, x, 0, scale, show_empty=True)
+        items.extend(f_items)
+        x += f_w + coeff_gap / 2
+        max_height = max(max_height, f_h)
 
-        x += (len(_str(c, rationalise)) + 1) * gap
+    if max_height == 0:
+        max_height = LEVEL_SPACING * scale
 
-        x, h, traces = _display_plotly_forest(f, x, y, h, scale, traces, gap)
-        x += gap / 2
+    return items, x, max_height
 
-        if i < len(forest_sum.term_list) - 1:
-            op = "+" if forest_sum.term_list[i + 1][0] > 0 else "-"
-            traces.append(go.Scatter(
-                x=[x], y=[y], text=[op], mode='text',
-                showlegend=False
-            ))
-            x += gap * 2
 
-    fig = go.Figure(traces)
-    extra_padding = 1 if h == 1 else 0
-    fig.update_layout(template="simple_white")
-    fig.update_layout(
-        width=fig_size[0],
-        height=fig_size[1],
-        xaxis={"showgrid" : False,
-               "zeroline" : False,
-               "visible" : False,
-               "range" : [-10, 100]},
-        yaxis={"showgrid" : False,
-               "zeroline" : False,
-               "visible" : False,
-               "range" : [-0.5, h + extra_padding + 0.5]},
-        margin={"l": 0, "r": 0, "t": 0, "b": 0}
-    )
+def _layout_tensor_sum(tensor_sum, scale, rationalise=False):
+    """Lay out a TensorProductSum left-to-right.
 
-    if file_name:
-        fig.write_image(file_name + ".png")
+    Returns (items, total_width, total_height).
+    """
+    fs = FONT_SIZE * scale
+    cw = CHAR_WIDTH_FACTOR
 
-    fig.show(config={
-        "displayModeBar": False,
-        "staticPlot": True
-    })
+    if not tensor_sum.term_list:
+        items = [('text', 0, 0, '0', fs)]
+        return items, fs * 0.5, fs
 
-def _display_tensor_plotly(tensor_sum,
-                    scale=0.7,
-                    fig_size=(1500, 50),
-                    file_name=None,
-                    rationalise = True):
-    gap = scale / 2
-    traces = []
-
-    x, y = 0, 0
-    h = 0
+    items = []
+    x = 0
+    max_height = 0
+    coeff_gap = COEFF_GAP * scale
+    tensor_gap = TENSOR_GAP * scale
 
     for i, (c, f1, f2) in enumerate(tensor_sum.term_list):
-        if i > 0:
-            c = abs(c)
+        x = _layout_coeff_op(items, x, c, i == 0, scale, rationalise)
 
-        # Add coefficient as text
-        traces.append(go.Scatter(
-            x=[x], y=[y], text=[_str(c, rationalise)], mode='text',
-            showlegend=False
-        ))
+        # Left forest
+        f1_items, f1_w, f1_h = _layout_forest(f1, x, 0, scale, show_empty=True)
+        items.extend(f1_items)
+        x += f1_w + tensor_gap / 2
 
-        x += (len(_str(c, rationalise)) + 1) * gap
+        # Tensor symbol
+        items.append(('text', x + fs * cw / 2, 0, '\u2297', fs))
+        x += fs * cw + tensor_gap / 2
 
-        x, h, traces = _display_plotly_forest(f1, x, y, h, scale, traces, gap, True)
-        x += 1.5 * gap
-        traces.append(go.Scatter(
-            x=[x], y=[y], text=["\u2297"], mode='text',
-            showlegend=False
-        ))
-        x += 2.5 * gap
-        x, h, traces = _display_plotly_forest(f2, x, y, h, scale, traces, gap, True)
-        x += 1.5 * gap
+        # Right forest
+        f2_items, f2_w, f2_h = _layout_forest(f2, x, 0, scale, show_empty=True)
+        items.extend(f2_items)
+        x += f2_w + coeff_gap / 2
 
-        if i < len(tensor_sum.term_list) - 1:
-            op = "+" if tensor_sum.term_list[i + 1][0] > 0 else "-"
-            traces.append(go.Scatter(
-                x=[x], y=[y], text=[op], mode='text',
-                showlegend=False
-            ))
-            x += gap * 2
+        max_height = max(max_height, f1_h, f2_h)
 
-    fig = go.Figure(traces)
-    extra_padding = 1 if h == 1 else 0
-    fig.update_layout(template="simple_white")
-    fig.update_layout(
-        width=fig_size[0],
-        height=fig_size[1],
-        xaxis={"showgrid" : False,
-               "zeroline" : False,
-               "visible" : False,
-               "range" : [-10, 100]},
-        yaxis={"showgrid" : False,
-               "zeroline" : False,
-               "visible" : False,
-               "range" : [-0.5, h + extra_padding + 0.5]},
-        margin={"l": 0, "r": 0, "t": 0, "b": 0}
-    )
+    if max_height == 0:
+        max_height = LEVEL_SPACING * scale
 
-    if file_name:
-        fig.write_image(file_name + ".png")
-
-    fig.show(config={
-        "displayModeBar": False,
-        "staticPlot": True
-    })
+    return items, x, max_height
 
 
+# ── Layer 2: SVG Rendering ───────────────────────────────────────────────
 
-###############################################################
-#Matplotlib
-###############################################################
+def _render_svg(items, width, height, scale):
+    """Convert render items into an SVG string.
 
-def _display_tree(layout, color_sequence, coords, scale = 0.2):
+    Layout uses y-up coordinates (root at bottom).  SVG uses y-down,
+    so we flip: svg_y = height - layout_y.
+    """
+    pad = PADDING * scale
+    svg_w = width + 2 * pad
+    svg_h = height + 2 * pad
+    r = NODE_RADIUS * scale
+    ew = EDGE_WIDTH * scale
+    nsw = NODE_STROKE_WIDTH
 
-    if layout == []:
-        return
+    parts = [
+        f'<svg xmlns="http://www.w3.org/2000/svg" '
+        f'width="{svg_w:.1f}" height="{svg_h:.1f}" '
+        f'viewBox="0 0 {svg_w:.1f} {svg_h:.1f}">'
+    ]
 
-    xroot, yroot = coords[0]
-
-    plt.scatter([xroot], [yroot], marker='o', linewidth= scale / 2, color = COLORS[color_sequence[0]], zorder = 1)
-
-    branch_layouts = []
-    branch_coords = []
-    branch_colors = []
-    for idx, i in enumerate(layout[1:]):
-        if i == 1:
-            branch_layouts.append([0])
-            branch_coords.append([coords[idx+1]])
-            branch_colors.append([color_sequence[idx + 1]])
+    # Render order: edges (behind), then nodes, then text (on top)
+    _ORDER = {'edge': 0, 'node': 1, 'text': 2}
+    for item in sorted(items, key=lambda it: _ORDER[it[0]]):
+        kind = item[0]
+        if kind == 'edge':
+            _, x1, y1, x2, y2 = item
+            parts.append(
+                f'<line x1="{x1 + pad:.1f}" y1="{height - y1 + pad:.1f}" '
+                f'x2="{x2 + pad:.1f}" y2="{height - y2 + pad:.1f}" '
+                f'stroke="black" stroke-width="{ew:.1f}" '
+                f'stroke-linecap="round" />'
+            )
+        elif kind == 'node':
+            _, x, y, color_idx = item
+            sx, sy = x + pad, height - y + pad
+            color = COLORS[color_idx] if color_idx < len(COLORS) else 'black'
+            if color_idx > 0:
+                parts.append(
+                    f'<circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r:.1f}" '
+                    f'fill="{color}" stroke="black" stroke-width="{nsw}" />'
+                )
+            else:
+                parts.append(
+                    f'<circle cx="{sx:.1f}" cy="{sy:.1f}" r="{r:.1f}" '
+                    f'fill="black" />'
+                )
         else:
-            branch_layouts[-1].append(i - 1)
-            branch_coords[-1].append(coords[idx+1])
-            branch_colors[-1].append(color_sequence[idx + 1])
+            _, x, y, text, font_size = item
+            parts.append(
+                f'<text x="{x + pad:.1f}" y="{height - y + pad:.1f}" '
+                f'font-size="{font_size:.1f}" font-family="sans-serif" '
+                f'text-anchor="middle" dominant-baseline="central">'
+                f'{text}</text>'
+            )
 
-    for lay, c, cols in zip(branch_layouts, branch_coords, branch_colors):
-        plt.plot([xroot, c[0][0]], [yroot, c[0][1]], color = 'black', zorder = -1)
-        _display_tree(lay, cols, c, scale)
+    parts.append('</svg>')
+    return '\n'.join(parts)
 
-def _display_forest(f, x, y, scale, tree_gap, h, empty = False):
 
-    if empty and f == Tree(None):
-        plt.text(x, y, "\u2205", fontsize=EMPTY_FONTSIZE)
-        x += 4 * tree_gap
-        return x, h
+# ── Layer 3: Orchestration ───────────────────────────────────────────────
 
-    for t in f.tree_list:
-        c, w = _get_node_coords(t.level_sequence(), x, 0, scale)
-        c = [(c_[0] + w / 2, c_[1]) for c_ in c]
-        _display_tree(t.level_sequence(), t.color_sequence(), c, scale)
-        x += w + tree_gap
-        if len(c) > 0:
-            h_ = max(c_[1] for c_ in c)
-            h = max(h, h_)
-    return x, h
+def _layout_single(obj, scale, rationalise):
+    """Layout a single tree-algebra object.
 
-def _display_plt(forest_sum,
-                 scale = 0.2,
-                 fig_size = (15, 1),
-                 file_name = None,
-                 rationalise = True):
-    tree_gap = scale / 4
-    coeff_gap = scale / 2
-
-    plt.figure(figsize = fig_size)
-    if not isinstance(forest_sum, ForestSum):
-        if isinstance(forest_sum, (int, float)):
-            forest_sum = Tree(None) * forest_sum
+    Returns (items, width, height).
+    """
+    if isinstance(obj, TensorProductSum):
+        return _layout_tensor_sum(obj, scale, rationalise)
+    elif isinstance(obj, ForestSum):
+        return _layout_forest_sum(obj, scale, rationalise)
+    elif isinstance(obj, (Forest, NoncommutativeForest)):
+        return _layout_forest(obj, 0, 0, scale, show_empty=True)
+    elif isinstance(obj, (Tree, PlanarTree)):
+        if obj.list_repr is None:
+            fs = FONT_SIZE * scale
+            cw = CHAR_WIDTH_FACTOR
+            items = [('text', fs * cw / 2, fs * cw / 2, '\u2205', fs)]
+            return items, fs * cw, fs * cw
         else:
-            forest_sum = forest_sum.as_forest_sum()
-    if forest_sum == ForestSum([]):
-        plt.text(0, 0, str(0))
-        h = 1
+            level_seq = obj.level_sequence()
+            color_seq = obj.color_sequence()
+            items, w, h = _layout_tree(level_seq, color_seq, 0, 0, scale)
+            items = _shift_items_x(items, w / 2)
+            return items, w, h
+    elif isinstance(obj, str):
+        fs = FONT_SIZE * scale
+        cw = CHAR_WIDTH_FACTOR
+        w = len(obj) * fs * cw
+        items = [('text', w / 2, 0, obj, fs)]
+        return items, w, LEVEL_SPACING * scale
+    elif isinstance(obj, (int, float)):
+        return _layout_single(str(obj), scale, rationalise)
     else:
-        x, y = 0, 0
-        h = 0
+        # Try converting to string as a fallback (e.g. sympy expressions)
+        try:
+            return _layout_single(str(obj), scale, rationalise)
+        except Exception:
+            raise TypeError("Cannot display object of type " + str(type(obj)))
 
-        for i, (c, f) in enumerate(forest_sum.term_list):
-            if i > 0:
-                c = abs(c)
-            plt.text(x, y, _str(c, rationalise))
-            x += (len(_str(c, rationalise)) + 1) * coeff_gap
 
-            x, h = _display_forest(f, x, y, scale, tree_gap, h)
+def _to_svg(*objects, scale=1.0, rationalise=False):
+    """Generate an SVG string for one or more tree-algebra objects.
 
-            x += coeff_gap / 2
-            if i < len(forest_sum.term_list) - 1:
-                plt.text(x, y, "+" if forest_sum.term_list[i + 1][0] > 0 else "-")
-                x += coeff_gap*2
+    Multiple arguments are laid out side by side with extra spacing.
+    """
+    if scale <= 0:
+        raise ValueError("scale must be positive, got " + str(scale))
 
-    plt.xlim(- 1, 15)
-    plt.ylim(-0.5, h + 0.5)
-    plt.xticks([])
-    plt.yticks([])
-    plt.axis('off')
-    plt.tight_layout()
+    if len(objects) == 1:
+        items, w, h = _layout_single(objects[0], scale, rationalise)
+        return _render_svg(items, w, h, scale)
+
+    gap = DISPLAY_GAP * scale
+    all_items = []
+    total_w = 0
+    max_h = 0
+
+    for i, obj in enumerate(objects):
+        items, w, h = _layout_single(obj, scale, rationalise)
+        all_items.extend(_shift_items_x(items, total_w))
+        total_w += w
+        max_h = max(max_h, h)
+        if i < len(objects) - 1:
+            total_w += gap
+
+    return _render_svg(all_items, total_w, max_h, scale)
+
+
+# ── Jupyter detection ────────────────────────────────────────────────────
+
+def _in_jupyter():
+    try:
+        from IPython import get_ipython
+        ip = get_ipython()
+        return ip is not None and 'IPKernelApp' in ip.config
+    except (ImportError, AttributeError):
+        return False
+
+
+# ── Public API ───────────────────────────────────────────────────────────
+
+def display(*objects: Union[Tree, Forest, ForestSum, TensorProductSum,
+                           PlanarTree, NoncommutativeForest, str],
+            scale: float = 1.0,
+            fig_size: tuple = None,
+            file_name: str = None,
+            use_plt: bool = None,
+            rationalise: bool = False) -> None:
+    """
+    Display one or more tree-algebra objects, optionally with string labels.
+
+    In Jupyter, renders inline SVG.
+
+    Multiple arguments are rendered side by side in a single image,
+    analogous to ``print(a, b, c)``.  Strings are rendered as text
+    labels between objects, e.g. ``display(t, "\u2192", t.unjoin())``.
+
+    :param objects: One or more objects or strings to display
+    :param scale: Scale factor for SVG output (default 1.0)
+    :param file_name: If provided, saves SVG to ``file_name.svg``
+    :param rationalise: If True, rationalise float coefficients
+    """
+    _TREE_TYPES = (Tree, Forest, ForestSum, TensorProductSum,
+                   PlanarTree, NoncommutativeForest)
+
+    if not objects:
+        raise TypeError("display() requires at least one argument.")
+
+    for obj in objects:
+        if isinstance(obj, (str, int, float)):
+            continue
+        if not isinstance(obj, _TREE_TYPES):
+            # Allow anything with a __str__ method (e.g. sympy expressions)
+            if not hasattr(obj, '__str__'):
+                raise TypeError("Cannot display object of type " + str(type(obj)))
+            continue
+        if isinstance(obj, ForestSum) and len(obj.term_list) == 0:
+            continue
+        if isinstance(obj, TensorProductSum) and (obj.term_list is None or len(obj.term_list) == 0):
+            continue
+        if obj.colors() > 9:
+            raise ValueError("Cannot display labelled trees with more than 9 different colors.")
+
+    if use_plt is not None:
+        warnings.warn("use_plt is deprecated and ignored. Output is now SVG.",
+                       DeprecationWarning, stacklevel=2)
+
+    if fig_size is not None:
+        warnings.warn("fig_size is deprecated and ignored. SVG auto-sizes.",
+                       DeprecationWarning, stacklevel=2)
+
+    svg = _to_svg(*objects, scale=scale, rationalise=rationalise)
 
     if file_name is not None:
-        plt.savefig(file_name + ".png")
+        with open(file_name + '.svg', 'w', encoding='utf-8') as fh:
+            fh.write(svg)
 
-    plt.show()
-
-def _display_tensor_plt(tensor_sum,
-                 scale = 0.2,
-                 fig_size = (15, 1),
-                 file_name = None,
-                 rationalise = True):
-    tree_gap = scale / 4
-    coeff_gap = scale / 2
-
-    plt.figure(figsize=fig_size)
-    x, y = 0, 0
-    h = 0
-
-    for i, (c, f1, f2) in enumerate(tensor_sum.term_list):
-        if i > 0:
-            c = abs(c)
-        plt.text(x, y, _str(c, rationalise))
-        x += (len(_str(c, rationalise)) + 1) * coeff_gap
-
-        x, h = _display_forest(f1, x, y, scale, tree_gap, h, True)
-        x += 0.5 * coeff_gap
-        plt.text(x, y, "\u2297", fontsize=TENSOR_FONTSIZE)
-        x += 2.5 * coeff_gap
-        x, h = _display_forest(f2, x, y, scale, tree_gap, h, True)
-
-        x += coeff_gap / 2
-        if i < len(tensor_sum.term_list) - 1:
-            plt.text(x, y, "+" if tensor_sum.term_list[i + 1][0] > 0 else "-")
-            x += coeff_gap * 2
-
-    plt.xlim(- 1, 15)
-    plt.ylim(-0.5, h + 0.5)
-    plt.xticks([])
-    plt.yticks([])
-    plt.axis('off')
-    plt.tight_layout()
-
-    if file_name is not None:
-        plt.savefig(file_name + ".png")
-
-    plt.show()
-
-
-###############################################################
-#Display
-###############################################################
-
-def display(obj : Union[Tree, Forest, ForestSum, TensorProductSum],
-            *,
-            scale : float = None,
-            fig_size : tuple = None,
-            file_name : str = None,
-            use_plt : bool = True,
-            rationalise : bool = False) -> None:
-    """
-    Plots a Tree, Forest, ForestSum or TensorProductSum.
-
-    :param obj: Object to plot
-    :type obj: Tree | Forest | ForestSum | TensorProductSum
-    :param scale: scale of the plot (default = 0.2 if use_plt is True otherwise 0.7)
-    :type scale: float
-    :param fig_size: figure size (default = (15,1) if use_plt is True otherwise (1500,50))
-    :type fig_size: tuple
-    :param file_name: If file_name is not None, will save the plot as a png file with the
-        name file_name (default = None).
-    :type file_name: string
-    :param use_plt: If True uses matplotlib (default), otherwise uses Plotly.
-        Plotly is quicker, but results in larger file sizes when used in notebooks.
-    :type use_plt: bool
-    """
-    if not isinstance(obj, (Tree, Forest, ForestSum, TensorProductSum)):
-        raise TypeError("Cannot display object of type " + str(type(obj)) + ". Object must be Tree, Forest, ForestSum or TensorProductSum.")
-
-    if obj.colors() > 9:
-        raise ValueError("Cannot display labelled trees with over 10 different colors.")
-
-    if use_plt:
-        if scale is None:
-            scale = 0.2
-        if fig_size is None:
-            fig_size = (15,1)
-
-        if isinstance(obj, TensorProductSum):
-            _display_tensor_plt(obj, scale, fig_size, file_name, rationalise)
-        else:
-            _display_plt(obj, scale, fig_size, file_name, rationalise)
-    else:
-        if scale is None:
-            scale = 0.7
-        if fig_size is None:
-            fig_size = (1500, 50)
-
-        if isinstance(obj, TensorProductSum):
-            _display_tensor_plotly(obj, scale, fig_size, file_name, rationalise)
-        else:
-            _display_plotly(obj, scale, fig_size, file_name, rationalise)
+    if _in_jupyter():
+        from IPython.display import display as ipy_display
+        ipy_display({'image/svg+xml': svg}, raw=True)

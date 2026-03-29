@@ -14,7 +14,7 @@
 # =========================================================================
 
 import unittest
-from kauri import *
+from kauri import Tree
 from kauri import Tree as T
 
 trees = [T(None),
@@ -47,7 +47,7 @@ class LabelledTests(unittest.TestCase):
     def test_repr(self):
         self.assertEqual(repr(T([[[1],2], [1],2])), '[[[1], 2], [1], 2]')
         self.assertEqual(repr(T([[[1],2], [1],2]).as_forest()), '[[[1], 2], [1], 2]')
-        self.assertEqual(repr(T([[[1], 2], [1], 2]).as_forest_sum()), ' 1 * [[[1], 2], [1], 2]')
+        self.assertEqual(repr(T([[[1], 2], [1], 2]).as_forest_sum()), '1 * [[[1], 2], [1], 2]')
 
     def test_equality(self):
         t1 = Tree([[[3], [2], 1], [2]])

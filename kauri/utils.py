@@ -20,12 +20,6 @@ import math
 from functools import cache
 import sympy as sp
 
-def _to_tuple(obj):
-    # Convert a list representation to a tuple representation (for immutability)
-    if isinstance(obj, list):
-        return tuple(_to_tuple(el) for el in obj)
-    return obj
-
 def _to_list(obj):
     # Convert a tuple representation to a list representation
     if isinstance(obj, tuple):
@@ -45,6 +39,8 @@ def _check_valid(obj):
 
     if isinstance(obj[-1], int) and obj[-1] < 0:
         return False
+    if isinstance(obj[-1], (tuple, list)):
+        return _check_valid(obj[-1])
     return True
 
 def _to_labelled_tuple(obj):
@@ -174,13 +170,20 @@ def _list_repr_to_color_sequence(rep):
     if rep is None:
         return []
     if len(rep) == 1:
-        return rep
+        return list(rep)
 
     layout = [rep[-1]]
     for r in rep[:-1]:
         lay = _list_repr_to_color_sequence(r)
         layout += lay
     return layout
+
+def _apply_color_sequence(unlabelled_rep, color_iter):
+    # Inverse of _list_repr_to_color_sequence: takes an unlabelled tuple repr
+    # and an iterator of colors, returns a labelled tuple repr.
+    color = next(color_iter)
+    children = tuple(_apply_color_sequence(child, color_iter) for child in unlabelled_rep)
+    return children + (color,)
 
 def _level_sequence_to_list_repr(level_seq):
     # Convert a level sequence to a list representation
@@ -219,6 +222,22 @@ def _next_layout(layout):
     for i in range(p, len(result)):
         result[i] = result[i - p + q]
     return result
+
+def _next_planar_layout(layout):
+    # Given a level sequence of a planar tree, computes the layout
+    # of the next planar tree in lexicographic order.
+    # Unlike _next_layout (Beyer-Hedetniemi), this enumerates ALL valid
+    # level sequences, since every sequence corresponds to a distinct planar tree.
+    n = len(layout)
+    for p in range(n - 1, 0, -1):
+        if layout[p] < layout[p - 1] + 1:
+            result = list(layout)
+            result[p] += 1
+            for i in range(p + 1, n):
+                result[i] = 1
+            return result
+    # Chain (maximal sequence) — advance to next order
+    return [0] + [1] * n
 
 def _rationalise(c, tol = 1e-10):
     # rationalised float

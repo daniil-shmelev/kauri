@@ -6,12 +6,13 @@
 import os
 import sys
 sys.path.insert(0, os.path.abspath('..'))
+sys.path.insert(0, os.path.abspath('.'))   # for kauri_sphinx extension
 
 # -- Project information -----------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'kauri'
-copyright = '2025, Daniil Shmelev'
+copyright = '2025\u20132026, Daniil Shmelev'
 author = 'Daniil Shmelev'
 release = '1.0.0'
 
@@ -22,7 +23,8 @@ extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
-    "sphinxcontrib.bibtex"
+    "sphinxcontrib.bibtex",
+    'kauri_sphinx',
 ]
 
 templates_path = ['_templates']
@@ -35,8 +37,11 @@ bibtex_bibfiles = ["refs.bib"]
 
 html_theme = 'sphinx_rtd_theme'
 html_static_path = ['_static']
+html_css_files = ['custom.css']
 html_logo = "_static/logo_light.png"
 
 add_module_names = False
 
 html_title = "Kauri"
+html_show_sourcelink = False
+html_show_sphinx = False

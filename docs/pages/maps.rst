@@ -20,5 +20,3 @@ We provide a few common instances of the :class:`Map` class for convenience.
     :no-value:
 .. autodata:: omega
     :no-value:
-
-.. include:: ../refs.rst

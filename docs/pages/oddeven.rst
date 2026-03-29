@@ -1,10 +1,20 @@
 Odd-Even Decomposition
 ========================
 
+Non-Planar
+----------
+
 .. automodule:: kauri.oddeven
 
-.. autodata:: id_sqrt
-.. autodata:: minus
-.. autodata:: plus
+.. autodata:: kauri.oddeven.id_sqrt
+.. autodata:: kauri.oddeven.minus
+.. autodata:: kauri.oddeven.plus
 
-.. include:: ../refs.rst
+Planar
+------
+
+.. automodule:: kauri.planar_oddeven
+
+.. autodata:: kauri.planar_oddeven.id_sqrt
+.. autodata:: kauri.planar_oddeven.minus
+.. autodata:: kauri.planar_oddeven.plus

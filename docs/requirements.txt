@@ -4,9 +4,6 @@
 #
 #    pip-compile requirements.in
 #
---extra-index-url https://pypi.ngc.nvidia.com
---trusted-host pypi.ngc.nvidia.com
-
 alabaster==1.0.0
     # via sphinx
 babel==2.17.0

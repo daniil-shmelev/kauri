@@ -16,61 +16,107 @@
 """
 Utility functions for dealing with generic Hopf algebras on trees
 """
-from .trees import Forest, ForestSum, _is_simplifiable
+from ._protocols import ForestLike, ForestSumLike
 
-def _forest_apply(f, func):
+
+def sign_factor(t) -> int:
+    """Return the scalar sign ``(-1)^|t|``."""
+    return 1 if t.nodes() % 2 == 0 else -1
+
+def forest_apply(f, func):
     # Apply a function func multiplicatively to a forest f
-    out = 1
-    for t in f.tree_list:
+    it = iter(f.tree_list)
+    out = func(next(it))
+    for t in it:
         out = out * func(t)
 
-    if _is_simplifiable(out):
+    if isinstance(out, (ForestLike, ForestSumLike)):
         out = out.simplify()
     return out
 
-def _forest_sum_apply(fs, func):
+def anti_forest_apply(f, func):
+    # Apply func to each tree in forest f in reversed order (anti-homomorphism).
+    # S(t1 * t2 * ... * tk) = S(tk) * ... * S(t2) * S(t1)
+    it = reversed(f.tree_list)
+    out = func(next(it))
+    for t in it:
+        out = out * func(t)
+    if isinstance(out, (ForestLike, ForestSumLike)):
+        out = out.simplify()
+    return out
+
+def forest_sum_apply(fs, func):
     # Applies a function func linearly and multiplicatively to a forest sum fs
     out = 0
     for c, f in fs.term_list:
-        term = 1
-        for t in f.tree_list:
+        it = iter(f.tree_list)
+        term = func(next(it))
+        for t in it:
             term = term * func(t)
         out += c * term
 
-    if _is_simplifiable(out):
+    if isinstance(out, (ForestLike, ForestSumLike)):
         out = out.simplify()
     return out
 
-def _apply(t, func):
+def anti_forest_sum_apply(fs, func):
+    # Same as forest_sum_apply but with reversed tree order (anti-homomorphism)
+    out = 0
+    for c, f in fs.term_list:
+        it = reversed(f.tree_list)
+        term = func(next(it))
+        for t in it:
+            term = term * func(t)
+        out += c * term
+
+    if isinstance(out, (ForestLike, ForestSumLike)):
+        out = out.simplify()
+    return out
+
+def apply_map(t, func, anti=False):
     # Applies a function func as a linear multiplicative map to a Forest or ForestSum t
-    if isinstance(t, Forest):
-        return _forest_apply(t, func)
-    if isinstance(t, ForestSum):
-        return _forest_sum_apply(t, func)
+    if isinstance(t, ForestLike):
+        return anti_forest_apply(t, func) if anti else forest_apply(t, func)
+    if isinstance(t, ForestSumLike):
+        return anti_forest_sum_apply(t, func) if anti else forest_sum_apply(t, func)
     return func(t)
 
-def _func_product(t, func1, func2, coproduct):
+def _default_mul(a, b):
+    return a * b
+
+def func_product(t, func1, func2, coproduct, singleton_reduce=False, product=None, anti1=False):
     # Given the coproduct of some hopf algebra, and two functions func1 and func2,
     # computes the function product evaluated at a tree t, defined by
     # \\mu \\circ (func1 \\otimes func2) \\circ \\Delta (t)
-    # where Delta is the coproduct and mu is defined as the commutative
-    # juxtaposition of trees.
+    # where Delta is the coproduct and mu is the algebra multiplication.
+    #
+    # If singleton_reduce=True, applies singleton_reduced() to the result.
+    # This is needed for algebras where the single-node tree is the unit (CEM, GL, PGL).
+    #
+    # product: optional binary function for combining results. If None, uses
+    #   forest juxtaposition (*). For GL/PGL, pass the grafting product.
+    # anti1: if True, extend func1 to forests as an anti-homomorphism (reversed order).
 
     cp = coproduct(t)
-    # a(branches) * b(subtrees)
     if len(cp) == 0:
         return 0
-    out = cp[0][0] * _forest_apply(cp[0][1], func1) * func2(cp[0][2][0]) # cp[0][2] is a forest with one tree, which is cp[0][2][0]
-    for c, branches, subtree_ in cp[1:]:
-        subtree = subtree_[0] # subtree_ is a forest with one tree, which is subtree_[0]
-        out += c * _forest_apply(branches, func1) * func2(subtree)
 
-    if _is_simplifiable(out):
+    _apply1 = anti_forest_apply if anti1 else forest_apply
+    _mul = product if product is not None else _default_mul
+
+    out = cp[0][0] * _mul(_apply1(cp[0][1], func1), func2(cp[0][2][0]))
+    for c, branches, subtree_ in cp[1:]:
+        subtree = subtree_[0]
+        out += c * _mul(_apply1(branches, func1), func2(subtree))
+
+    if isinstance(out, (ForestLike, ForestSumLike)):
+        if singleton_reduce:
+            out = out.singleton_reduced()
         out = out.simplify()
 
     return out
 
-def _func_power(t, func, exponent, coproduct, counit, antipode):
+def func_power(t, func, exponent, coproduct, counit, antipode, singleton_reduce=False, product=None, anti1=False):
     # Given the coproduct, counit and antipode of some hopf algebra,
     # computes the power of func, where the product of functions is
     # defined as above, and f^{-1} = f \\circ antipode.
@@ -81,13 +127,15 @@ def _func_power(t, func, exponent, coproduct, counit, antipode):
         res = func(t)
     elif exponent < 0:
         def m(x):
-            return _func_power(x, func, -exponent, coproduct, counit, antipode)
-        res = _forest_sum_apply(antipode(t), m)
+            return func_power(x, func, -exponent, coproduct, counit, antipode, singleton_reduce, product, anti1)
+        res = forest_sum_apply(antipode(t), m)
     else:
         def m(x):
-            return _func_power(x, func, exponent - 1, coproduct, counit, antipode)
-        res = _func_product(t, func, m, coproduct)
+            return func_power(x, func, exponent - 1, coproduct, counit, antipode, singleton_reduce, product, anti1)
+        res = func_product(t, func, m, coproduct, singleton_reduce, product, anti1)
 
-    if _is_simplifiable(res):
+    if isinstance(res, (ForestLike, ForestSumLike)):
+        if singleton_reduce:
+            res = res.singleton_reduced()
         res = res.simplify()
     return res
