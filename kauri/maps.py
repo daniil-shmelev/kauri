@@ -18,7 +18,6 @@ This module provides the :class:`Map` class, which implements linear multiplicat
 and allows for their manipulation with respect to different Hopf algebras. In particular, this covers
 characters on the Hopf algebra, as well as more complicated maps.
 """
-import copy
 from typing import Union, Callable
 
 from .trees import (Tree, PlanarTree, Forest, NoncommutativeForest, ForestSum,
@@ -150,7 +149,7 @@ class Map:
             counit = ident * bck.antipode
             ident_2 = 2 * ident # ident_2(t) = 2 * t for any tree t
         """
-        temp = copy.deepcopy(self)
+        temp = Map(self.func, anti=self.anti)
         temp *= other
         return temp
 
@@ -175,7 +174,7 @@ class Map:
             counit = ident ^ cem.antipode
             ident_2 = 2 ^ ident # ident_2(t) = 2 * t for any tree t
         """
-        temp = copy.deepcopy(self)
+        temp = Map(self.func, anti=self.anti)
         temp ^= other
         return temp
 
@@ -208,7 +207,7 @@ class Map:
             m1 = 2 * bck.antipode
             m2 = bck.antipode + bck.antipode # Same as m1
         """
-        temp = copy.deepcopy(self)
+        temp = Map(self.func, anti=self.anti)
         temp += other
         return temp
 
@@ -221,7 +220,7 @@ class Map:
 
     def __sub__(self, other):
         """Returns the pointwise difference of two maps: ``(f - g)(t) = f(t) - g(t)``."""
-        temp = copy.deepcopy(self)
+        temp = Map(self.func, anti=self.anti)
         temp -= other
         return temp
 

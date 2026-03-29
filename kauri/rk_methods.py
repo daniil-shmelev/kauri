@@ -355,7 +355,6 @@ def EES27(x, plus=True):
     :param plus: If True, takes :math:`+\\sqrt{2}` in the Butcher tableau, otherwise :math:`-\\sqrt{2}`.
     :rtype: kauri.RK
     """
-    _tol = 1e-10
     if abs(2*x - 1) < _EES_TOL:
         raise ValueError(f"EES27(x) is not defined for x = {x} (division by zero in alpha, beta).")
     if abs(x - 1) < _EES_TOL:

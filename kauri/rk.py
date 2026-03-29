@@ -27,7 +27,7 @@ import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from .gentrees import trees_of_order, planar_trees_of_order
-from .trees import Tree, Forest, ForestSum, PlanarTree, NoncommutativeForest, _is_scalar
+from .trees import Tree, Forest, ForestSum, PlanarTree, _is_scalar
 from ._protocols import TreeLike, ForestLike, ForestSumLike
 from .maps import Map, sign
 from .generic_algebra import apply_map, sign_factor
@@ -254,10 +254,8 @@ class RK:
         self.explicit = self._check_explicit()
         self.deriv_dict = {}
         for i in range(self.s):
-            self.deriv_dict[(i, repr(None))] = 1
+            self.deriv_dict[(i, None)] = 1
 
-        self.np_a = np.array(a)
-        self.np_b = np.array(b)
 
     def __repr__(self):
         out = "["
@@ -495,44 +493,6 @@ class RK:
 
         return t_vals, y_vals
 
-    # def __add__(self, other : 'RK') -> 'RK':
-    #     """
-    #     Returns the sum of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
-    #
-    #     .. math::
-    #
-    #         \\begin{array}{c|cc}
-    #             c_1 & A_1 & 0 \\\\
-    #             c_2 & 0 & A_2\\\\
-    #             \\hline
-    #              & b_1 & b_2
-    #         \\end{array}
-    #
-    #     :rtype: RK
-    #     """
-    #     if not isinstance(other, RK):
-    #         raise TypeError("Cannot add RK and object of type " + str(type(other)))
-    #
-    #     s1 = other.s
-    #     a1 = other.a
-    #     b1 = other.b
-    #
-    #     s2 = self.s
-    #     a2 = self.a
-    #     b2 = self.b
-    #
-    #     a = [[a1[i][j] for j in range(s1)] + [0 for _ in range(s2)] for i in range(s1)]
-    #     a += [[0 for _ in range(s1)] + [a2[i][j] for j in range(s2)] for i in range(s2)]
-    #     b = b1 + b2
-    #
-    #     return RK(a, b)
-    #
-    # def __neg__(self):
-    #     return RK(self.a, [-self.b[i] for i in range(self.s)])
-    #
-    # def __sub__(self, other):
-    #     return self + other.__neg__()
-
     def __mul__(self, other : 'RK') -> 'RK':
         """
         Returns the composition of two RK schemes, :math:`(A_1, b_1)` and :math:`(A_2, b_2)`, with Butcher tableau:
@@ -608,13 +568,14 @@ class RK:
         return sum(self.a[i][j] * self._derivative_weights(j, t_rep) for j in range(self.s))
 
     def _derivative_weights(self, i, t_rep):
-        if (i, repr(t_rep)) in self.deriv_dict:
-            return self.deriv_dict[(i, repr(t_rep))]
+        key = (i, t_rep)
+        if key in self.deriv_dict:
+            return self.deriv_dict[key]
 
         out = 1
         for subtree in t_rep[:-1]:
             out *= self._internal_weights(i, subtree)
-        self.deriv_dict[(i, repr(t_rep))] = out
+        self.deriv_dict[key] = out
         return out
 
     def _elementary_weights(self, t_rep):
