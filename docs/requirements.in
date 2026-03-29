@@ -1,3 +1,4 @@
 sphinx==8.2.3
 sphinx_rtd_theme==3.0.2
 sphinxcontrib-bibtex==2.6.3
+setuptools>=75.0  # Required on Python 3.13+ for pkg_resources (used by pybtex)
