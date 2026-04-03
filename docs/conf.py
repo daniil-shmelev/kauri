@@ -42,6 +42,14 @@ html_logo = "_static/logo_light.png"
 
 add_module_names = False
 
+mathjax3_config = {
+    'tex': {
+        'macros': {
+            'shuffle': r'\mathrel{\unicode{x29E2}}',
+        }
+    }
+}
+
 html_title = "Kauri"
 html_show_sourcelink = False
 html_show_sphinx = False
