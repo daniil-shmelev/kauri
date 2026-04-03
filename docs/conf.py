@@ -45,7 +45,7 @@ add_module_names = False
 mathjax3_config = {
     'tex': {
         'macros': {
-            'shuffle': r'\mathrel{\unicode{x29E2}}',
+            'shuffle': r'\unicode{x29E2}',
         }
     }
 }
