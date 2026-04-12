@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "kauri"
-version = "2.0.0"
+version = "2.1.0"
 description = "Hopf algebras, B-series, and Runge-Kutta methods on rooted trees"
 readme = "README.md"
 requires-python = ">=3.10"
@@ -24,19 +24,20 @@ classifiers = [
   "Programming Language :: Python",
   "Topic :: Scientific/Engineering :: Mathematics",
 ]
-dependencies = [
-  "matplotlib>=3.9.2",
-  "numpy>=1.26.4",
-  "sympy>=1.12",
-  "scipy>=1.13",
-  "tqdm",
-]
+dependencies = []
 
 [project.urls]
 Homepage = "https://github.com/daniil-shmelev/kauri"
 Documentation = "https://kauri.readthedocs.io"
 
 [project.optional-dependencies]
+full = [
+  "matplotlib>=3.9.2",
+  "numpy>=1.26.4",
+  "sympy>=1.12",
+  "scipy>=1.13",
+  "tqdm",
+]
 dev = [
   "pytest>=8.0",
   "ruff>=0.9.0",

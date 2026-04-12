@@ -18,7 +18,6 @@ Back-end utility functions
 """
 import math
 from functools import cache
-import sympy as sp
 
 def _to_list(obj):
     # Convert a tuple representation to a list representation
@@ -241,6 +240,7 @@ def _next_planar_layout(layout):
 
 def _rationalise(c, tol = 1e-10):
     # rationalised float
+    import sympy as sp
     return str(sp.nsimplify(c, tolerance=tol, rational = True))
 
 def _str(c, rationalise = False, tol = 1e-10):

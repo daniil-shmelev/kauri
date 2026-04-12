@@ -16,15 +16,26 @@
 """
 Runge-Kutta Schemes
 """
+from __future__ import annotations
 import copy
 from typing import Union, Callable, Tuple
 import warnings
 
-import numpy as np
-import sympy
-from scipy.optimize import root
-import matplotlib.pyplot as plt
-from tqdm import tqdm
+try:
+    import numpy as np
+    import sympy
+    from scipy.optimize import root as _scipy_root
+    import matplotlib.pyplot as plt
+    from tqdm import tqdm
+except ImportError:
+    np = sympy = _scipy_root = plt = tqdm = None
+
+def _require_full():
+    if np is None:
+        raise ImportError(
+            "This feature requires additional dependencies. "
+            "Install with: pip install kauri[full]"
+        )
 
 from .gentrees import trees_of_order, planar_trees_of_order
 from .trees import Tree, Forest, ForestSum, PlanarTree, _is_scalar
@@ -158,6 +169,7 @@ def rk_symbolic_weight(
     if not isinstance(rationalise, bool):
         raise TypeError("rationalise must be a bool, not " + str(type(rationalise)))
 
+    _require_full()
     t_ = t
     if _is_scalar(t):
         t_ = t * Tree(None).as_forest_sum()
@@ -214,6 +226,7 @@ def rk_order_cond(
         print(rk_order_cond(t, 2, a_mask = a_mask, b_mask = b_mask))
 
     """
+    _require_full()
     if not isinstance(t, (int, float, TreeLike, ForestLike, ForestSumLike)):
         raise TypeError("t must be a Tree, Forest, ForestSum (or planar equivalent), int or float, not " + str(type(t)))
 
@@ -237,9 +250,10 @@ class RK:
     :param b: The Runge--Kutta parameter vector :math:`b`.
     """
     def __init__(self, a, b, name = None):
-        if not isinstance(a, (list, np.ndarray)):
+        _valid_types = (list, np.ndarray) if np is not None else (list,)
+        if not isinstance(a, _valid_types):
             raise TypeError("a must be a list or array, not " + str(type(a)))
-        if not isinstance(b, (list, np.ndarray)):
+        if not isinstance(b, _valid_types):
             raise TypeError("b must be a list or array, not " + str(type(b)))
 
         self.name = name
@@ -343,7 +357,7 @@ class RK:
 
             return np.concatenate(G_vec)
 
-        sol = root(G, k0, method='hybr', tol=tol, options={'maxfev': max_iter})
+        sol = _scipy_root(G, k0, method='hybr', tol=tol, options={'maxfev': max_iter})
 
         if not sol.success:
             warnings.warn(f"Implicit RK solver failed: {sol.message}")
@@ -379,6 +393,7 @@ class RK:
         :rtype: list | array
         """
 
+        _require_full()
         if not isinstance(y0, (list, np.ndarray)):
             raise TypeError("y0 must be a list or array, not " + str(type(y0)))
         if not isinstance(t0, float):
@@ -440,6 +455,7 @@ class RK:
         :return: t_vals, y_vals - the lists of values of t and y respectively
         :rtype: tuple[list, list]
         """
+        _require_full()
 
         if not isinstance(y0, (list, np.ndarray)):
             raise TypeError("y0 must be a list or array, not " + str(type(y0)))

@@ -37,7 +37,6 @@ from functools import total_ordering
 from typing import Union
 import warnings
 
-import sympy
 
 from .utils import (_nodes, _height, _factorial, _sigma,
                     _sorted_list_repr, _list_repr_to_level_sequence,
@@ -1431,8 +1430,14 @@ class ForestSum:
 ##############################################
 ##############################################
 
+try:
+    import sympy as _sympy
+    _SCALAR_TYPES = (numbers.Real, _sympy.Expr)
+except ImportError:
+    _SCALAR_TYPES = (numbers.Real,)
+
 def _is_scalar(obj):
-    return isinstance(obj, (numbers.Real, sympy.Expr))
+    return isinstance(obj, _SCALAR_TYPES)
 
 def _is_tree_or_forest(obj):
     return isinstance(obj, (TreeLike, ForestLike))

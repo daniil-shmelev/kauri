@@ -17,10 +17,10 @@
 Functions for generating rooted trees in lexicographic order, based on the algorithms of :cite:`beyer1980constant`.
 """
 from typing import Generator
-from functools import lru_cache
+from functools import lru_cache, cache
 from itertools import product
 
-from .trees import Tree
+from .trees import Tree, EMPTY_TREE
 from .utils import _level_sequence_to_list_repr, _apply_color_sequence
 
 def trees_up_to_order(order : int) -> Generator[Tree, None, None]:
@@ -282,3 +282,188 @@ def colored_planar_trees_up_to_order(order: int, d: int):
     _validate_num_colors(d)
     for current_order in range(order + 1):
         yield from colored_planar_trees_of_order(current_order, d)
+
+
+# ---------------------------------------------------------------------------
+# Colored tree indexing
+# ---------------------------------------------------------------------------
+
+@cache
+def _colored_tree_list_cached(max_order: int, d: int) -> tuple:
+    """Cached tuple of all colored trees up to max_order with d colors."""
+    return tuple(colored_trees_up_to_order(max_order, d))
+
+
+@cache
+def _colored_tree_lookup_cached(max_order: int, d: int) -> dict:
+    """Cached dict mapping Tree -> index."""
+    trees = _colored_tree_list_cached(max_order, d)
+    return {t: i for i, t in enumerate(trees)}
+
+
+def colored_trees(d: int, max_order: int) -> list[Tree]:
+    """
+    Returns all distinct colored rooted trees up to a given order with *d* colors,
+    starting with the empty tree.
+
+    :param d: Number of colors (path dimension).
+    :type d: int
+    :param max_order: Maximum number of nodes.
+    :type max_order: int
+    :return: List of colored trees.
+    :rtype: list[Tree]
+    """
+    _validate_num_colors(d)
+    return list(_colored_tree_list_cached(max_order, d))
+
+
+def colored_tree_to_idx(tree: Tree, d: int, max_order: int) -> int:
+    """
+    Returns the index of a colored tree in the canonical enumeration.
+
+    Index 0 is the empty tree. Non-empty trees are enumerated by order,
+    then by shape, then by coloring.
+
+    :param tree: A colored rooted tree.
+    :type tree: Tree
+    :param d: Number of colors (path dimension).
+    :type d: int
+    :param max_order: Maximum number of nodes.
+    :type max_order: int
+    :return: Index in the enumeration.
+    :rtype: int
+    """
+    _validate_num_colors(d)
+    lookup = _colored_tree_lookup_cached(max_order, d)
+    if tree not in lookup:
+        raise ValueError(f"Tree {tree} not found in enumeration for d={d}, max_order={max_order}")
+    return lookup[tree]
+
+
+def idx_to_colored_tree(idx: int, d: int, max_order: int) -> Tree:
+    """
+    Returns the colored tree at a given index in the canonical enumeration.
+
+    :param idx: Index (0 = empty tree).
+    :type idx: int
+    :param d: Number of colors (path dimension).
+    :type d: int
+    :param max_order: Maximum number of nodes.
+    :type max_order: int
+    :return: The colored tree at the given index.
+    :rtype: Tree
+    """
+    _validate_num_colors(d)
+    trees = _colored_tree_list_cached(max_order, d)
+    if idx < 0 or idx >= len(trees):
+        raise ValueError(f"idx {idx} out of range [0, {len(trees)}) for d={d}, max_order={max_order}")
+    return trees[idx]
+
+
+# ---------------------------------------------------------------------------
+# Recursive tree ordering and canonical-recursive permutation
+#
+# The "recursive" ordering enumerates decorated trees by building them
+# bottom-up from child multisets, cycling root labels innermost. This
+# matches the C++ enumeration in pySigLib's cp_branched_trees.h.
+#
+# The "canonical" ordering (used by colored_trees_of_order etc.) enumerates
+# by shape first, then colorings.
+# ---------------------------------------------------------------------------
+
+def _enumerate_child_multisets(target_nodes, min_idx, tree_nodes, total_count):
+    """Enumerate multisets of tree indices whose total node count equals target_nodes."""
+    if target_nodes == 0:
+        yield ()
+        return
+    for idx in range(min_idx, total_count):
+        n = tree_nodes[idx]
+        if n > target_nodes:
+            break
+        for rest in _enumerate_child_multisets(target_nodes - n, idx, tree_nodes, total_count):
+            yield (idx,) + rest
+
+
+@cache
+def _enumerate_trees_recursive(d: int, max_order: int) -> tuple:
+    """Enumerate decorated trees in recursive ordering (child-multiset first, root label innermost)."""
+    trees = []
+    tree_nodes = []
+    for order in range(1, max_order + 1):
+        if order == 1:
+            for label in range(d):
+                trees.append((1, label, ()))
+                tree_nodes.append(1)
+        else:
+            current_count = len(trees)
+            for children in _enumerate_child_multisets(order - 1, 0, tree_nodes, current_count):
+                if not children:
+                    continue
+                for label in range(d):
+                    trees.append((order, label, children))
+                    tree_nodes.append(order)
+    return tuple(trees)
+
+
+def _recursive_tree_to_kauri(tree_idx, all_trees):
+    """Convert a recursive-order internal tree to a kauri Tree object."""
+    from .trees import Forest
+    _num_nodes, label, child_ids = all_trees[tree_idx]
+    if not child_ids:
+        return Tree([label])
+    children = [_recursive_tree_to_kauri(c, all_trees) for c in child_ids]
+    return Forest(children).join(root_color=label)
+
+
+@cache
+def canonical_to_recursive_permutation(d: int, max_order: int):
+    """
+    Compute the permutation mapping canonical tree indices to recursive tree indices.
+
+    ``perm[i] = j`` means the tree at canonical position ``i`` is at recursive
+    position ``j``. Both are 0-indexed and exclude the empty tree.
+
+    :param d: Number of colors (path dimension).
+    :type d: int
+    :param max_order: Maximum number of nodes.
+    :type max_order: int
+    :return: Permutation array of shape ``(num_trees,)``.
+    :rtype: numpy.ndarray
+    """
+    try:
+        import numpy as np
+    except ImportError:
+        raise ImportError("Permutation functions require numpy. Install with: pip install kauri[full]")
+    _validate_num_colors(d)
+    rec_trees = _enumerate_trees_recursive(d, max_order)
+    rec_kauri = [_recursive_tree_to_kauri(i, rec_trees) for i in range(len(rec_trees))]
+    rec_lookup = {t: i for i, t in enumerate(rec_kauri)}
+
+    canonical = _colored_tree_list_cached(max_order, d)
+    perm = [rec_lookup[kt] for kt in canonical[1:]]
+    return np.array(perm, dtype=np.int64)
+
+
+@cache
+def recursive_to_canonical_permutation(d: int, max_order: int):
+    """
+    Compute the permutation mapping recursive tree indices to canonical tree indices.
+
+    Inverse of :func:`canonical_to_recursive_permutation`.
+
+    :param d: Number of colors (path dimension).
+    :type d: int
+    :param max_order: Maximum number of nodes.
+    :type max_order: int
+    :return: Inverse permutation array of shape ``(num_trees,)``.
+    :rtype: numpy.ndarray
+    """
+    try:
+        import numpy as np
+    except ImportError:
+        raise ImportError("Permutation functions require numpy. Install with: pip install kauri[full]")
+    _validate_num_colors(d)
+    perm = canonical_to_recursive_permutation(d, max_order)
+    inv = np.empty_like(perm)
+    inv[perm] = np.arange(len(perm))
+    return inv

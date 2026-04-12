@@ -78,14 +78,24 @@ and the symmetric-adjoint method is given by
 where `kr.sign` is the :class:`Map` sending `t` to `(-1)^|t| * t`.
 
 """
+from __future__ import annotations
 import itertools
 from functools import cache
 from typing import Union
 
-import sympy as sp
+try:
+    import sympy as sp
+except ImportError:
+    sp = None
 
 from kauri import Tree, trees_up_to_order, Map
 from kauri.trees import _is_scalar
+
+def _require_sympy():
+    if sp is None:
+        raise ImportError(
+            "B-series requires sympy. Install with: pip install kauri[full]"
+        )
 
 def _check_f_y(f, y):
     # Checks that f and y are correctly specified
@@ -179,6 +189,7 @@ def elementary_differential(tree : Tree,
         t = Tree([[[]],[]])
         print(elementary_differential(t, f, y))
     """
+    _require_sympy()
     if not isinstance(tree, Tree):
         raise TypeError("The argument 'tree' must be of type Tree, not " + str(type(tree)))
     if tree.colors() > 1:
@@ -227,7 +238,8 @@ class BSeries:
         print(bs([1], 0.1)) # Evaluate the B-Series at y = [1], h = 0.1
     """
 
-    def __init__(self, y : sp.Matrix, f : sp.Matrix, weights : Map, order : int):
+    def __init__(self, y, f, weights : Map, order : int):
+        _require_sympy()
         if not isinstance(weights, Map):
             raise TypeError("weights must be a Map, not " + str(type(weights)))
         if not isinstance(order, int):

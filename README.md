@@ -20,6 +20,14 @@ Kauri is a Python package for symbolic and algebraic manipulation of rooted tree
 pip install kauri
 ```
 
+The base install is lightweight (pure Python, no external dependencies) and provides tree algebra, enumeration, indexing, and Hopf algebraic operations.
+
+For visualization, Runge-Kutta analysis, and B-series (requires matplotlib, numpy, scipy, sympy, tqdm):
+
+```
+pip install kauri[full]
+```
+
 ## Documentation
 
 Full documentation is available at [https://kauri.readthedocs.io](https://kauri.readthedocs.io)

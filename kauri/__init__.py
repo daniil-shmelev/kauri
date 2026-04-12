@@ -17,7 +17,7 @@
 Algebraic manipulation of rooted trees for the analysis of B-series and Runge-Kutta schemes.
 """
 
-__version__ = "2.0.0"
+__version__ = "2.1.0"
 
 __all__ = [
     # Core types
@@ -30,6 +30,8 @@ __all__ = [
     # Tree generation
     "trees_of_order", "trees_up_to_order",
     "colored_trees_of_order", "colored_trees_up_to_order",
+    "colored_trees", "colored_tree_to_idx", "idx_to_colored_tree",
+    "canonical_to_recursive_permutation", "recursive_to_canonical_permutation",
     "planar_trees_of_order", "planar_trees_up_to_order",
     "colored_planar_trees_of_order", "colored_planar_trees_up_to_order",
     # Display
@@ -53,23 +55,23 @@ __all__ = [
 
 from .trees import (Tree, Forest, CommutativeForest, ForestSum, TensorProductSum,
                     NoncommutativeForest, PlanarTree, OrderedForest, EMPTY_PLANAR_TREE)
+from .trees import EMPTY_TREE, EMPTY_FOREST, EMPTY_ORDERED_FOREST, EMPTY_FOREST_SUM, ZERO_FOREST_SUM
 from .maps import Map, ident, sign, exact_weights, omega
 from .display import display
 from .gentrees import (trees_of_order, trees_up_to_order,
                        colored_trees_of_order, colored_trees_up_to_order,
+                       colored_trees, colored_tree_to_idx, idx_to_colored_tree,
+                       canonical_to_recursive_permutation, recursive_to_canonical_permutation,
                        planar_trees_of_order, planar_trees_up_to_order,
                        colored_planar_trees_of_order, colored_planar_trees_up_to_order)
 from .rk import RK, rk_symbolic_weight, rk_order_cond
 from .cf import CFMethod
-
 from .rk_methods import (euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
                          ralston_rk3, rk4, ralston_rk4, nystrom_rk5, backward_euler,
                          implicit_midpoint, crank_nicolson, gauss6, radau_iia, lobatto6,
                          EES25, EES27)
-
 from .bseries import BSeries, elementary_differential
-
-from .trees import EMPTY_TREE, EMPTY_FOREST, EMPTY_ORDERED_FOREST, EMPTY_FOREST_SUM, ZERO_FOREST_SUM
+from .oddeven import id_sqrt, minus, plus
 
 import kauri.bck
 import kauri.cem
@@ -77,8 +79,5 @@ import kauri.gl
 import kauri.mkw
 import kauri.nck
 import kauri.pgl
-
-from .oddeven import id_sqrt, minus, plus
-
 import kauri.oddeven
 import kauri.planar_oddeven
