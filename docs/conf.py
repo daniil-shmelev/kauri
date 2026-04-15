@@ -14,7 +14,7 @@ sys.path.insert(0, os.path.abspath('.'))   # for kauri_sphinx extension
 project = 'kauri'
 copyright = '2025\u20132026, Daniil Shmelev'
 author = 'Daniil Shmelev'
-release = '2.0.0'
+release = '2.1.0'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
