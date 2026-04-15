@@ -17,7 +17,7 @@
 Algebraic manipulation of rooted trees for the analysis of B-series and Runge-Kutta schemes.
 """
 
-__version__ = "2.1.0"
+__version__ = "2.1.1"
 
 __all__ = [
     # Core types
@@ -34,6 +34,8 @@ __all__ = [
     "canonical_to_recursive_permutation", "recursive_to_canonical_permutation",
     "planar_trees_of_order", "planar_trees_up_to_order",
     "colored_planar_trees_of_order", "colored_planar_trees_up_to_order",
+    "colored_planar_tree_to_idx", "idx_to_colored_planar_tree",
+    "planar_canonical_to_recursive_permutation", "planar_recursive_to_canonical_permutation",
     # Display
     "display",
     # Runge-Kutta
@@ -63,7 +65,10 @@ from .gentrees import (trees_of_order, trees_up_to_order,
                        colored_trees, colored_tree_to_idx, idx_to_colored_tree,
                        canonical_to_recursive_permutation, recursive_to_canonical_permutation,
                        planar_trees_of_order, planar_trees_up_to_order,
-                       colored_planar_trees_of_order, colored_planar_trees_up_to_order)
+                       colored_planar_trees_of_order, colored_planar_trees_up_to_order,
+                       colored_planar_tree_to_idx, idx_to_colored_planar_tree,
+                       planar_canonical_to_recursive_permutation,
+                       planar_recursive_to_canonical_permutation)
 from .rk import RK, rk_symbolic_weight, rk_order_cond
 from .cf import CFMethod
 from .rk_methods import (euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
