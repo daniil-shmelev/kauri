@@ -178,18 +178,24 @@ class CoproductTests(unittest.TestCase):
 
 
 class CoassociativityTests(unittest.TestCase):
-    """Verify coassociativity via functional evaluation.
+    """Verify coassociativity via convolution associativity on LB characters.
 
     We check (f*g*h)(t) is the same whether computed as ((f*g)*h)(t) or
-    (f*(g*h))(t) using mkw.map_product.  Since map_product implements
-    the MKW convolution, this indirectly tests coassociativity of Delta.
+    (f*(g*h))(t) using mkw.map_product.  Since MKW convolution is defined
+    for **shuffle-symmetric characters** (which is what LB-series
+    characters are — every iterated exponential in an RKMK/CF method
+    yields a shuffle-symmetric character, and composition preserves
+    symmetry), we use LB characters here, not arbitrary scalar maps.
     """
 
     def _coassoc_check(self, t):
-        """Check coassociativity for a single tree via convolution associativity."""
-        f = Map(lambda x: x.nodes() if x.list_repr is not None else 1)
-        g = Map(lambda x: x.height() if x.list_repr is not None else 1)
-        h = Map(lambda x: 1)
+        """Check convolution associativity on a single tree.
+        Uses LB characters from predefined CF methods."""
+        from kauri import lie_euler, lie_midpoint, cfree_rk3
+
+        f = lie_euler.lb_character()
+        g = lie_midpoint.lb_character()
+        h = cfree_rk3.lb_character()
 
         fg = mkw.map_product(f, g)
         gh = mkw.map_product(g, h)
@@ -197,8 +203,8 @@ class CoassociativityTests(unittest.TestCase):
         fg_h = mkw.map_product(fg, h)
         f_gh = mkw.map_product(f, gh)
 
-        self.assertEqual(fg_h(t), f_gh(t),
-                         msg=f"Coassociativity failed for {t.list_repr}")
+        self.assertAlmostEqual(fg_h(t), f_gh(t), places=10,
+                               msg=f"Coassociativity failed for {t.list_repr}")
 
     def test_coassociativity_order_1(self):
         for t in planar_trees_of_order(1):
@@ -282,15 +288,30 @@ class ConvolutionTests(unittest.TestCase):
             for t in planar_trees_of_order(n):
                 self.assertEqual(h(t), f(t), msg=repr(t.list_repr))
 
-    def test_scalar_convolution_matches_nck(self):
-        """For scalar-valued maps, MKW and NCK convolutions are identical."""
+    def test_mkw_and_nck_agree_on_ladder_trees(self):
+        """MKW and NCK convolutions coincide on ladder (chain) trees —
+        their coproducts are identical on ladders since every cut is
+        left-admissible (there is only one branch at each vertex)."""
         f = Map(lambda t: t.nodes() if t.list_repr is not None else 1)
         g = Map(lambda t: 1)
         mkw_fg = mkw.map_product(f, g)
         nck_fg = nck.map_product(f, g)
-        for n in range(1, 5):
-            for t in planar_trees_of_order(n):
-                self.assertEqual(mkw_fg(t), nck_fg(t), msg=repr(t.list_repr))
+        ladders = [PT([]), PT([[]]), PT([[[]]]), PT([[[[]]]]), PT([[[[[]]]]])]
+        for t in ladders:
+            self.assertAlmostEqual(mkw_fg(t), nck_fg(t), places=10,
+                                   msg=f"MKW/NCK disagree on ladder {t.list_repr}")
+
+    def test_mkw_disagrees_with_nck_on_non_ladders(self):
+        """On trees with identical-type siblings, MKW and NCK convolutions
+        *should* differ: MKW has coefficient 1 on the bullet⊗chain2 term
+        of Delta(cherry) while NCK has coefficient 2."""
+        f = Map(lambda t: t.nodes() if t.list_repr is not None else 1)
+        g = Map(lambda t: 1)
+        mkw_fg = mkw.map_product(f, g)
+        nck_fg = nck.map_product(f, g)
+        # cherry is the simplest tree where the coproducts differ
+        self.assertNotAlmostEqual(mkw_fg(cherry), nck_fg(cherry), places=6,
+            msg="MKW and NCK convolutions should differ on cherry")
 
     def test_map_power_inverse(self):
         """f^(-1) * f = counit for scalar-valued f."""
@@ -299,7 +320,8 @@ class ConvolutionTests(unittest.TestCase):
         product = mkw.map_product(f_inv, f)
         for n in range(1, 4):
             for t in planar_trees_of_order(n):
-                self.assertEqual(product(t), mkw.counit(t), msg=repr(t.list_repr))
+                self.assertAlmostEqual(product(t), mkw.counit(t), places=10,
+                                       msg=repr(t.list_repr))
 
 
 class CounitTests(unittest.TestCase):

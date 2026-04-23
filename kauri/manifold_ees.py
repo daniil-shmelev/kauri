@@ -15,10 +15,11 @@ from __future__ import annotations
 
 import sympy
 
-from .trees import PlanarTree, EMPTY_PLANAR_TREE
+from .trees import PlanarTree, EMPTY_PLANAR_TREE, OrderedForest
+from ._protocols import ForestLike
 from .gentrees import planar_trees_of_order
 from .rk import _elementary_symbolic
-from .nck.nck import coproduct_impl
+from .mkw.mkw import coproduct_impl, forest_coproduct_impl
 from .generic_algebra import sign_factor
 
 
@@ -59,19 +60,59 @@ def symbolic_cf_params(s: int, J: int, explicit: bool = True):
 # Symbolic coproduct convolution helper
 # ---------------------------------------------------------------------------
 
-def _sym_coproduct_eval(tree, left_func, right_func):
-    """Evaluate ``sum_Delta c * prod(left_func(t_i)) * right_func(tree')`` symbolically,
-    where the product is over trees ``t_i`` in the left forest of each coproduct term."""
-    if tree.list_repr is None:
+def _shuffle_sym_value(x, tree_func):
+    """Symbolic shuffle-symmetric evaluation of a basis-aware base character.
+
+    For a tree ``x``: return ``tree_func(x)``.
+    For a forest ``(t_1, ..., t_k)``: return ``prod tree_func(t_i) / k!``.
+    This is the correct extension for a base (exponential) MKW character;
+    it is NOT used for convolution results, which are evaluated by
+    :func:`_sym_coproduct_eval` recursively through the paper's coproduct.
+    """
+    if isinstance(x, ForestLike):
+        non_empty = [t for t in x.tree_list if t.list_repr is not None]
+        if not non_empty:
+            return sympy.sympify(tree_func(x.tree_list[0]))
+        val = sympy.Integer(1)
+        for t in non_empty:
+            val *= sympy.sympify(tree_func(t))
+        k = len(non_empty)
+        if k > 1:
+            val = val / sympy.factorial(k)
+        return val
+    return sympy.sympify(tree_func(x))
+
+
+def _sym_coproduct_eval(x, left_fn, right_fn):
+    """Symbolic MKW convolution ``(left_fn * right_fn)(x)``.
+
+    Uses the paper's coproduct — ``coproduct_impl`` on trees and
+    ``forest_coproduct_impl`` on ordered forests — and evaluates each
+    side by calling ``left_fn`` / ``right_fn`` on the resulting basis
+    element.  The ``*_fn`` arguments MUST accept both trees and forests
+    (a "basis-aware" symbolic character); for base characters defined
+    only on trees, wrap via :func:`_shuffle_sym_value`.
+
+    This gives associative iterated convolution by coassociativity of
+    the MKW coproduct.
+    """
+    # Trivial cases
+    if isinstance(x, PlanarTree) and x.list_repr is None:
         return sympy.Integer(1)
-    cp = coproduct_impl(tree)
+    if isinstance(x, ForestLike):
+        trees = [t for t in x.tree_list if t.list_repr is not None]
+        if not trees:
+            return sympy.sympify(left_fn(x.tree_list[0])) * sympy.sympify(right_fn(x.tree_list[0]))
+        if len(trees) == 1:
+            return _sym_coproduct_eval(trees[0], left_fn, right_fn)
+        cp = forest_coproduct_impl(x)
+    else:
+        cp = coproduct_impl(x)
+
     result = sympy.Integer(0)
-    for c, left_forest, right_forest in cp:
-        left_val = sympy.Integer(1)
-        for ti in left_forest.tree_list:
-            if ti.list_repr is not None:
-                left_val *= sympy.sympify(left_func(ti))
-        right_val = sympy.sympify(right_func(right_forest[0]))
+    for c, left, right in cp.term_list:
+        left_val = sympy.sympify(left_fn(left))
+        right_val = sympy.sympify(right_fn(right))
         result += c * left_val * right_val
     return sympy.expand(result)
 
@@ -92,8 +133,12 @@ def symbolic_lb_character(
     """
     Compute the LB-series character ``alpha(tau)`` symbolically.
 
-    Uses the NCK convolution:
-    ``alpha = alpha_J *_nck ... *_nck alpha_1``.
+    Uses the MKW convolution:
+    ``alpha = alpha_J *_MKW ... *_MKW alpha_1``,
+    where each ``alpha_l`` is the elementary-weight character of the
+    exponential ``(A, beta_l)``, viewed as a shuffle-multiplicative
+    character on H_MKW.  Forest-extension uses the shuffle-symmetric
+    ``1/k!`` convention.
 
     :param tree: An ordered (planar) tree.
     :param a: Symbolic *s* x *s* coefficient matrix.
@@ -106,16 +151,23 @@ def symbolic_lb_character(
     if _b_mats is None:
         _b_mats = [sympy.Matrix(1, s, lambda _, i: betas[l][i]) for l in range(J)]
 
-    def _ew_l(l):
+    def _ew_tree(l):
+        """Tree-only elementary weight for exponential l."""
         b_l = _b_mats[l]
         return lambda t: _elementary_symbolic(t.list_repr, a, b_l, s)
 
-    ew_funcs = [_ew_l(l) for l in range(J)]
+    # Wrap each exponential's tree function as a basis-aware base character
+    # (shuffle-symmetric extension to forests).
+    def _ew_basis(l):
+        tree_fn = _ew_tree(l)
+        return lambda x: _shuffle_sym_value(x, tree_fn)
+
+    ew_funcs = [_ew_basis(l) for l in range(J)]
 
     if J == 1:
         return sympy.expand(ew_funcs[0](tree))
 
-    # Iteratively convolve: result = alpha_1, then alpha_2 *_nck result, ...
+    # Iteratively convolve: result = alpha_1, then alpha_2 *_MKW result, ...
     current = ew_funcs[0]
     for l in range(1, J):
         prev, outer = current, ew_funcs[l]
@@ -181,11 +233,19 @@ def antisymmetry_conditions(
         for key, val in alpha_cache.items()
     }
 
-    def _alpha(tree):
-        return alpha_cache[tree.list_repr]
+    # Tree-only lookups
+    def _alpha_tree(t):
+        return alpha_cache[t.list_repr]
 
-    def _sign_alpha(tree):
-        return sign_alpha_cache[tree.list_repr]
+    def _sign_alpha_tree(t):
+        return sign_alpha_cache[t.list_repr]
+
+    # Basis-aware wrappers (shuffle-symmetric extension on forests)
+    def _alpha(x):
+        return _shuffle_sym_value(x, _alpha_tree)
+
+    def _sign_alpha(x):
+        return _shuffle_sym_value(x, _sign_alpha_tree)
 
     conds = []
     for n in range(1, max_order + 1):
@@ -302,11 +362,18 @@ def verify_ees_character(phi, order: int, tol: float = 1e-10) -> bool:
 
     validate_order(order, allow_zero=False)
 
-    def _phi_sign(tree):
-        return sympy.expand(sign_factor(tree) * sympy.sympify(phi(tree)))
+    def _phi_tree(t):
+        return sympy.expand(sympy.sympify(phi(t)))
 
-    def _phi(tree):
-        return sympy.sympify(phi(tree))
+    def _phi_sign_tree(t):
+        return sympy.expand(sign_factor(t) * sympy.sympify(phi(t)))
+
+    # Basis-aware wrappers: shuffle-symmetric on forests
+    def _phi(x):
+        return _shuffle_sym_value(x, _phi_tree)
+
+    def _phi_sign(x):
+        return _shuffle_sym_value(x, _phi_sign_tree)
 
     for tree in planar_trees_up_to_order(order):
         if tree.list_repr is None:

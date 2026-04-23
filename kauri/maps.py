@@ -23,35 +23,62 @@ from typing import Union, Callable
 from .trees import (Tree, PlanarTree, Forest, NoncommutativeForest, ForestSum,
                      TensorProductSum, EMPTY_TREE, _is_scalar, _is_planar_obj)
 from ._protocols import TreeLike, ForestLike, ForestSumLike
-from .generic_algebra import apply_map, func_power, func_product
+from .generic_algebra import apply_map, func_power, func_product, mkw_apply
 
 class Map:
     """
-    A multiplicative linear map on rooted trees. This class is callable.
+    A linear map on rooted trees, with a choice of forest-extension
+    convention.  The class is callable.
 
-    When applied to a forest, the map is extended multiplicatively:
+    When ``extension="concat"`` (default, used by BCK, NCK, CEM, GL, PGL),
+    the map extends multiplicatively over forest concatenation:
     ``f(t1 * t2 * ... * tk) = f(t1) * f(t2) * ... * f(tk)``.
+    If ``anti=True``, the map extends as a concatenation anti-homomorphism
+    (reversed order), as required for antipodes of noncommutative Hopf
+    algebras (NCK, PGL).
 
-    If ``anti=True``, the map is extended as an anti-homomorphism instead:
-    ``f(t1 * t2 * ... * tk) = f(tk) * ... * f(t2) * f(t1)``.
-    This is required for antipodes of noncommutative Hopf algebras (e.g. NCK, PGL).
+    When ``extension="shuffle"`` (used by MKW), ``func`` is expected to
+    accept **any MKW basis element** (tree or :class:`OrderedForest`) and
+    return a scalar; :meth:`__call__` extends it linearly over a
+    :class:`ForestSum`.  Base characters (tree values only) should be
+    wrapped with :func:`kauri.generic_algebra.mkw_base_char_func` so that
+    forest inputs are handled by the shuffle-symmetric Pi/k! extension;
+    convolution results from :func:`kauri.mkw.map_product` already have a
+    basis-aware ``func`` that recurses through the paper's forest
+    coproduct.  ``anti`` is not meaningful here (the shuffle product is
+    commutative) and must be ``False``.
 
-    :param func: A function taking as input a single tree and returning a scalar,
+    :param func: A function taking a basis element (tree or forest for
+        shuffle extension; tree for concat) and returning a scalar,
         Tree, Forest or ForestSum.
-    :type func: Callable[[Tree], int | float | Tree | Forest | ForestSum]
-    :param anti: If True, extend to forests as an anti-homomorphism (reversed order).
-        Default is False.
+    :type func: Callable
+    :param anti: If True, use the concat anti-homomorphism extension
+        (reversed order).  Requires ``extension="concat"``.
     :type anti: bool
+    :param extension: ``"concat"`` (default) or ``"shuffle"``.
+    :type extension: str
     """
-    def __init__(self, func : Callable[[Tree], Union[int, float, Tree, Forest, ForestSum]], anti=False):
+    def __init__(self,
+                 func : Callable[[Tree], Union[int, float, Tree, Forest, ForestSum]],
+                 anti : bool = False,
+                 extension : str = "concat"):
         if not callable(func):
             raise TypeError("func parameter must be callable")
+        if extension not in ("concat", "shuffle"):
+            raise ValueError(
+                "extension must be 'concat' or 'shuffle', not " + repr(extension))
+        if extension == "shuffle" and anti:
+            raise ValueError(
+                "anti=True is only meaningful with extension='concat' "
+                "(the shuffle product is commutative)")
         self.func = func
         self.anti = anti
+        self.extension = extension
         self._cache = {}
 
     def __call__(self, t : Union[Tree, Forest, ForestSum]) -> Union[int, float, Tree, Forest, ForestSum]:
-        """Applies the map to a tree, forest, or forest sum (extends linearly and multiplicatively)."""
+        """Applies the map to a tree, forest, or forest sum (extends linearly
+        using the forest-extension convention set at construction)."""
         if isinstance(t, TensorProductSum):
             raise TypeError("Cannot apply Map to TensorProductSum. "
                             "Apply the map to each tensor factor separately.")
@@ -60,7 +87,12 @@ class Map:
         try:
             return self._cache[t]
         except KeyError:
-            result = apply_map(t, self.func, anti=self.anti)
+            if self.extension == "shuffle":
+                # Basis-aware func: handles Tree and ForestLike directly.
+                # ForestSum is extended linearly via mkw_apply.
+                result = mkw_apply(t, self.func)
+            else:
+                result = apply_map(t, self.func, anti=self.anti)
             self._cache[t] = result
             return result
 
@@ -149,7 +181,7 @@ class Map:
             counit = ident * bck.antipode
             ident_2 = 2 * ident # ident_2(t) = 2 * t for any tree t
         """
-        temp = Map(self.func, anti=self.anti)
+        temp = Map(self.func, anti=self.anti, extension=self.extension)
         temp *= other
         return temp
 
@@ -174,7 +206,7 @@ class Map:
             counit = ident ^ cem.antipode
             ident_2 = 2 ^ ident # ident_2(t) = 2 * t for any tree t
         """
-        temp = Map(self.func, anti=self.anti)
+        temp = Map(self.func, anti=self.anti, extension=self.extension)
         temp ^= other
         return temp
 
@@ -207,12 +239,12 @@ class Map:
             m1 = 2 * bck.antipode
             m2 = bck.antipode + bck.antipode # Same as m1
         """
-        temp = Map(self.func, anti=self.anti)
+        temp = Map(self.func, anti=self.anti, extension=self.extension)
         temp += other
         return temp
 
     def __neg__(self):
-        return Map(lambda x : -self.func(x), anti=self.anti)
+        return Map(lambda x : -self.func(x), anti=self.anti, extension=self.extension)
 
     def __isub__(self, other):
         self.__iadd__(-other)
@@ -220,7 +252,7 @@ class Map:
 
     def __sub__(self, other):
         """Returns the pointwise difference of two maps: ``(f - g)(t) = f(t) - g(t)``."""
-        temp = Map(self.func, anti=self.anti)
+        temp = Map(self.func, anti=self.anti, extension=self.extension)
         temp -= other
         return temp
 
@@ -257,7 +289,7 @@ class Map:
             inner = other(x)
             empty = PlanarTree(None) if _is_planar_obj(inner) else Tree(None)
             return self(inner * empty)
-        return Map(_composed)
+        return Map(_composed, extension=self.extension)
 
     def modified_equation(self) -> 'Map':
         """
