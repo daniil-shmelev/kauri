@@ -30,6 +30,7 @@ Two forest-extension conventions coexist here:
   associative iterated convolution on the MKW Hopf algebra.
 """
 import math
+from fractions import Fraction
 
 from ._protocols import ForestLike, ForestSumLike
 
@@ -225,7 +226,7 @@ def mkw_shuffle_symmetric_value(x, tree_fn):
         k = len(non_empty)
         if k == 1:
             return prod
-        return prod / math.factorial(k)
+        return prod * Fraction(1, math.factorial(k))
     return tree_fn(x)
 
 
