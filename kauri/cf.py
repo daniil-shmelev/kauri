@@ -109,10 +109,10 @@ class CFMethod:
         but each tree is mapped to an exact :class:`sympy.Expr` (typically
         a :class:`sympy.Rational`) instead of a float.
 
-        Internally delegates to
-        :func:`kauri.manifold_ees.symbolic_lb_character` after converting
-        this method's concrete tableau entries to :class:`sympy.Rational`
-        via :func:`sympy.nsimplify`.
+        Builds the same MKW basis-aware character as :meth:`lb_character`,
+        but with exact symbolic elementary weights.  Forest values of
+        convolution results are therefore evaluated through the MKW forest
+        coproduct, not by reusing the base ``prod/k!`` extension.
 
         :rtype: Map
         """
@@ -120,28 +120,39 @@ class CFMethod:
             return self._symbolic_lb_character
 
         import sympy
-        from .manifold_ees import symbolic_lb_character as _sym_char
+        from .generic_algebra import mkw_base_char_func
+        from .mkw.mkw import _as_basis_aware_map
+        from .rk import _elementary_symbolic
 
         a_sym = sympy.Matrix(
             self.s, self.s,
             lambda i, j: sympy.nsimplify(self.a[i][j], rational=True),
         )
-        betas_sym = [
-            [sympy.nsimplify(self.betas[l][i], rational=True)
-             for i in range(self.s)]
-            for l in range(self.J)
-        ]
-        cache: dict = {}
 
-        def _char(t):
-            key = t.list_repr
-            if key not in cache:
-                cache[key] = _sym_char(t, a_sym, betas_sym, self.s, self.J)
-            return cache[key]
+        exp_maps = []
+        for l in range(self.J):
+            b_l = sympy.Matrix(
+                1, self.s,
+                lambda _, i, l=l: sympy.nsimplify(
+                    self.betas[l][i], rational=True),
+            )
+            cache: dict = {}
 
-        m = Map(_char)
-        self._symbolic_lb_character = m
-        return m
+            def tree_fn(t, b_l=b_l, cache=cache):
+                key = t.list_repr
+                if key not in cache:
+                    cache[key] = sympy.expand(
+                        _elementary_symbolic(key, a_sym, b_l, self.s))
+                return cache[key]
+
+            exp_maps.append(_as_basis_aware_map(
+                mkw_base_char_func(tree_fn)))
+
+        result = exp_maps[0]
+        for l in range(1, self.J):
+            result = mkw_map_product(exp_maps[l], result)
+        self._symbolic_lb_character = result
+        return result
 
     def symmetry_defect_map(self) -> Map:
         """
@@ -157,15 +168,11 @@ class CFMethod:
         if self._symmetry_defect is not None:
             return self._symmetry_defect
 
-        from .generic_algebra import mkw_base_char_func
         from .mkw.mkw import _as_basis_aware_map
 
         alpha = self.lb_character()
-        # sign · alpha as a shuffle-symmetric base character: on trees
-        # it's (-1)^|tau|·alpha(tau); the forest extension follows the
-        # canonical 1/k! rule via mkw_base_char_func.
         sign_alpha = _as_basis_aware_map(
-            mkw_base_char_func(lambda t: sign_factor(t) * alpha(t)))
+            lambda x: sign_factor(x) * alpha(x))
 
         self._symmetry_defect = mkw_map_product(sign_alpha, alpha)
         return self._symmetry_defect

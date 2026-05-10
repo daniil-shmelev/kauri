@@ -34,6 +34,7 @@ from kauri import (
     lie_midpoint,
     cfree_rk3,
     cfree_rk4,
+    CFMethod,
     PlanarTree,
     Map,
 )
@@ -123,6 +124,22 @@ class TestCharacterAgainstExactSolution(unittest.TestCase):
             val = alpha(t)
             self.assertIsInstance(val, sympy.Expr,
                 msg=f"Expected sympy.Expr, got {type(val)}")
+
+    def test_symbolic_character_matches_numerical_on_mkw_forests(self):
+        method = CFMethod(
+            a=[[sympy.Rational(0)]],
+            betas=[[sympy.Rational(1, 2)], [sympy.Rational(1, 2)]],
+        )
+        forest = bullet.as_ordered_forest() * bullet.as_ordered_forest()
+
+        num_alpha = method.lb_character()
+        sym_alpha = method.symbolic_lb_character()
+
+        self.assertEqual(
+            sympy.simplify(sym_alpha(forest) - num_alpha(forest)),
+            0,
+        )
+        self.assertEqual(sym_alpha(forest), sympy.Rational(1, 2))
 
 
 # ---------------------------------------------------------------------------
@@ -309,6 +326,21 @@ class TestCFCharacterComposition(unittest.TestCase):
                 num_val, sym_val, places=10,
                 msg=f"numerical vs symbolic composition disagree at {t.list_repr}",
             )
+
+    def test_multi_exponential_symmetry_defect_uses_composed_forest_values(self):
+        """The signed character must preserve the composed MKW forest values,
+        not re-extend tree values using the base shuffle formula."""
+        method = CFMethod(
+            a=[[sympy.Rational(0)]],
+            betas=[[sympy.Rational(1, 2)], [sympy.Rational(1, 2)]],
+        )
+        defect = method.symmetry_defect_map()
+
+        self.assertEqual(sympy.simplify(defect(b_bc2)), 0)
+        self.assertEqual(
+            sympy.simplify(defect(b_c2b) + sympy.Rational(1, 16)),
+            0,
+        )
 
 
 if __name__ == "__main__":
