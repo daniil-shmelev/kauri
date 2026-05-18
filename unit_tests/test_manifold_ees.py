@@ -82,11 +82,17 @@ class TestPhaseC(unittest.TestCase):
         return a, b
 
     def test_single_exponential_matches_rk(self):
-        """J=1 CF should give the same planar orders as the underlying RK."""
+        """J=1 CF should give the same planar ORDER as the underlying RK (both
+        evaluate tree character values, which agree).  The ANTISYMMETRIC
+        order can differ: ``RK.planar_antisymmetric_order`` uses the NCK
+        convolution for the symmetry defect, whereas
+        ``CFMethod.planar_antisymmetric_order`` uses the MKW convolution
+        (the Lie-group convention).  EES25 was designed to satisfy NCK's
+        antisymmetric order 5; under MKW it is 3."""
         a, b = self._ees25_params()
         cf = CFMethod(a, [b])
         self.assertEqual(cf.planar_order(), 2)
-        self.assertEqual(cf.planar_antisymmetric_order(), 5)
+        self.assertEqual(cf.planar_antisymmetric_order(), 3)
 
     def test_projected_rk(self):
         a, b = self._ees25_params()
@@ -130,8 +136,12 @@ class TestPhaseD(unittest.TestCase):
         self.assertEqual(len(result['forward']), 2)
 
     def test_ees25_satisfies_conditions(self):
+        """EES25 was designed under the NCK convention to have
+        antisymmetric order 5; under the MKW (Lie-group) convention
+        used by :func:`generate_conditions`, its antisymmetric order is
+        3 — still a valid forward-order-2 / antisymmetric-order-3 method."""
         from kauri.manifold_ees import generate_conditions, verify_conditions
-        result = generate_conditions(2, 5, s=3, J=1, explicit=True)
+        result = generate_conditions(2, 3, s=3, J=1, explicit=True)
         subs = {
             sympy.Symbol('a10'): sympy.Rational(1, 2),
             sympy.Symbol('a20'): 0,

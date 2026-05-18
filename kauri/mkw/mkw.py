@@ -14,6 +14,20 @@
 # =========================================================================
 """
 The MKW (Munthe-Kaas--Wright) Hopf algebra module.
+
+The MKW Hopf algebra ``H_MKW = (OF, shuffle, Delta_MKW)`` lives on
+ordered (planar) forests with the **commutative shuffle product** and
+the left-admissible-cuts coproduct.  Characters of ``H_MKW`` must
+therefore be **shuffle-multiplicative**: ``alpha(x shuffle y) = alpha(x)
+* alpha(y)``.  The :class:`kauri.maps.Map` objects returned by
+:func:`counit`, :func:`antipode`, :func:`map_product` and
+:func:`map_power` use ``extension="shuffle"`` so that evaluation on an
+ordered forest ``(t_1, ..., t_k)`` picks up the ``1/k!`` shuffle
+multinomial denominator.  This is the correct convention for every
+LB-series character arising from an RKMK/CF method: a single ``exp(beta
+k)`` generates a shuffle-symmetric character, and :func:`map_product`
+preserves symmetry, so kauri's MKW characters are always
+shuffle-symmetric.  Asymmetric MKW characters are not supported.
 """
 from functools import cache
 from itertools import combinations, product as iter_product
@@ -21,9 +35,12 @@ from itertools import combinations, product as iter_product
 from ..maps import Map
 from ..trees import (Tree, PlanarTree, OrderedForest,
                      ForestSum, TensorProductSum,
-                     EMPTY_ORDERED_FOREST)
-from ..generic_algebra import func_product, func_power
-from ..nck.nck import coproduct_impl as _nck_coproduct, antipode_impl as _nck_antipode
+                     EMPTY_ORDERED_FOREST, EMPTY_PLANAR_TREE)
+from .._protocols import ForestLike
+from ..generic_algebra import (
+    mkw_apply, mkw_base_char_func,
+    mkw_convolution_func, mkw_convolution_power,
+)
 
 
 # ---------------------------------------------------------------------------
@@ -189,6 +206,102 @@ def coproduct_impl(t):
     return TensorProductSum(tuple(raw_terms)).simplify()
 
 
+def _b_plus(trees: tuple) -> PlanarTree:
+    """Graft the given trees onto a new root of colour 0.  This is the
+    B+ operation of Munthe-Kaas--Wright (and Connes-Kreimer); ``trees``
+    must be a tuple of non-empty PlanarTrees."""
+    return PlanarTree(tuple(t.list_repr for t in trees) + (0,))
+
+
+def _basis_aware_func(m: "Map"):
+    """Return ``m.func`` if ``m`` is already a basis-aware MKW Map (i.e. its
+    ``func`` handles both trees and ordered forests); otherwise wrap
+    ``m.func`` as an MKW base character via :func:`mkw_base_char_func`.
+    Used by :func:`map_product` and :func:`map_power` to accept either
+    base characters or previously-composed characters interchangeably."""
+    if getattr(m, "_mkw_basis_aware", False):
+        return m.func
+    return mkw_base_char_func(m.func)
+
+
+def _as_basis_aware_map(func, *, cache_key: bool = True) -> "Map":
+    """Build a ``Map(extension='shuffle')`` from a basis-aware ``func`` and
+    tag it ``_mkw_basis_aware = True`` so that subsequent convolutions
+    skip redundant wrapping."""
+    m = Map(func, extension="shuffle")
+    m._mkw_basis_aware = True
+    return m
+
+
+# ---------------------------------------------------------------------------
+# Forest coproduct — the canonical extension of Delta_tree to ordered forests
+# via the B+/B- recursion from Munthe-Kaas & Wright (2008, eq. derived from
+# Definition 5 / eq. 1031–1035 of the paper).  For an ordered forest
+# omega = (t_1, ..., t_k),
+#
+#     Delta_forest(omega) = (id tensor B-) ( Delta_tree(B+(omega)) - B+(omega) tensor 1 )
+#
+# where B+(omega) is the tree obtained by grafting all trees of omega onto a
+# common new root (colour 0), and B-(tau) extracts the children of tau as an
+# ordered forest.  This is the coassociative extension used by the paper's
+# Table 5 and the only one that gives associative convolution.  Reduces to
+# coproduct_impl(tau) when omega is a single-tree forest.
+# ---------------------------------------------------------------------------
+
+@cache
+def forest_coproduct_impl(forest: OrderedForest) -> TensorProductSum:
+    """MKW coproduct on an ordered forest, via the B+/B- recursion.
+
+    For empty or single-tree forests, reduces to the tree coproduct (with
+    appropriate wrapping).  For multi-tree forests, constructs the parent
+    tree ``B+(omega)``, takes the tree coproduct, removes the ``B+(omega)
+    otimes 1`` term, and applies ``id otimes B-`` — yielding
+    ``Delta_forest(omega)`` with ordered forests on both sides.
+    """
+    trees = tuple(t for t in forest.tree_list if t.list_repr is not None)
+
+    if not trees:
+        # Delta(unit) = unit tensor unit
+        return TensorProductSum(
+            ((1, EMPTY_ORDERED_FOREST, EMPTY_ORDERED_FOREST),))
+
+    if len(trees) == 1:
+        # Single-tree forest: promote the tree coproduct (right side is a
+        # 1-tree forest already, matching the forest-coproduct convention).
+        return coproduct_impl(trees[0])
+
+    parent = _b_plus(trees)
+    parent_cp = coproduct_impl(parent)
+
+    raw_terms = []
+    for c, left, right in parent_cp.term_list:
+        right_tree = right[0]
+
+        # The B+(omega) tensor 1 term has left = (parent,) and right is empty.
+        # Skip it per the formula.
+        if right_tree.list_repr is None:
+            left_trees = tuple(
+                t for t in left.tree_list if t.list_repr is not None)
+            if len(left_trees) == 1 and left_trees[0] == parent:
+                continue
+
+        # Apply (id tensor B-): replace right_tree by its children as a forest.
+        if right_tree.list_repr is None:
+            new_right = EMPTY_ORDERED_FOREST
+        else:
+            child_reprs = right_tree.list_repr[:-1]
+            if child_reprs:
+                new_right = OrderedForest(
+                    tuple(PlanarTree(r) for r in child_reprs))
+            else:
+                # B-(leaf) = empty forest
+                new_right = EMPTY_ORDERED_FOREST
+
+        raw_terms.append((c, left, new_right))
+
+    return TensorProductSum(tuple(raw_terms)).simplify()
+
+
 # ---------------------------------------------------------------------------
 # Antipode
 # ---------------------------------------------------------------------------
@@ -221,9 +334,7 @@ def _forest_antipode(forest):
     if len(trees) == 1:
         return antipode_impl(trees[0])
 
-    # B₊(ω): graft all trees onto a new root (color 0)
-    parent_repr = tuple(t.list_repr for t in trees) + (0,)
-    parent = PlanarTree(parent_repr)
+    parent = _b_plus(trees)
     cp = coproduct_impl(parent)
 
     the_forest = OrderedForest(trees)
@@ -284,7 +395,14 @@ def antipode_impl(t):
 # Public wrappers
 # ---------------------------------------------------------------------------
 
-counit = Map(counit_impl)
+def _counit_basis(x):
+    """Counit on any MKW basis element: 1 on the unit, 0 elsewhere."""
+    if isinstance(x, ForestLike):
+        non_empty = [t for t in x.tree_list if t.list_repr is not None]
+        return 1 if not non_empty else 0
+    return counit_impl(x)
+
+counit = _as_basis_aware_map(_counit_basis)
 counit.__doc__ = """
 The counit :math:`\\varepsilon` of the MKW Hopf algebra.
 
@@ -298,13 +416,19 @@ The counit :math:`\\varepsilon` of the MKW Hopf algebra.
     print(mkw.counit(PlanarTree([])))  # Returns 0
 """
 
-def _safe_antipode(t):
-    if not isinstance(t, PlanarTree):
-        hint = " For non-planar trees, use bck.antipode instead." if isinstance(t, Tree) else ""
-        raise TypeError("Argument to mkw.antipode must be a PlanarTree, not " + str(type(t)) + "." + hint)
-    return antipode_impl(t)
+def _safe_antipode(x):
+    """Basis-aware MKW antipode: dispatches to :func:`antipode_impl` on
+    trees and to :func:`_forest_antipode` on ordered forests."""
+    if isinstance(x, PlanarTree):
+        return antipode_impl(x)
+    if isinstance(x, OrderedForest):
+        return _forest_antipode(x)
+    hint = " For non-planar trees, use bck.antipode instead." if isinstance(x, Tree) else ""
+    raise TypeError(
+        "Argument to mkw.antipode must be a PlanarTree or OrderedForest, "
+        "not " + str(type(x)) + "." + hint)
 
-antipode = Map(_safe_antipode, anti=False)
+antipode = _as_basis_aware_map(_safe_antipode)
 antipode.__doc__ = """
 The antipode :math:`S` of the MKW Hopf algebra.
 
@@ -382,11 +506,22 @@ def map_product(f: Map, g: Map) -> Map:
 
         (f \\cdot g)(t) := \\mu \\circ (f \\otimes g) \\circ \\Delta_{MKW}(t)
 
-    where :math:`\\mu` is the shuffle product.
+    where :math:`\\mu` is the shuffle product and
+    :math:`\\Delta_{MKW}` is the left-admissible-cuts coproduct.  The
+    inputs are interpreted as **shuffle-multiplicative** scalar characters,
+    and the returned :class:`Map` carries ``extension="shuffle"`` so that
+    subsequent evaluations on ordered forests apply the shuffle-symmetric
+    ``1/k!`` extension.
 
     .. note::
 
-        Both maps must be **scalar-valued** (returning numbers, not trees/forests).
+        Both maps must be **scalar-valued** (returning numbers, not
+        trees/forests) and interpreted as shuffle-symmetric characters.
+        The true-solution LB character on a Lie group has different tree
+        values than the flat-space B-series character; e.g.
+        ``alpha_exact(cherry) = 1/6`` under MKW, not ``1/3``.  See
+        ``unit_tests/test_cf_methods.py::TestLBCompositionSemantics``
+        for the order-4 table.
 
     :param f: f
     :type f: Map
@@ -405,21 +540,27 @@ def map_product(f: Map, g: Map) -> Map:
     if not (isinstance(f, Map) and isinstance(g, Map)):
         raise TypeError("Arguments in mkw.map_product must be of type Map, not "
                         + str(type(f)) + " and " + str(type(g)))
-    # For scalar-valued maps, the MKW and NCK convolutions are identical:
-    # the shuffle coefficients in Delta_MKW exactly cancel with the 1/k!
-    # factors required by the shuffle-algebra character evaluation.
-    # We use the NCK coproduct internally for efficiency and consistency.
-    # MKW is commutative, so anti1 is always False (no anti-homomorphism).
-    return Map(lambda t: func_product(t, f.func, g.func, _nck_coproduct, anti1=False))
+
+    f_fn = _basis_aware_func(f)
+    g_fn = _basis_aware_func(g)
+
+    def conv(x):
+        return mkw_convolution_func(
+            x, f_fn, g_fn, coproduct_impl, forest_coproduct_impl)
+    return _as_basis_aware_map(conv)
 
 
 def map_power(f: Map, exponent: int) -> Map:
     """
-    Returns the convolution power of a map in the MKW Hopf algebra.
+    Returns the convolution power of a scalar-valued map in the MKW Hopf
+    algebra.  The result carries ``extension="shuffle"`` so that forest
+    evaluations obey the shuffle-symmetric :math:`1/k!` extension.
 
     .. note::
 
-        The map should be **scalar-valued** for iterated powers (exponent > 1 or < 0).
+        The map should be **scalar-valued** and interpreted as a
+        shuffle-symmetric character.  See :func:`map_product` for the
+        conventions used.
 
     :param f: f
     :type f: Map
@@ -439,5 +580,12 @@ def map_power(f: Map, exponent: int) -> Map:
         raise TypeError("f must be a Map, not " + str(type(f)))
     if not isinstance(exponent, int):
         raise TypeError("exponent must be an int, not " + str(type(exponent)))
-    # See map_product for why we use NCK internals for scalar-valued maps.
-    return Map(lambda t: func_power(t, f.func, exponent, _nck_coproduct, counit_impl, _nck_antipode, anti1=False))
+
+    f_fn = _basis_aware_func(f)
+
+    def pow_fn(x):
+        return mkw_convolution_power(
+            x, f_fn, exponent,
+            coproduct_impl, forest_coproduct_impl,
+            _counit_basis, _safe_antipode)
+    return _as_basis_aware_map(pow_fn)

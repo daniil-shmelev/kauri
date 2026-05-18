@@ -17,7 +17,7 @@
 Algebraic manipulation of rooted trees for the analysis of B-series and Runge-Kutta schemes.
 """
 
-__version__ = "2.1.1"
+__version__ = "2.2.0"
 
 __all__ = [
     # Core types
@@ -47,11 +47,12 @@ __all__ = [
     # B-series
     "BSeries", "elementary_differential",
     # Commutator-free methods
-    "CFMethod",
+    "CFMethod", "ReusedStageCFMethod",
+    "lie_euler", "lie_midpoint", "cfree_rk3", "cfree_rk4",
     # Odd-even decomposition
     "id_sqrt", "minus", "plus",
     # Submodules
-    "bck", "cem", "gl", "mkw", "nck", "pgl",
+    "bck", "cem", "gl", "mkw", "nck", "pgl", "lb_substitution",
     "oddeven", "planar_oddeven",
 ]
 
@@ -70,7 +71,8 @@ from .gentrees import (trees_of_order, trees_up_to_order,
                        planar_canonical_to_recursive_permutation,
                        planar_recursive_to_canonical_permutation)
 from .rk import RK, rk_symbolic_weight, rk_order_cond
-from .cf import CFMethod
+from .cf import CFMethod, ReusedStageCFMethod
+from .cf_methods import lie_euler, lie_midpoint, cfree_rk3, cfree_rk4
 from .rk_methods import (euler, heun_rk2, midpoint, kutta_rk3, heun_rk3,
                          ralston_rk3, rk4, ralston_rk4, nystrom_rk5, backward_euler,
                          implicit_midpoint, crank_nicolson, gauss6, radau_iia, lobatto6,
@@ -81,6 +83,7 @@ from .oddeven import id_sqrt, minus, plus
 import kauri.bck
 import kauri.cem
 import kauri.gl
+import kauri.lb_substitution
 import kauri.mkw
 import kauri.nck
 import kauri.pgl

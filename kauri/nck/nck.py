@@ -14,7 +14,19 @@
 # =========================================================================
 
 """
-The NCK (noncommutative Connes-Kreimer) Hopf algebra module
+The NCK (noncommutative Connes-Kreimer) Hopf algebra module.
+
+The NCK Hopf algebra ``H_NCK = (OF, concat, Delta_NCK)`` lives on
+ordered (planar) forests with the **noncommutative concatenation
+product** ``.`` and the admissible-cuts coproduct.  Its characters are
+therefore **concatenation-multiplicative**: ``alpha(x . y) = alpha(x) *
+alpha(y)``.  The default forest-extension of a :class:`kauri.maps.Map`
+(``extension="concat"``) is the correct one for NCK characters — no
+``extension="shuffle"`` variant is needed here, in contrast to MKW.
+
+The non-commutative concatenation product means the antipode is an
+**anti-homomorphism** rather than a homomorphism; the public
+:func:`antipode` therefore uses ``anti=True`` to reverse forest order.
 """
 from functools import cache
 from itertools import product as iter_product
